@@ -57,6 +57,14 @@ else
   rsync -ruvz --files-from "deploy.files" . "${DOCROOT}"
 fi
 
+if [ "$DEPENDENCIES" = true ]; then
+  if [ "$CONFIG" -ne "local" ]; then
+    ssh ${USER}@${HOST} "cd ${DOCROOT} && ./build.sh ${CONFIG}"
+  else
+    cd ${DOCROOT} && ./build.sh ${CONFIG}
+  fi
+fi
+
 if [ "$INITIALIZE" = true ]; then
   if [ "$CONFIG" -ne "local" ]; then
     ssh ${USER}@${HOST} "cd ${DOCROOT} && cp config/config.${CONFIG}.yml config.yml && cp credentials.EXAMPLE.yml credentials.yml"
@@ -65,14 +73,6 @@ if [ "$INITIALIZE" = true ]; then
   fi
 
   echo -e "NOTE: credentials.yml file updated.  You will need to modify this file and add valid credentials."
-fi
-
-if [ "$DEPENDENCIES" = true ]; then
-  if [ "$CONFIG" -ne "local" ]; then
-    ssh ${USER}@${HOST} "cd ${DOCROOT} && ./build.sh ${CONFIG}"
-  else
-    cd ${DOCROOT} && ./build.sh ${CONFIG}
-  fi
 fi
 
 exit 0
