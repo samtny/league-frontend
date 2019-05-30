@@ -51,14 +51,14 @@ DOCROOT=$config_league_frontend_docroot
 
 RSYNC_EXCLUDE=""
 
-if [ "$CONFIG" -ne "local" ]; then
+if [ "$CONFIG" != "local" ]; then
   rsync -ruvz --files-from "deploy.files" . "${USER}@${HOST}:${DOCROOT}"
 else
   rsync -ruvz --files-from "deploy.files" . "${DOCROOT}"
 fi
 
 if [ "$DEPENDENCIES" = true ]; then
-  if [ "$CONFIG" -ne "local" ]; then
+  if [ "$CONFIG" != "local" ]; then
     ssh ${USER}@${HOST} "cd ${DOCROOT} && ./build.sh ${CONFIG}"
   else
     cd ${DOCROOT} && ./build.sh ${CONFIG}
@@ -66,7 +66,7 @@ if [ "$DEPENDENCIES" = true ]; then
 fi
 
 if [ "$INITIALIZE" = true ]; then
-  if [ "$CONFIG" -ne "local" ]; then
+  if [ "$CONFIG" != "local" ]; then
     ssh ${USER}@${HOST} "cd ${DOCROOT} && cp config/config.${CONFIG}.yml config.yml && cp credentials.EXAMPLE.yml credentials.yml"
   else
     cd ${DOCROOT} && cp config/config.${CONFIG}.yml config.yml && cp credentials.EXAMPLE.yml credentials.yml
