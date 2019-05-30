@@ -13,6 +13,6 @@ build.sh
 composer.json
 composer.lock
 credentials.EXAMPLE.yml
+package-lock.json
 package.json
 webpack.mix.js
-yarn.lock

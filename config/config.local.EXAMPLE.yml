@@ -1,0 +1,9 @@
+---
+
+league_frontend_url: localhost
+league_frontend_runmode: development
+league_frontend_docroot: /var/www/league-frontend
+league_frontend_log_directory: /home/exampleuser/logs
+league_frontend_deploy_host: localhost
+league_frontend_deploy_user: exampleuser
+league_frontend_db_name: league-frontend

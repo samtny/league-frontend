@@ -51,16 +51,28 @@ DOCROOT=$config_league_frontend_docroot
 
 RSYNC_EXCLUDE=""
 
-rsync -ruvz --files-from "deploy.files" . "${USER}@${HOST}:${DOCROOT}"
+if [ "$CONFIG" -ne "local" ]; then
+  rsync -ruvz --files-from "deploy.files" . "${USER}@${HOST}:${DOCROOT}"
+else
+  rsync -ruvz --files-from "deploy.files" . "${DOCROOT}"
+fi
 
 if [ "$INITIALIZE" = true ]; then
-  ssh ${USER}@${HOST} "cd ${DOCROOT} && cp config/config.${CONFIG}.yml config.yml && cp credentials.EXAMPLE.yml credentials.yml"
+  if [ "$CONFIG" -ne "local" ]; then
+    ssh ${USER}@${HOST} "cd ${DOCROOT} && cp config/config.${CONFIG}.yml config.yml && cp credentials.EXAMPLE.yml credentials.yml"
+  else
+    cd ${DOCROOT} && cp config/config.${CONFIG}.yml config.yml && cp credentials.EXAMPLE.yml credentials.yml
+  fi
 
   echo -e "NOTE: credentials.yml file updated.  You will need to modify this file and add valid credentials."
 fi
 
 if [ "$DEPENDENCIES" = true ]; then
-  ssh ${USER}@${HOST} "cd ${DOCROOT} && ./build.sh ${CONFIG}"
+  if [ "$CONFIG" -ne "local" ]; then
+    ssh ${USER}@${HOST} "cd ${DOCROOT} && ./build.sh ${CONFIG}"
+  else
+    cd ${DOCROOT} && ./build.sh ${CONFIG}
+  fi
 fi
 
 exit 0
