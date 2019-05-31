@@ -10,6 +10,7 @@
         <title>{{ config('app.name', 'Pinball League') }} — @yield('title')</title>
 
         <!-- Fonts -->
+        <link rel="dns-prefetch" href="//fonts.gstatic.com">
         <link href="https://fonts.googleapis.com/css?family=Nunito:200,600" rel="stylesheet">
 
         <!-- Styles -->
