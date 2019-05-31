@@ -22,3 +22,21 @@ Route::get('/standings', function () {
 Route::get('/schedule', function () {
     return view('schedule');
 })->name('schedule');
+
+Route::prefix('association')->group(function () {
+
+    Route::get('create', function () {
+        return view('association.create');
+    });
+
+    Route::post('create', 'AssociationsController@store');
+
+    Route::get('{association}/new', function (App\Association $association) {
+        return view('association.new', ['association' => $association]);
+    })->name('association.new');
+
+    Route::get('{association}', function (App\Association $association) {
+        return $association->name;
+    });
+
+});
