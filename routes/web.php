@@ -44,3 +44,7 @@ Route::prefix('onboard')->group(function () {
     })->name('onboard.association');
 
 });
+
+Auth::routes();
+
+Route::get('/home', 'HomeController@index')->name('home');
