@@ -22,7 +22,8 @@ class AssociationsController extends Controller
 
         $association->save();
 
-        return redirect()->route('association.new', ['association' => $association]);
+        // TODO: Do not necessarily "onboard" for certain roles?
+        return redirect()->route('onboard.association', ['association' => $association]);
 
     }
 

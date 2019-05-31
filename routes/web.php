@@ -31,12 +31,16 @@ Route::prefix('association')->group(function () {
 
     Route::post('create', 'AssociationsController@store');
 
-    Route::get('{association}/new', function (App\Association $association) {
-        return view('association.new', ['association' => $association]);
-    })->name('association.new');
-
     Route::get('{association}', function (App\Association $association) {
         return $association->name;
     });
+
+});
+
+Route::prefix('onboard')->group(function () {
+
+    Route::get('association/{association}', function (App\Association $association) {
+        return view('onboard.association', ['association' => $association]);
+    })->name('onboard.association');
 
 });
