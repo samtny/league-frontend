@@ -26,8 +26,8 @@ Route::get('/schedule', function () {
 Route::prefix('association')->group(function () {
 
     Route::get('create', function () {
-        return view('association.create');
-    });
+        return view('association.create', ['current_user' => Auth::user()]);
+    })->name('association.create');
 
     Route::post('create', 'AssociationsController@store');
 
@@ -48,3 +48,20 @@ Route::prefix('onboard')->group(function () {
 Auth::routes();
 
 Route::get('/home', 'HomeController@index')->name('home');
+
+Route::prefix('user')->group(function () {
+
+    Route::get('{user}', function (App\User $user) {
+        $associations = App\Association::where('user_id', $user->id)->get();
+        //$associations = App\Association::all();
+
+        foreach ($associations as $ass) {
+            //echo('yo');
+            //var_dump($ass['user_id']);
+        }
+        //exit(1);
+
+        return view('user', ['user' => $user, 'associations' => $associations]);
+    })->name('user');
+
+});

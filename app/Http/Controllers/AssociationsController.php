@@ -19,6 +19,7 @@ class AssociationsController extends Controller
         $association = new Association;
 
         $association->name = $request->name;
+        $association->user_id = $request->user_id;
 
         $association->save();
 

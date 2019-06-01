@@ -11,6 +11,13 @@
             @csrf
 
             <div class="form-item">
+                <label for="user_id">Owner</label>
+                <select id="user_id" name="user_id">
+                    <option value="<?php echo($current_user->id); ?>"><?php echo($current_user->name); ?></option>
+                </select>
+            </div>
+
+            <div class="form-item">
                 <label for="name">Name</label>
                 <input id="name" type="text" name="name" class="@error('name') is-invalid @enderror">
                 @error('name')
