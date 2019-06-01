@@ -31,6 +31,12 @@ Route::prefix('association')->group(function () {
 
     Route::post('create', 'AssociationsController@store');
 
+    Route::get('{association}/edit', function (App\Association $association) {
+        return view('association.edit', ['association' => $association, 'current_user' => Auth::user()]);
+    })->name('association.edit');
+
+    Route::post('update', 'AssociationsController@update');
+
     Route::get('{association}', function (App\Association $association) {
         return $association->name;
     });

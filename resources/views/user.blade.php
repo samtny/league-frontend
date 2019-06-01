@@ -17,9 +17,11 @@
 
     <div class="associations">
         Associations
-        <?php foreach ($associations as $index => $association) {
-            echo ('<div class="association">' . $association->name . '</div>');
-        }?>
+        <?php foreach ($associations as $index => $association): ?>
+            <a href="/association/<?php echo($association->id); ?>/edit">
+               <?php echo ('<div class="association">' . $association->name . '</div>'); ?>
+            </a>
+        <?php endforeach; ?>
     </div>
 
     <div class="links">

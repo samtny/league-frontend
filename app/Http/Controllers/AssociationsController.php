@@ -28,4 +28,25 @@ class AssociationsController extends Controller
 
     }
 
+    public function update(Request $request) {
+
+        $association = Association::find($request->id);
+
+        $association->name = $request->name;
+        $association->user_id = $request->user_id;
+
+        $association->save();
+
+        //Session::flash('message', 'Successfully updated nerd!');
+
+        $url = $request->url;
+
+        if (!empty($url)) {
+            return redirect($url)->with('success', 'Data saved successfully!');
+        }
+
+        return redirect()->route('user', ['id' => \Auth::user()->id]);
+
+    }
+
 }
