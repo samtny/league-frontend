@@ -32,7 +32,12 @@ Route::prefix('association')->group(function () {
     Route::post('create', 'AssociationsController@store');
 
     Route::get('{association}/edit', function (App\Association $association) {
-        return view('association.edit', ['association' => $association, 'current_user' => Auth::user()]);
+        if (Bouncer::can('edit', $association)) {
+            return view('association.edit', ['association' => $association, 'current_user' => Auth::user()]);
+        }
+        else {
+            return view('denied');
+        }
     })->name('association.edit');
 
     Route::post('update', 'AssociationsController@update');
