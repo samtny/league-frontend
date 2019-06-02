@@ -1,13 +1,13 @@
 @extends('layouts.app')
 
-@section('title', 'Create Association')
+@section('title', 'Create Series')
 
 @section('content')
     <div class="title m-b-md">
-        Edit Association
+        Edit Series
     </div>
     <div class="form">
-        <form method="POST" action="/association/update">
+        <form method="POST" action="/series/update">
             @csrf
 
             <div class="form-item">
@@ -17,16 +17,26 @@
                 </select>
             </div>
 
-            <input type="hidden" name="id" value="{{ $association->id }}">
+            <input type="hidden" name="id" value="{{ $series->id }}">
 
             <input type="hidden" name="url" value="{{  URL::previous()  }}">
 
             <div class="form-item">
                 <label for="name">Name</label>
-                <input id="name" type="text" name="name" value="{{ $association->name }}" class="@error('name') is-invalid @enderror">
+                <input id="name" type="text" name="name" value="{{ $series->name }}" class="@error('name') is-invalid @enderror">
                 @error('name')
                     <div class="alert alert-danger">{{ $message }}</div>
                 @enderror
+            </div>
+
+            <div class="form-item">
+                <label for="association_id">Association</label>
+                <select id="association_id" name="association_id">
+                    <option value="">- No Association -</option>
+                    <?php foreach($associations as $association): ?>
+                        <option value="<?php echo $association->id; ?>"><?php echo $association->name; ?></option>
+                    <?php endforeach; ?>
+                </select>
             </div>
 
             <div class="form-actions">
@@ -36,22 +46,5 @@
             </div>
 
         </form>
-    </div>
-    <div class="series">
-        Association Series
-        <?php if (!empty($series)): ?>
-            <?php foreach ($series as $index => $item): ?>
-                <a href="/series/<?php echo($item->id); ?>/edit">
-                    <?php echo ('<div class="series">' . $item->name . '</div>'); ?>
-                </a>
-            <?php endforeach; ?>
-        <?php else: ?>
-            <div class="message">
-                No Series for this association.
-            </div>
-        <?php endif; ?>
-        <div class="links">
-            <a href="{{ route('series.create') }}">Create Series</a>
-        </div>
     </div>
 @endsection

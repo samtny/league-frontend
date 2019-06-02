@@ -33,7 +33,11 @@ Route::prefix('association')->group(function () {
 
     Route::get('{association}/edit', function (App\Association $association) {
         if (Bouncer::can('edit', $association)) {
-            return view('association.edit', ['association' => $association, 'current_user' => Auth::user()]);
+            return view('association.edit', [
+                'association' => $association,
+                'series' => App\Series::where('association_id', $association->id)->get(),
+                'current_user' => Auth::user()
+            ]);
         }
         else {
             return view('denied');
@@ -48,11 +52,42 @@ Route::prefix('association')->group(function () {
 
 });
 
+Route::prefix('series')->group(function () {
+    Route::get('{series}/edit', function (App\Series $series) {
+        if (Bouncer::can('edit', $series)) {
+            return view('series.edit', [
+                'current_user' => Auth::user(),
+                'series' => $series,
+                'associations' => App\Association::where('user_id', Auth::user()->id)->get(),
+            ]);
+        }
+        else {
+            return view('denied');
+        }
+    })->name('series.edit');
+
+    Route::get('create', function () {
+        return view('series.create', [
+            'current_user' => Auth::user(),
+            'associations' => App\Association::where('user_id', Auth::user()->id)->get(),
+        ]);
+    })->name('series.create');
+
+    Route::post('create', 'SeriesController@store');
+
+    Route::post('update', 'SeriesController@update');
+
+});
+
 Route::prefix('onboard')->group(function () {
 
     Route::get('association/{association}', function (App\Association $association) {
         return view('onboard.association', ['association' => $association]);
     })->name('onboard.association');
+
+    Route::get('series/{series}', function (App\Series $series) {
+        return view('onboard.series', ['series' => $series]);
+    })->name('onboard.series');
 
 });
 
@@ -64,6 +99,7 @@ Route::prefix('user')->group(function () {
 
     Route::get('{user}', function (App\User $user) {
         $associations = App\Association::where('user_id', $user->id)->get();
+        $series = App\Series::where('user_id', $user->id)->get();
         //$associations = App\Association::all();
 
         foreach ($associations as $ass) {
@@ -72,7 +108,11 @@ Route::prefix('user')->group(function () {
         }
         //exit(1);
 
-        return view('user', ['user' => $user, 'associations' => $associations]);
+        return view('user', [
+            'user' => $user,
+            'associations' => $associations,
+            'series' => $series,
+        ]);
     })->name('user');
 
 });
