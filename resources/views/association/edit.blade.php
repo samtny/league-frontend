@@ -52,6 +52,7 @@
         <?php endif; ?>
         <div class="links">
             <a href="{{ route('series.create') }}">Create Series</a>
+            <a href="{{ route('association.delete', [ 'association' => $association ]) }}">Delete Association</a>
         </div>
     </div>
 @endsection

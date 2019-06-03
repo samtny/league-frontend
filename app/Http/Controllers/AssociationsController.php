@@ -68,6 +68,26 @@ class AssociationsController extends Controller
         return view('association.create', ['current_user' => \Auth::user()]);
     }
 
+    public function deleteConfirm(Association $association) {
+        return view('association.delete', ['association' => $association]);
+    }
+
+    public function delete(Association $association) {
+        $association->delete();
+
+        return redirect()->route('user', ['user' => \Auth::user()])->with('success', 'Association deleted successfully.');
+    }
+
+    public function undeleteConfirm(Association $association) {
+        return view('association.undelete', ['association' => $association]);
+    }
+
+    public function undelete(Association $association) {
+        $association->restore();
+
+        return redirect()->route('user', ['user' => \Auth::user()])->with('success', 'Association restored successfully.');
+    }
+
     public function view(Association $association) {
         return view('association.view', ['association' => $association]);
     }

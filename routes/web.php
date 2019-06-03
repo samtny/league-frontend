@@ -28,6 +28,16 @@ Route::prefix('association')->group(function () {
     Route::get('create', 'AssociationsController@create')->name('association.create');
     Route::post('create', 'AssociationsController@store');
     Route::post('update', 'AssociationsController@update');
+    Route::get('{association}/delete', 'AssociationsController@deleteConfirm')->name('association.deleteConfirm');
+    Route::post('{association}/delete', 'AssociationsController@delete')->name('association.delete');
+    Route::get('{association}/undelete', function () {
+        Route::bind('trashed_user', function ($id) {
+            return App\User::onlyTrashed()->find($id);
+        });
+    });
+
+    Route::get('{association}/undelete', 'AssociationsController@undeleteConfirm')->name('association.undeleteConfirm');
+    Route::post('{association}/undelete', 'AssociationsController@undelete')->name('association.undelete');
     Route::get('{association}', 'AssociationsController@view')->name('association.view');
 });
 
@@ -63,4 +73,5 @@ Route::prefix('user')->group(function () {
 
 Route::prefix('admin')->group(function () {
     Route::get('users', 'AdminController@users')->name('admin.users');
+    Route::get('associations/deleted', 'AdminController@associationsDeleted')->name('admin.associations.deleted');
 });

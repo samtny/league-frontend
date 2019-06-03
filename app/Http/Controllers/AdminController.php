@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Association;
 use App\User;
 use Bouncer;
 use Illuminate\Http\Request;
@@ -18,6 +19,12 @@ class AdminController extends Controller
         else {
             return view('denied');
         }
+    }
+
+    public function associationsDeleted() {
+        $associations = Association::onlyTrashed()->get();
+
+        return view('admin.associations.trashed', ['associations' => $associations]);
     }
 
 }
