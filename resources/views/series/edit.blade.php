@@ -34,7 +34,7 @@
                 <select id="association_id" name="association_id">
                     <option value="">- No Association -</option>
                     <?php foreach($associations as $association): ?>
-                        <option value="<?php echo $association->id; ?>"><?php echo $association->name; ?></option>
+                <option value="<?php echo $association->id; ?>"<?php if ($association_id == $association->id): ?> selected<?php endif; ?>><?php echo $association->name; ?></option>
                     <?php endforeach; ?>
                 </select>
             </div>

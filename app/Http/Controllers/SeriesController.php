@@ -37,6 +37,7 @@ class SeriesController extends Controller
                 'current_user' => \Auth::user(),
                 'series' => $series,
                 'associations' => Association::where('user_id', \Auth::user()->id)->get(),
+                'association_id' => $series->association_id
             ]);
         }
         else {
