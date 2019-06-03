@@ -30,6 +30,16 @@
             </div>
 
             <div class="form-item">
+                <label for="start_date">Start Date</label>
+                <input id="start_date" type="date" name="start_date" value="{{ $start_date_string }}">
+            </div>
+
+            <div class="form-item">
+                <label for="end_date">End Date</label>
+                <input id="end_date" type="date" name="end_date" value="{{ $end_date_string }}">
+            </div>
+
+            <div class="form-item">
                 <label for="association_id">Association</label>
                 <select id="association_id" name="association_id">
                     <option value="">- No Association -</option>

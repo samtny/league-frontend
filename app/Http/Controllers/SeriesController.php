@@ -36,6 +36,8 @@ class SeriesController extends Controller
             return view('series.edit', [
                 'current_user' => \Auth::user(),
                 'series' => $series,
+                'start_date_string' => $series->start_date !== NULL ? date('Y-m-d', $series->start_date) : NULL,
+                'end_date_string' => $series->end_date !== NULL ? date('Y-m-d', $series->end_date) : NULL,
                 'associations' => Association::where('user_id', \Auth::user()->id)->get(),
                 'association_id' => $series->association_id
             ]);
@@ -59,6 +61,22 @@ class SeriesController extends Controller
         $series->name = $request->name;
         $series->user_id = $request->user_id;
         $series->association_id = $request->association_id;
+
+        if ($request->start_date !== NULL) {
+            $start_date_timestamp = strtotime($request->start_date);
+            $series->start_date = $start_date_timestamp;
+        }
+        else {
+            $series->start_date = NULL;
+        }
+
+        if ($request->end_date !== NULL) {
+            $end_date_timestamp = strtotime($request->end_date);
+            $series->end_date = $end_date_timestamp;
+        }
+        else {
+            $series->end_date = NULL;
+        }
 
         $series->save();
 
