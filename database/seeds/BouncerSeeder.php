@@ -14,7 +14,13 @@ class BouncerSeeder extends Seeder
     {
         Bouncer::allow('superadmin')->everything();
 
+        Bouncer::allow('admin')->to('administer-associations');
+        Bouncer::allow('admin')->to('view-users');
+        Bouncer::allow('admin')->to('create', Association::class);
+
         Bouncer::allow('assocadmin')->to('create', Association::class);
         Bouncer::allow('assocadmin')->toOwn(Association::class);
+
+        Bouncer::allow('authenticated')->to('view-users');
     }
 }

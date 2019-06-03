@@ -17,17 +17,20 @@ class AssociationsController extends Controller
      * @return Response
      */
     public function store(Request $request) {
+        if (Bouncer::can('create', Association::class)) {
+            $association = new Association;
 
-        $association = new Association;
+            $association->name = $request->name;
+            $association->user_id = $request->user_id;
 
-        $association->name = $request->name;
-        $association->user_id = $request->user_id;
+            $association->save();
 
-        $association->save();
-
-        // TODO: Do not necessarily "onboard" for certain roles?
-        return redirect()->route('onboard.association', ['association' => $association]);
-
+            // TODO: Do not necessarily "onboard" for certain roles?
+            return redirect()->route('onboard.association', ['association' => $association]);
+        }
+        else {
+            return view('denied');
+        }
     }
 
     public function update(Request $request) {
@@ -65,7 +68,12 @@ class AssociationsController extends Controller
     }
 
     public function create() {
-        return view('association.create', ['current_user' => \Auth::user()]);
+        if (Bouncer::can('create', Association::class)) {
+            return view('association.create', ['current_user' => \Auth::user()]);
+        }
+        else {
+            return view('denied');
+        }
     }
 
     public function deleteConfirm(Association $association) {

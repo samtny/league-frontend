@@ -22,9 +22,14 @@ class AdminController extends Controller
     }
 
     public function associationsDeleted() {
-        $associations = Association::onlyTrashed()->get();
+        if (Bouncer::can('administer-associations')) {
+            $associations = Association::onlyTrashed()->get();
 
-        return view('admin.associations.trashed', ['associations' => $associations]);
+            return view('admin.associations.trashed', ['associations' => $associations]);
+        }
+        else {
+            return view('denied');
+        }
     }
 
 }
