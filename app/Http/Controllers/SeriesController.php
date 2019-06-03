@@ -2,7 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Association;
 use App\Series;
+use Bouncer;
 use Illuminate\Http\Request;
 
 class SeriesController extends Controller
@@ -27,6 +29,26 @@ class SeriesController extends Controller
         // TODO: Do not necessarily "onboard" for certain roles?
         return redirect()->route('onboard.series', ['series' => $series]);
 
+    }
+
+    public function edit(Series $series) {
+        if (Bouncer::can('edit', $series)) {
+            return view('series.edit', [
+                'current_user' => \Auth::user(),
+                'series' => $series,
+                'associations' => Association::where('user_id', \Auth::user()->id)->get(),
+            ]);
+        }
+        else {
+            return view('denied');
+        }
+    }
+
+    public function create() {
+        return view('series.create', [
+            'current_user' => \Auth::user(),
+            'associations' => Association::where('user_id', \Auth::user()->id)->get(),
+        ]);
     }
 
     public function update(Request $request) {

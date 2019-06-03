@@ -53,30 +53,10 @@ Route::prefix('association')->group(function () {
 });
 
 Route::prefix('series')->group(function () {
-    Route::get('{series}/edit', function (App\Series $series) {
-        if (Bouncer::can('edit', $series)) {
-            return view('series.edit', [
-                'current_user' => Auth::user(),
-                'series' => $series,
-                'associations' => App\Association::where('user_id', Auth::user()->id)->get(),
-            ]);
-        }
-        else {
-            return view('denied');
-        }
-    })->name('series.edit');
-
-    Route::get('create', function () {
-        return view('series.create', [
-            'current_user' => Auth::user(),
-            'associations' => App\Association::where('user_id', Auth::user()->id)->get(),
-        ]);
-    })->name('series.create');
-
+    Route::get('{series}/edit', 'SeriesController@edit')->name('series.edit');
+    Route::get('create', 'SeriesController@create')->name('series.create');
     Route::post('create', 'SeriesController@store');
-
     Route::post('update', 'SeriesController@update');
-
 });
 
 Route::prefix('onboard')->group(function () {
