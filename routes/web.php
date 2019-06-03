@@ -60,3 +60,7 @@ Route::prefix('user')->group(function () {
     Route::get('{user}', 'UsersController@view')->name('user');
 
 });
+
+Route::prefix('admin')->group(function () {
+    Route::get('users', 'AdminController@users')->name('admin.users');
+});
