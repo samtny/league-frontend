@@ -24,32 +24,11 @@ Route::get('/schedule', function () {
 })->name('schedule');
 
 Route::prefix('association')->group(function () {
-
-    Route::get('create', function () {
-        return view('association.create', ['current_user' => Auth::user()]);
-    })->name('association.create');
-
+    Route::get('{association}/edit', 'AssociationsController@edit')->name('association.edit');
+    Route::get('create', 'AssociationsController@create')->name('association.create');
     Route::post('create', 'AssociationsController@store');
-
-    Route::get('{association}/edit', function (App\Association $association) {
-        if (Bouncer::can('edit', $association)) {
-            return view('association.edit', [
-                'association' => $association,
-                'series' => App\Series::where('association_id', $association->id)->get(),
-                'current_user' => Auth::user()
-            ]);
-        }
-        else {
-            return view('denied');
-        }
-    })->name('association.edit');
-
     Route::post('update', 'AssociationsController@update');
-
-    Route::get('{association}', function (App\Association $association) {
-        return $association->name;
-    });
-
+    Route::get('{association}', 'AssociationsController@view')->name('association.view');
 });
 
 Route::prefix('series')->group(function () {
@@ -57,6 +36,7 @@ Route::prefix('series')->group(function () {
     Route::get('create', 'SeriesController@create')->name('series.create');
     Route::post('create', 'SeriesController@store');
     Route::post('update', 'SeriesController@update');
+    Route::get('{series}', 'SeriesController@view')->name('series.view');
 });
 
 Route::prefix('onboard')->group(function () {
@@ -77,22 +57,6 @@ Route::get('/home', 'HomeController@index')->name('home');
 
 Route::prefix('user')->group(function () {
 
-    Route::get('{user}', function (App\User $user) {
-        $associations = App\Association::where('user_id', $user->id)->get();
-        $series = App\Series::where('user_id', $user->id)->get();
-        //$associations = App\Association::all();
-
-        foreach ($associations as $ass) {
-            //echo('yo');
-            //var_dump($ass['user_id']);
-        }
-        //exit(1);
-
-        return view('user', [
-            'user' => $user,
-            'associations' => $associations,
-            'series' => $series,
-        ]);
-    })->name('user');
+    Route::get('{user}', 'UsersController@view')->name('user');
 
 });

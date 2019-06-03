@@ -19,8 +19,11 @@
         Associations
         <?php if (!empty($associations)): ?>
             <?php foreach ($associations as $index => $association): ?>
-                <a href="/association/<?php echo($association->id); ?>/edit">
+                <a href="/association/<?php echo($association->id); ?>">
                     <?php echo ('<div class="association">' . $association->name . '</div>'); ?>
+                </a>
+                <a href="/association/<?php echo($association->id); ?>/edit">
+                    Edit
                 </a>
             <?php endforeach; ?>
         <?php else: ?>
@@ -37,8 +40,11 @@
         Series
         <?php if (!empty($series)): ?>
             <?php foreach ($series as $index => $item): ?>
-                <a href="/series/<?php echo($item->id); ?>/edit">
+                <a href="/series/<?php echo($item->id); ?>">
                     <?php echo ('<div class="series">' . $item->name . '</div>'); ?>
+                </a>
+                <a href="/series/<?php echo($item->id); ?>/edit">
+                    Edit
                 </a>
             <?php endforeach; ?>
         <?php else: ?>

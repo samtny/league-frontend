@@ -73,4 +73,10 @@ class SeriesController extends Controller
 
     }
 
+    public function view(Series $series) {
+        return view('series.view', [
+            'series' => $series,
+        ]);
+    }
+
 }
