@@ -23,7 +23,8 @@ class RouteServiceProvider extends ServiceProvider
      */
     public function boot()
     {
-        //
+        // See https://stackoverflow.com/a/7101148/1569360
+        Route::pattern('subdomain', '^((?!local|dev|stage|www).)*$');
 
         parent::boot();
     }
