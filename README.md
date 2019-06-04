@@ -15,4 +15,5 @@ This app runs on the Laravel framework: https://laravel.com.
 
 ### Local Development
 
-1. php -S localhost:8000 -t public
+1. composer install
+1. php artisan serve
