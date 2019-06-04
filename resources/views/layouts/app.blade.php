@@ -44,6 +44,10 @@
                 top: 18px;
             }
 
+            .alert {
+                text-align: center;
+            }
+
             .content {
                 text-align: center;
             }
@@ -98,6 +102,12 @@
             @show
 
             <div class="content">
+                @if (session('message'))
+                    <div class="alert alert-message" role="alert">
+                        {{ session('message') }}
+                    </div>
+                @endif
+
                 @yield('content')
             </div>
         </div>

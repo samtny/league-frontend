@@ -80,12 +80,12 @@ class SeriesController extends Controller
 
         $series->save();
 
-        //Session::flash('message', 'Successfully updated nerd!');
+        $request->session()->flash('message', __('Successfully updated series :series!', ['series' => $series->name]));
 
         $url = $request->url;
 
         if (!empty($url)) {
-            return redirect($url)->with('success', 'Data saved successfully!');
+            return redirect($url)->with('success', __('Data saved successfully!'));
         }
 
         return redirect()->route('user', ['id' => \Auth::user()->id]);
