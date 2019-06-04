@@ -10,6 +10,21 @@ use Illuminate\Http\Request;
 class AssociationsController extends Controller
 {
 
+    public function __construct(Request $request) {
+        $subdomain = array_first(explode('.', \Request::getHost()));
+
+        $this->association = Association::where('subdomain', $subdomain)->first();
+    }
+
+    public function home() {
+        if (!empty($this->association)) {
+            return view('association.view', ['association' => $this->association]);
+        }
+        else {
+            abort(404);
+        }
+    }
+
     /**
      * Store a new association.
      *
@@ -39,6 +54,10 @@ class AssociationsController extends Controller
 
         $association->name = $request->name;
         $association->user_id = $request->user_id;
+
+        if (isset($request->subdomain)) {
+            $association->subdomain = $request->subdomain;
+        }
 
         $association->save();
 

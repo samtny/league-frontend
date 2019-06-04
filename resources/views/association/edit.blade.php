@@ -29,6 +29,16 @@
                 @enderror
             </div>
 
+            @can ('administer-subdomains')
+                <div class="form-item">
+                    <label for="name">Subdomain</label>
+                    <input id="subdomain" type="text" name="subdomain" value="{{ $association->subdomain }}" class="@error('subdomain') is-invalid @enderror">
+                    @error('subdomain')
+                        <div class="alert alert-danger">{{ $message }}</div>
+                    @enderror
+                </div>
+            @endcan
+
             <div class="form-actions">
                 <div class="form-item">
                     <input id="submit" type="submit" value="Submit"/>

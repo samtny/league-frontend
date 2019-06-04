@@ -11,6 +11,10 @@
 |
 */
 
+Route::group(['domain' => '{subdomain}.pinballleague.org'], function() {
+    Route::get('/', 'AssociationsController@home');
+});
+
 Route::get('/', function () {
     return view('home');
 })->name('home');
