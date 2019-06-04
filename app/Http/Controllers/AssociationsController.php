@@ -30,11 +30,17 @@ class AssociationsController extends Controller
     }
 
     public function standings() {
-        return view('association.home', ['association' => $this->association]);
+        return view('association.standings', ['association' => $this->association]);
     }
 
     public function schedule() {
-        return view('association.home', ['association' => $this->association]);
+        return view('association.schedule', ['association' => $this->association]);
+    }
+
+    public function css() {
+        $response = \Response::make('body { background-color: red; }');
+        $response->header('Content-Type', 'text/css');
+        return $response;
     }
 
     /**

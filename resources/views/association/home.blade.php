@@ -1,4 +1,4 @@
-@extends('layouts.app')
+@extends('layouts.association')
 
 @section('title', $association->name)
 

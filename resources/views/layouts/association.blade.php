@@ -15,6 +15,7 @@
 
         <!-- Styles -->
         <link href="/css/laravel.css" rel="stylesheet">
+        <link href="/css/association/{{ $association->subdomain }}.css" rel="stylesheet">
     </head>
     <body>
         <div class="flex-center position-ref full-height">
