@@ -11,8 +11,11 @@
 |
 */
 
-Route::group(['domain' => '{subdomain}.pinballleague.org'], function() {
-    Route::get('/', 'AssociationsController@home');
+Route::domain('{subdomain}.pinballleague.org')->middleware('subdomain')->group(function() {
+    Route::get('/', 'AssociationsController@home')->name('association.home');
+    Route::get('/submit', 'AssociationsController@submitScore')->name('association.submit.score');
+    Route::get('/standings', 'AssociationsController@standings')->name('association.standings');
+    Route::get('/schedule', 'AssociationsController@schedule')->name('association.schedule');
 });
 
 Route::get('/', function () {

@@ -18,11 +18,23 @@ class AssociationsController extends Controller
 
     public function home() {
         if (!empty($this->association)) {
-            return view('association.view', ['association' => $this->association]);
+            return view('association.home', ['association' => $this->association]);
         }
         else {
             abort(404);
         }
+    }
+
+    public function submitScore() {
+        return view('association.home', ['association' => $this->association]);
+    }
+
+    public function standings() {
+        return view('association.home', ['association' => $this->association]);
+    }
+
+    public function schedule() {
+        return view('association.home', ['association' => $this->association]);
     }
 
     /**
