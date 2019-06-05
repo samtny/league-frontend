@@ -4,7 +4,7 @@ use Illuminate\Support\Facades\Schema;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Database\Migrations\Migration;
 
-class UpdateSeriesTableToo extends Migration
+class CreateDivisionTable extends Migration
 {
     /**
      * Run the migrations.
@@ -13,8 +13,11 @@ class UpdateSeriesTableToo extends Migration
      */
     public function up()
     {
-        Schema::table('series', function (Blueprint $table) {
-            $table->bigInteger('user_id')->change();
+        Schema::create('divisions', function (Blueprint $table) {
+            $table->bigIncrements('id');
+            $table->timestamps();
+            $table->string('name');
+            $table->string('association_id');
         });
     }
 
@@ -25,6 +28,6 @@ class UpdateSeriesTableToo extends Migration
      */
     public function down()
     {
-        //
+        Schema::dropIfExists('division');
     }
 }
