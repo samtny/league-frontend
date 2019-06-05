@@ -25,13 +25,13 @@
                 <select id="division_id" name="division_id">
                     <option value="">- No division -</option>
                     <?php foreach($available_divisions as $item): ?>
-                        <option value="<?php echo $item->id; ?>"<?php if($item->id === $division->id) echo ' selected'; ?>><?php echo $item->name; ?></option>
+                        <option value="<?php echo $item->id; ?>"><?php echo $item->name; ?></option>
                     <?php endforeach; ?>
                 </select>
             </div>
 
             <div class="form-item">
-                <legend>Weekday</legend>
+                <legend>Match Day</legend>
                 <fieldset>
                     <label for="weekday_sunday">Sunday</label>
                     <input type="checkbox" name="weekday_sunday" value="sun">
@@ -58,7 +58,7 @@
 
             <div class="form-actions">
                 <div class="form-item">
-                    <input id="submit" type="submit" value="Submit"/>
+                    <input id="submit" type="submit" value="Create"/>
                 </div>
             </div>
 

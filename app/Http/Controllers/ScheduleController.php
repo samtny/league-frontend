@@ -10,7 +10,7 @@ class ScheduleController extends Controller
 
     public function create(Series $series) {
         $available_series = \App\Series::where(['association_id' => $series->association_id])->get()->all();
-        $available_divisions = \App\Division::where(['association_id' => $series->association_id])->get()->all();
+        $available_divisions = \App\Division::orderBy('sequence' , 'ASC')->where(['association_id' => $series->association_id])->get()->all();
 
         return view('schedule.create', [
             'series' => $series,
