@@ -60,9 +60,24 @@
                 No Series for this association.
             </div>
         <?php endif; ?>
-        <div class="links">
-            <a href="{{ route('series.create') }}">Create Series</a>
-            <a href="{{ route('association.delete', [ 'association' => $association ]) }}">Delete Association</a>
-        </div>
+    </div>
+    <div class="divisions">
+        Association Divisions
+        <?php if (!empty($divisions)): ?>
+            <?php foreach ($divisions as $index => $item): ?>
+                <a href="/association/<?php echo $association->id; ?>/division/<?php echo($item->id); ?>/edit">
+                    <?php echo ('<div class="division">' . $item->name . '</div>'); ?>
+                </a>
+            <?php endforeach; ?>
+        <?php else: ?>
+            <div class="message">
+                No Divisions for this association.
+            </div>
+        <?php endif; ?>
+    </div>
+    <div class="links">
+        <a href="{{ route('series.create') }}">Create Series</a>
+        <a href="{{ route('division.create', ['association' => $association ]) }}">Create Division</a>
+        <a href="{{ route('association.delete', [ 'association' => $association ]) }}">Delete Association</a>
     </div>
 @endsection

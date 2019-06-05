@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Association;
+use App\Division;
 use App\Series;
 use Bouncer;
 use Illuminate\Http\Request;
@@ -96,6 +97,7 @@ class AssociationsController extends Controller
             return view('association.edit', [
                 'association' => $association,
                 'series' => Series::where('association_id', $association->id)->get(),
+                'divisions' => Division::orderBy('sequence', 'ASC')->where('association_id', $association->id)->get(),
                 'current_user' => \Auth::user()
             ]);
         }

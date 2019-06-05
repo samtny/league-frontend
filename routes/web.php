@@ -36,6 +36,11 @@ Route::prefix('schedule')->group(function () {
 });
 
 Route::prefix('association')->group(function () {
+    Route::get('{association}/division/create', 'DivisionsController@create')->name('division.create');
+    Route::post('{association}/division/create', 'DivisionsController@store');
+    Route::get('{association}/division/{division}/edit', 'DivisionsController@edit')->name('division.edit');
+    Route::post('{association}/division/{division}/update', 'DivisionsController@update');
+
     Route::get('{association}/edit', 'AssociationsController@edit')->name('association.edit');
     Route::get('create', 'AssociationsController@create')->name('association.create');
     Route::post('create', 'AssociationsController@store');
