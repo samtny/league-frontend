@@ -7,7 +7,7 @@
         Create Schedule
     </div>
     <div class="form">
-        <form method="POST" action="/series/create">
+        <form method="POST" action="/series/<?php echo $series->id; ?>/schedule/create">
             @csrf
 
             <div class="form-item">
@@ -31,28 +31,38 @@
             </div>
 
             <div class="form-item">
-                <legend>Match Day</legend>
+                <label for="start_date">Start Date</label>
+                <input id="start_date" type="date" name="start_date">
+            </div>
+
+            <div class="form-item">
+                <label for="end_date">End Date</label>
+                <input id="end_date" type="date" name="end_date">
+            </div>
+
+            <div class="form-item">
+                <legend>Match Weekday</legend>
                 <fieldset>
                     <label for="weekday_sunday">Sunday</label>
-                    <input type="checkbox" name="weekday_sunday" value="sun">
+                    <input type="radio" id="weekday_sunday" name="weekday" value="sun">
 
                     <label for="weekday_monday">Monday</label>
-                    <input type="checkbox" name="weekday_monday" value="sun">
+                    <input type="radio" id="weekday_monday" name="weekday" value="mon">
 
                     <label for="weekday_tuesday">Tuesday</label>
-                    <input type="checkbox" name="weekday_tuesday" value="sun">
+                    <input type="radio" id="weekday_tuesday" name="weekday" value="tue">
 
                     <label for="weekday_wednesday">Wednesday</label>
-                    <input type="checkbox" name="weekday_wednesday" value="sun">
+                    <input type="radio" id="weekday_wednesday" name="weekday" value="wed">
 
                     <label for="weekday_thursday">Thursday</label>
-                    <input type="checkbox" name="weekday_thursday" value="sun">
+                    <input type="radio" id="weekday_thursday" name="weekday" value="thu">
 
                     <label for="weekday_friday">Friday</label>
-                    <input type="checkbox" name="weekday_friday" value="sun">
+                    <input type="radio" id="weekday_friday" name="weekday" value="fri">
 
                     <label for="weekday_saturday">Saturday</label>
-                    <input type="checkbox" name="weekday_saturday" value="sun">
+                    <input type="radio" id="weekday_saturday" name="weekday" value="sat">
                 </fieldset>
             </div>
 

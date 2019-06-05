@@ -32,7 +32,6 @@
 
             <div class="form-item">
                 <label for="start_date">Start Date</label>
-                {{ $start_date_string }}
                 <input id="start_date" type="date" name="start_date" value="{{ $start_date_string }}">
             </div>
 
