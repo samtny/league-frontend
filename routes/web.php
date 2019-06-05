@@ -61,6 +61,7 @@ Route::prefix('association')->group(function () {
 Route::prefix('series')->group(function () {
     Route::get('{series}/schedule/create', 'ScheduleController@create')->name('schedule.create');
     Route::post('{series}/schedule/create', 'ScheduleController@store');
+    Route::get('{series}/schedule/edit', 'ScheduleController@edit')->name('schedule.edit');
 
     Route::get('{series}/edit', 'SeriesController@edit')->name('series.edit');
     Route::get('create', 'SeriesController@create')->name('series.create');

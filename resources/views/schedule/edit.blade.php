@@ -1,13 +1,13 @@
 @extends('layouts.bootstrap')
 
-@section('title', 'Create Schedule')
+@section('title', 'Edit Schedule')
 
 @section('content')
     <div class="title m-b-md">
-        Create Schedule
+        Edit Schedule
     </div>
     <div class="form">
-        <form method="POST" action="/series/<?php echo $series->id; ?>/schedule/create">
+        <form method="POST" action="/series/<?php echo $series->id; ?>/schedule/update">
             @csrf
 
             <div class="form-item">

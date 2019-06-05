@@ -50,6 +50,21 @@
                 </select>
             </div>
 
+            <?php if (!empty($rounds)): ?>
+                <?php foreach ($rounds as $index => $round): ?>
+                    <a href="/round/<?php echo($round->id); ?>">
+                        <?php echo ('<div class="round">' . $round->name . '</div>'); ?> — <?php echo date('d-m-Y', strtotime($round->start_date)); ?>
+                    </a>
+                    <a href="/round/<?php echo($round->id); ?>/edit">
+                        Edit
+                    </a>
+                <?php endforeach; ?>
+            <?php else: ?>
+                <div class="message">
+                    No rounds.
+                </div>
+            <?php endif; ?>
+
             <div class="form-actions">
                 <div class="form-item">
                     <input id="submit" type="submit" value="Submit"/>
@@ -60,6 +75,7 @@
     </div>
     <div class="links">
         <a href="{{ route('schedule.create', [ 'series' => $series ]) }}">Create Schedule</a>
+        <a href="{{ route('schedule.edit', [ 'series' => $series ]) }}">Edit Schedule</a>
         <a href="{{ route('series.delete', [ 'series' => $series ]) }}">Delete Series</a>
     </div>
 @endsection
