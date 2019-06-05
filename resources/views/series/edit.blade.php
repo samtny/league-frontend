@@ -27,10 +27,12 @@
                 @error('name')
                     <div class="alert alert-danger">{{ $message }}</div>
                 @enderror
+                <span class="form-item-help">Enter a name for this series, like <em>"Summer 2019"</em> or whatever you would like.</span>
             </div>
 
             <div class="form-item">
                 <label for="start_date">Start Date</label>
+                {{ $start_date_string }}
                 <input id="start_date" type="date" name="start_date" value="{{ $start_date_string }}">
             </div>
 
@@ -56,5 +58,9 @@
             </div>
 
         </form>
+    </div>
+    <div class="links">
+        <a href="{{ route('schedule.create', [ 'series' => $series ]) }}">Create Schedule</a>
+        <a href="{{ route('series.delete', [ 'series' => $series ]) }}">Delete Series</a>
     </div>
 @endsection

@@ -27,9 +27,13 @@ Route::get('/standings', function () {
     return view('standings');
 })->name('standings');
 
-Route::get('/schedule', function () {
-    return view('schedule');
-})->name('schedule');
+Route::prefix('schedule')->group(function () {
+
+
+    Route::get('/', function () {
+        return view('schedule');
+    })->name('schedule');
+});
 
 Route::prefix('association')->group(function () {
     Route::get('{association}/edit', 'AssociationsController@edit')->name('association.edit');
@@ -50,11 +54,13 @@ Route::prefix('association')->group(function () {
 });
 
 Route::prefix('series')->group(function () {
+    Route::get('{series}/schedule/create', 'ScheduleController@create')->name('schedule.create');
     Route::get('{series}/edit', 'SeriesController@edit')->name('series.edit');
     Route::get('create', 'SeriesController@create')->name('series.create');
     Route::post('create', 'SeriesController@store');
     Route::post('update', 'SeriesController@update');
     Route::get('{series}', 'SeriesController@view')->name('series.view');
+    Route::get('delete', 'SeriesController@delete')->name('series.delete');
 });
 
 Route::prefix('onboard')->group(function () {
