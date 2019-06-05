@@ -26,6 +26,23 @@ class ScheduleController extends Controller
         $end_date = $request->end_date;
         $weekday = $request->weekday;
 
+        $start_datetime = new \DateTime($start_date);
+        $end_datetime = new \DateTime($end_date);
+
+        $days_interval = $start_datetime->diff($end_datetime);
+
+        $days = $days_interval->format('%a');
+
+        for ($i = 0; $i < $days; $i += 1) {
+            if (strtolower($start_datetime->format('D')) == strtolower($weekday)) {
+                echo $start_datetime->format('Y-m-d') . "\n";
+            }
+
+            $start_datetime->add(new \DateInterval('P1D'));
+        }
+
+        exit(1);
+
         var_dump($division_id);
         var_dump($start_date);
         var_dump($end_date);
