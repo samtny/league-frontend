@@ -23,12 +23,11 @@ class ScheduleController extends Controller
         ]);
     }
 
-    public function edit(Series $series) {
+    public function edit(Schedule $schedule) {
         return view('schedule.edit', [
-            'series' => $series,
-            'rounds' =>  Round::where('series_id', $series->id)->orderBy('division_id')->orderBy('start_date', 'ASC')->get(),
-            'available_series' => \App\Series::where(['association_id' => $series->association_id])->get()->all(),
-            'available_divisions' => \App\Division::orderBy('sequence' , 'ASC')->where(['association_id' => $series->association_id])->get()->all(),
+            'schedule' => $schedule,
+            'available_series' => \App\Series::where(['association_id' => $schedule->association_id])->get()->all(),
+            'available_divisions' => \App\Division::orderBy('sequence' , 'ASC')->where(['association_id' => $schedule->association_id])->get()->all(),
         ]);
     }
 
@@ -72,6 +71,7 @@ class ScheduleController extends Controller
 
                 $round = new Round;
 
+                $round->schedule_id = $schedule->id;
                 $round->division_id = $division_id;
                 $round->series_id = $series->id;
                 $round->start_date = $start_datetime;

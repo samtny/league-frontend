@@ -58,10 +58,13 @@ Route::prefix('association')->group(function () {
     Route::get('{association}', 'AssociationsController@view')->name('association.view');
 });
 
+Route::prefix('schedule')->group(function () {
+    Route::get('{schedule}/edit', 'ScheduleController@edit')->name('schedule.edit');
+});
+
 Route::prefix('series')->group(function () {
     Route::get('{series}/schedule/create', 'ScheduleController@create')->name('schedule.create');
     Route::post('{series}/schedule/create', 'ScheduleController@store');
-    Route::get('{series}/schedule/edit', 'ScheduleController@edit')->name('schedule.edit');
 
     Route::get('{series}/edit', 'SeriesController@edit')->name('series.edit');
     Route::get('create', 'SeriesController@create')->name('series.create');

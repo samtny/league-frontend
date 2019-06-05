@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Association;
 use App\Round;
+use App\Schedule;
 use App\Series;
 use Bouncer;
 use Illuminate\Http\Request;
@@ -43,7 +44,7 @@ class SeriesController extends Controller
                 'end_date_string' => $series->end_date !== NULL ? date('Y-m-d', strtotime($series->end_date)) : NULL,
                 'associations' => Association::where('user_id', \Auth::user()->id)->get(),
                 'association_id' => $series->association_id,
-                'rounds' => Round::where('series_id', $series->id)->orderBy('start_date', 'ASC')->get(),
+                'schedules' => Schedule::where('series_id', $series->id)->orderBy('sequence', 'ASC')->orderBy('start_date', 'ASC')->get(),
             ]);
         }
         else {

@@ -7,7 +7,7 @@
         Edit Schedule
     </div>
     <div class="form">
-        <form method="POST" action="/series/<?php echo $series->id; ?>/schedule/update">
+        <form method="POST" action="/schedule/<?php echo $schedule->id; ?>/update">
             @csrf
 
             <div class="form-item">
@@ -65,6 +65,21 @@
                     <input type="radio" id="weekday_saturday" name="weekday" value="sat">
                 </fieldset>
             </div>
+
+            <?php if (!empty($schedule->rounds)): ?>
+                <?php foreach ($schedule->rounds as $index => $round): ?>
+                    <a href="/round/<?php echo($round->id); ?>">
+                        <?php echo ('<div class="round">' . $round->name . '</div>'); ?> — <?php echo date('Y-m-d', strtotime($round->start_date)); ?>
+                    </a>
+                    <a href="/round/<?php echo($round->id); ?>/edit">
+                        Edit
+                    </a>
+                <?php endforeach; ?>
+            <?php else: ?>
+                <div class="message">
+                    No rounds.
+                </div>
+            <?php endif; ?>
 
             <div class="form-actions">
                 <div class="form-item">

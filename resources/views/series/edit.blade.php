@@ -50,18 +50,19 @@
                 </select>
             </div>
 
-            <?php if (!empty($rounds)): ?>
-                <?php foreach ($rounds as $index => $round): ?>
-                    <a href="/round/<?php echo($round->id); ?>">
-                        <?php echo ('<div class="round">' . $round->name . '</div>'); ?> — <?php echo date('d-m-Y', strtotime($round->start_date)); ?>
+            Schedules
+            <?php if (!empty($schedules)): ?>
+                <?php foreach ($schedules as $index => $item): ?>
+                    <a href="/schedule/<?php echo($item->id); ?>">
+                        <?php echo ('<div class="schedule">' . $item->name . '</div>'); ?> — <?php echo date('d-m-Y', strtotime($item->start_date)); ?>
                     </a>
-                    <a href="/round/<?php echo($round->id); ?>/edit">
+                    <a href="/schedule/<?php echo($item->id); ?>/edit">
                         Edit
                     </a>
                 <?php endforeach; ?>
             <?php else: ?>
                 <div class="message">
-                    No rounds.
+                    No schedules.
                 </div>
             <?php endif; ?>
 
