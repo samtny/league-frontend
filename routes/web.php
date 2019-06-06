@@ -60,6 +60,7 @@ Route::prefix('association')->group(function () {
 
 Route::prefix('schedule')->group(function () {
     Route::get('{schedule}/edit', 'ScheduleController@edit')->name('schedule.edit');
+    Route::post('{schedule}/update', 'ScheduleController@update');
 });
 
 Route::prefix('series')->group(function () {

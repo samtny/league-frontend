@@ -13,6 +13,8 @@
         <form method="POST" action="/association/<?php echo $association->id; ?>/delete">
             @csrf
 
+            <input type="hidden" name="url" value="{{ URL::previous() }}">
+
             <div class="form-actions">
                 <div class="form-item">
                     <input id="submit" type="submit" value="Yes"/>

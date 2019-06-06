@@ -7,7 +7,7 @@
         Edit Series
     </div>
     <div class="form">
-        <form method="POST" action="/series/update">
+        <form method="POST" action="/series/<?php echo $series->id; ?>/update">
             @csrf
 
             <div class="form-item">
@@ -54,7 +54,7 @@
             <?php if (!empty($schedules)): ?>
                 <?php foreach ($schedules as $index => $item): ?>
                     <a href="/schedule/<?php echo($item->id); ?>">
-                        <?php echo ('<div class="schedule">' . $item->name . '</div>'); ?> — <?php echo date('d-m-Y', strtotime($item->start_date)); ?>
+                        <?php echo ('<div class="schedule">' . $item->name . '</div>'); ?> — <?php echo date('Y-m-d', strtotime($item->start_date)); ?>
                     </a>
                     <a href="/schedule/<?php echo($item->id); ?>/edit">
                         Edit
@@ -76,7 +76,6 @@
     </div>
     <div class="links">
         <a href="{{ route('schedule.create', [ 'series' => $series ]) }}">Create Schedule</a>
-        <a href="{{ route('schedule.edit', [ 'series' => $series ]) }}">Edit Schedule</a>
         <a href="{{ route('series.delete', [ 'series' => $series ]) }}">Delete Series</a>
     </div>
 @endsection

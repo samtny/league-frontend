@@ -10,11 +10,9 @@
         <form method="POST" action="/schedule/<?php echo $schedule->id; ?>/update">
             @csrf
 
-            <?php echo $schedule->start_date; ?>
+            <input type="hidden" name="id" value="<?php echo $schedule->id; ?>">
 
-            <?php echo strtotime($schedule->start_date); ?>
-
-            <?php echo date('Y-m-d', strtotime($schedule->start_date)); ?>
+            <input type="hidden" name="url" value="{{ URL::previous() }}">
 
             <div class="form-item">
                 <label for="end_date">Start Date</label>

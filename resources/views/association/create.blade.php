@@ -10,6 +10,8 @@
         <form method="POST" action="/association/create">
             @csrf
 
+            <input type="hidden" name="url" value="{{ URL::previous() }}">
+
             <div class="form-item">
                 <label for="user_id">Owner</label>
                 <select id="user_id" name="user_id">

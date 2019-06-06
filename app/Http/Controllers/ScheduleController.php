@@ -95,4 +95,25 @@ class ScheduleController extends Controller
         return redirect()->route('user', ['id' => \Auth::user()->id]);
     }
 
+    public function update(Request $request) {
+
+        $schedule = schedule::find($request->id);
+
+        $schedule->start_date = $request->start_date;
+        $schedule->end_date = $request->end_date;
+
+        $schedule->save();
+
+        $request->session()->flash('message', __('Successfully updated schedule'));
+
+        $url = $request->url;
+
+        if (!empty($url)) {
+            return redirect($url)->with('success', __('Data saved successfully!'));
+        }
+
+        return redirect()->route('user', ['id' => \Auth::user()->id]);
+
+    }
+
 }

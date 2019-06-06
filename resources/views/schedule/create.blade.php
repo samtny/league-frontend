@@ -12,6 +12,8 @@
 
             <input type="hidden" name="association_id" value="<?php echo $association_id; ?>" />
 
+            <input type="hidden" name="url" value="{{ URL::previous() }}">
+
             <div class="form-item">
                 <label for="series_id">Series</label>
                 <select id="series_id" name="series_id">
