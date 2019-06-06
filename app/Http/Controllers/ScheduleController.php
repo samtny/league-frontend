@@ -13,10 +13,12 @@ class ScheduleController extends Controller
 {
 
     public function create(Series $series) {
+        $association_id = $series->association_id;
         $available_series = \App\Series::where(['association_id' => $series->association_id])->get()->all();
         $available_divisions = \App\Division::orderBy('sequence' , 'ASC')->where(['association_id' => $series->association_id])->get()->all();
 
         return view('schedule.create', [
+            'association_id' => $association_id,
             'series' => $series,
             'available_series' => $available_series,
             'available_divisions' => $available_divisions,
@@ -26,13 +28,12 @@ class ScheduleController extends Controller
     public function edit(Schedule $schedule) {
         return view('schedule.edit', [
             'schedule' => $schedule,
-            'available_series' => \App\Series::where(['association_id' => $schedule->association_id])->get()->all(),
-            'available_divisions' => \App\Division::orderBy('sequence' , 'ASC')->where(['association_id' => $schedule->association_id])->get()->all(),
         ]);
     }
 
     public function store(Series $series, Request $request) {
 
+        $association_id = $request->association_id;
         $division_id = $request->division_id;
         $start_date = $request->start_date;
         $end_date = $request->end_date;
@@ -40,6 +41,7 @@ class ScheduleController extends Controller
 
         $schedule = new Schedule;
 
+        $schedule->association_id = $association_id;
         $schedule->series_id = $series->id;
         $schedule->division_id = $division_id;
         $schedule->start_date = $start_date;

@@ -4,7 +4,7 @@ use Illuminate\Support\Facades\Schema;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Database\Migrations\Migration;
 
-class RoundsAddScheduleId extends Migration
+class ScheduleAddAssociationId extends Migration
 {
     /**
      * Run the migrations.
@@ -13,8 +13,8 @@ class RoundsAddScheduleId extends Migration
      */
     public function up()
     {
-        Schema::table('rounds', function (Blueprint $table) {
-            $table->bigInteger('schedule_id')->nullable();
+        Schema::table('schedules', function (Blueprint $table) {
+            $table->bigInteger('association_id')->nullable();
         });
     }
 
@@ -25,8 +25,8 @@ class RoundsAddScheduleId extends Migration
      */
     public function down()
     {
-        Schema::table('rounds', function (Blueprint $table) {
-            $table->dropColumn('schedule_id');
+        Schema::table('schedules', function (Blueprint $table) {
+            $table->dropColumn('association_id');
         });
     }
 }

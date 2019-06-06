@@ -10,6 +10,8 @@
         <form method="POST" action="/series/<?php echo $series->id; ?>/schedule/create">
             @csrf
 
+            <input type="hidden" name="association_id" value="<?php echo $association_id; ?>" />
+
             <div class="form-item">
                 <label for="series_id">Series</label>
                 <select id="series_id" name="series_id">
@@ -68,7 +70,7 @@
 
             <div class="form-actions">
                 <div class="form-item">
-                    <input id="submit" type="submit" value="Create"/>
+                    <input id="submit" type="submit" value="Update"/>
                 </div>
             </div>
 

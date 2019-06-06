@@ -10,34 +10,20 @@
         <form method="POST" action="/schedule/<?php echo $schedule->id; ?>/update">
             @csrf
 
-            <div class="form-item">
-                <label for="series_id">Series</label>
-                <select id="series_id" name="series_id">
-                    <option value="">- No series -</option>
-                    <?php foreach($available_series as $item): ?>
-                        <option value="<?php echo $item->id; ?>"<?php if($item->id === $series->id) echo ' selected'; ?>><?php echo $item->name; ?></option>
-                    <?php endforeach; ?>
-                </select>
-            </div>
+            <?php echo $schedule->start_date; ?>
+
+            <?php echo strtotime($schedule->start_date); ?>
+
+            <?php echo date('Y-m-d', strtotime($schedule->start_date)); ?>
 
             <div class="form-item">
-                <label for="division_id">Division</label>
-                <select id="division_id" name="division_id">
-                    <option value="">- No division -</option>
-                    <?php foreach($available_divisions as $item): ?>
-                        <option value="<?php echo $item->id; ?>"><?php echo $item->name; ?></option>
-                    <?php endforeach; ?>
-                </select>
-            </div>
-
-            <div class="form-item">
-                <label for="start_date">Start Date</label>
-                <input id="start_date" type="date" name="start_date">
+                <label for="end_date">Start Date</label>
+                <input id="start_date" type="date" name="start_date" value="<?php echo $schedule->start_date != null ? date('Y-m-d', strtotime($schedule->start_date)) : null ?>">
             </div>
 
             <div class="form-item">
                 <label for="end_date">End Date</label>
-                <input id="end_date" type="date" name="end_date">
+                <input id="end_date" type="date" name="end_date" value="<?php echo $schedule->end_date != null ? date('Y-m-d', strtotime($schedule->end_date)) : null ?>">
             </div>
 
             <div class="form-item">
