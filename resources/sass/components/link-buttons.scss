@@ -5,10 +5,12 @@
         list-style: none;
         
         li {
+            display: flex;
             margin: 0 0 rem(16px) 0;
+            justify-content: center;
 
-            a {
-                width: rem(120px);
+            .button {
+                flex-basis: rem(295px);
             }
         }
     }
