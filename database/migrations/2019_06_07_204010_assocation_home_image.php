@@ -4,7 +4,7 @@ use Illuminate\Support\Facades\Schema;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Database\Migrations\Migration;
 
-class UpdateSeriesTableToo extends Migration
+class AssocationHomeImage extends Migration
 {
     /**
      * Run the migrations.
@@ -13,8 +13,8 @@ class UpdateSeriesTableToo extends Migration
      */
     public function up()
     {
-        Schema::table('series', function (Blueprint $table) {
-            $table->bigInteger('user_id')->nullable();
+        Schema::table('associations', function (Blueprint $table) {
+            $table->string('home_image_path')->nullable();
         });
     }
 
@@ -25,6 +25,8 @@ class UpdateSeriesTableToo extends Migration
      */
     public function down()
     {
-        //
+        Schema::table('associations', function (Blueprint $table) {
+            $table->dropColumn('home_image_path');
+        });
     }
 }

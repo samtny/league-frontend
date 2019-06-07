@@ -1,0 +1,19 @@
+.button {
+    position: relative;
+    font-size: rem(14px);
+    line-height: rem(16px);
+    background-color: transparent;
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+    text-decoration: none;
+    text-align: center;
+    color: #6D1327;
+    height: rem(50px);
+    padding-right: rem(20px);
+    padding-left: rem(20px);
+    transition: background-color 0.1s ease-in-out;
+    border: rem(1px) solid #6D1327;
+    border-radius: rem(9px);
+    white-space: normal;
+}

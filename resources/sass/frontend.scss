@@ -3,10 +3,15 @@
 @import 'base/variables.scss';
 @import 'base/layout.scss';
 @import 'base/typography.scss' ;
+@import 'base/buttons.scss';
 
 @import 'layouts/full.scss';
 
 @import 'components/header.scss';
 @import 'components/footer.scss';
 
+@import 'components/link-buttons.scss';
+@import 'components/association-home-image.scss';
+
+@import 'templates/home.scss';
 @import 'templates/schedule.scss';
