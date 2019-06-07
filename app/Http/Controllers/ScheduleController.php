@@ -127,6 +127,16 @@ class ScheduleController extends Controller
 
         $schedule->save();
 
+        foreach ($schedule->matches as $match) {
+            $home_team_id = $request->{'match_' . $match->id . '__home_team_id'};
+            $away_team_id = $request->{'match_' . $match->id . '__away_team_id'};
+
+            $match->home_team_id = $home_team_id;
+            $match->away_team_id = $away_team_id;
+
+            $match->save();
+        }
+
         $request->session()->flash('message', __('Successfully updated schedule'));
 
         $url = $request->url;

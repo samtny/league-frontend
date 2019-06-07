@@ -25,4 +25,8 @@ class Schedule extends Model
         return $this->hasMany('App\Round');
     }
 
+    public function matches() {
+        return $this->hasMany('App\Match');
+    }
+
 }

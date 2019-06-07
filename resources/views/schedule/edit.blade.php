@@ -51,16 +51,22 @@
                                 <th scope="row"><?php echo $venue->name ?></th>
                                 <?php foreach ($schedule->rounds as $index => $round): ?>
                                 <td>
-                                    <select id="team_id" name="team_id">
+                                    <?php $match = \App\Match::where([
+                                        'schedule_id' => $schedule->id,
+                                        'round_id' => $round->id,
+                                        'venue_id' => $venue->id,
+                                        'sequence' => 1,
+                                        ])->first();?>
+                                    <select id="match_<?php echo $match->id; ?>__home_team_id" name="match_<?php echo $match->id; ?>__home_team_id">
                                         <option value="">- No team -</option>
                                         <?php foreach($schedule->association->teams->sortBy('name') as $team): ?>
-                                        <option value="<?php echo $team->id; ?>"><?php echo $team->name; ?></option>
+                                        <option value="<?php echo $team->id; ?>"<?php if($match->home_team_id == $team->id) echo ' selected'; ?>><?php echo $team->name; ?></option>
                                         <?php endforeach; ?>
                                     </select>
-                                    <select id="team_id" name="team_id">
+                                    <select id="match_<?php echo $match->id; ?>__away_team_id" name="match_<?php echo $match->id; ?>__away_team_id">
                                         <option value="">- No team -</option>
                                         <?php foreach($schedule->association->teams->sortBy('name') as $team): ?>
-                                        <option value="<?php echo $team->id; ?>"><?php echo $team->name; ?></option>
+                                        <option value="<?php echo $team->id; ?>"<?php if($match->away_team_id == $team->id) echo ' selected'; ?>><?php echo $team->name; ?></option>
                                         <?php endforeach; ?>
                                     </select>
                                 </td>
