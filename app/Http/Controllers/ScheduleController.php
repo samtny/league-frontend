@@ -76,6 +76,7 @@ class ScheduleController extends Controller
                 $round->schedule_id = $schedule->id;
                 $round->division_id = $division_id;
                 $round->series_id = $series->id;
+
                 $round->start_date = $start_datetime;
                 $round->end_date = $start_datetime;
                 $round->name = 'Round ' . $round_number;
