@@ -3,9 +3,11 @@
 @section('title', 'Schedule')
 
 @section('content')
-    <h1 class="title m-b-md">
-        Schedule - <?php echo $association->name; ?>
-    </h1>
+    @component('page-title')
+        @slot('title')
+            Schedule - <?php echo $association->name; ?>
+        @endslot
+    @endcomponent
     <div class="schedules">
         <?php foreach ($association->schedules->sortBy('start_date') as $schedule): ?>
             <?php echo $schedule->division->name; ?>

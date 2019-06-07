@@ -1,79 +1,15 @@
-<!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
-    <head>
-        <meta charset="utf-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1">
-
-        <!-- CSRF Token -->
-        <meta name="csrf-token" content="{{ csrf_token() }}">
-
-        <title>{{ config('app.name', 'Pinball League') }} — @yield('title')</title>
-
-        <!-- Fonts -->
-        <link rel="dns-prefetch" href="//fonts.gstatic.com">
-        <link href="https://fonts.googleapis.com/css?family=Nunito:200,600" rel="stylesheet">
-
-        <!-- Styles -->
-        <link href="/css/frontend.css" rel="stylesheet">
-    </head>
+@component('components/html-header')
+@endcomponent
     <body>
-        <header>
-            @section('main-menu')
-                <nav class="main-menu">
-                    <ul>
-                        <li>
-                            <a href="{{ url('/') }}">Home</a>
-                        </li>
-                        <li>
-                            <a href="{{ route('standings') }}">Standings</a>
-                        </li>
-                        <li>
-                            <a href="{{ route('schedule') }}">Schedule</a>
-                        </li>
+        @component('components/header')
 
-                        <!-- Authentication Links -->
-                        @guest
-                        <li>
-                            <a class="nav-link" href="{{ route('login') }}">{{ __('Login') }}</a>
-                        </li>
-                            @if (Route::has('register'))
-                            <li>
-                                <a class="nav-link" href="{{ route('register') }}">{{ __('Register') }}</a>
-                            </li>
-                            @endif
-                        @else
-                            <li>
-                                <a id="navbarDropdown" class="nav-link dropdown-toggle" href="{{ route('user', [ 'id' => Auth::user()->id ]) }}" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" v-pre>
-                                    {{ Auth::user()->name }} <span class="caret"></span>
-                                </a>
-                            </li>
-                            <li>
-                                <a class="dropdown-item" href="{{ route('logout') }}"
-                                    onclick="event.preventDefault();
-                                                    document.getElementById('logout-form').submit();">
-                                    {{ __('Logout') }}
-                                </a>
-                                <form id="logout-form" action="{{ route('logout') }}" method="POST" style="display: none;">
-                                    @csrf
-                                </form>
-                            </li>
-                        @endguest
-                    </ul>
-
-
-
-
-                </nav>
-            @show
-        </header>
+        @endcomponent
         <div class="content">
-            @if (session('message'))
-                <div class="alert alert-message" role="alert">
-                    {{ session('message') }}
-                </div>
-            @endif
+            @component('components/alert')
+            @endcomponent
 
             @yield('content')
         </div>
     </body>
-</html>
+@component('components/html-footer')
+@endcomponent
