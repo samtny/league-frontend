@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Association;
 use App\Division;
+use App\Match;
 use App\Round;
 use App\Schedule;
 use App\Series;
@@ -65,12 +66,13 @@ class ScheduleController extends Controller
 
         $days = $days_interval->format('%a');
 
+        $association = Association::where(['id' => $association_id])->first();
+        $venues = $association->venues;
+
         $round_number = 1;
 
         for ($i = 0; $i <= $days; $i += 1) {
             if (strtolower($start_datetime->format('D')) == strtolower($weekday)) {
-                echo $start_datetime->format('Y-m-d') . "\n";
-
                 $round = new Round;
 
                 $round->schedule_id = $schedule->id;
@@ -84,6 +86,26 @@ class ScheduleController extends Controller
                 $round->save();
 
                 $round_number += 1;
+
+                foreach ($venues as $venue) {
+                    $match = new Match;
+
+                    $match->name = $venue->name . ' – ' . $round->start_date->format('m-d-Y');
+                    $match->association_id = $association->id;
+                    $match->series_id = $series->id;
+                    $match->division_id = $division->id;
+
+                    // Unique key fields:
+                    $match->schedule_id = $schedule->id;
+                    $match->round_id = $round->id;
+                    $match->venue_id = $venue->id;
+                    $match->sequence = 1;
+
+                    $match->start_date = $round->start_date;
+                    $match->end_date = $round->end_date;
+
+                    $match->save();
+                }
             }
 
             $start_datetime->add(new \DateInterval('P1D'));
