@@ -7,7 +7,7 @@
         Edit Association
     </div>
     <div class="form">
-        <form method="POST" action="/association/update">
+        <form method="POST" action="/association/update" enctype="multipart/form-data">
             @csrf
 
             <input type="hidden" name="url" value="{{ URL::previous() }}">
@@ -40,6 +40,11 @@
                     @enderror
                 </div>
             @endcan
+
+            <div class="form-group">
+                <label for="home_image_file">Homepage Image File</label>
+                <input type="file" id="home_image_file" name="home_image_file" />
+            </div>
 
             <div class="form-actions">
                 <div class="form-item">
