@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Association;
 use App\Division;
 use App\Series;
+use App\Venue;
 use Bouncer;
 use Illuminate\Http\Request;
 
@@ -98,6 +99,7 @@ class AssociationsController extends Controller
                 'association' => $association,
                 'series' => Series::where('association_id', $association->id)->get(),
                 'divisions' => Division::orderBy('sequence', 'ASC')->where('association_id', $association->id)->get(),
+                'venues' => Venue::orderBy('name', 'ASC')->where('association_id', $association->id)->get(),
                 'current_user' => \Auth::user()
             ]);
         }
