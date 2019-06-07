@@ -1,53 +1,51 @@
-@extends('layouts.app')
+@extends('layouts.bootstrap')
 
 @section('title', 'Create Series')
 
 @section('content')
-    <div class="title m-b-md">
-        Edit Series
+    <div class="row">
+        <div class="col-md-12">
+            <div class="title m-b-md h1">
+                Edit Series – <?php echo $series->name; ?>
+            </div>
+        </div>
     </div>
     <div class="form">
         <form method="POST" action="/series/<?php echo $series->id; ?>/update">
             @csrf
 
-            <div class="form-item">
+            <div class="form-group">
                 <label for="user_id">Owner</label>
                 <select id="user_id" name="user_id">
                     <option value="<?php echo($current_user->id); ?>"><?php echo($current_user->name); ?></option>
                 </select>
             </div>
 
+            <div class="form-group">
+                <label for="association">Association</label>
+                <input type="text" readonly value="<?php echo $series->association->name; ?>">
+            </div>
+
             <input type="hidden" name="id" value="{{ $series->id }}">
 
             <input type="hidden" name="url" value="{{  URL::previous()  }}">
 
-            <div class="form-item">
+            <div class="form-group">
                 <label for="name">Name</label>
                 <input id="name" type="text" name="name" value="{{ $series->name }}" class="@error('name') is-invalid @enderror">
                 @error('name')
                     <div class="alert alert-danger">{{ $message }}</div>
                 @enderror
-                <span class="form-item-help">Enter a name for this series, like <em>"Summer 2019"</em> or whatever you would like.</span>
             </div>
 
-            <div class="form-item">
+            <div class="form-group">
                 <label for="start_date">Start Date</label>
                 <input id="start_date" type="date" name="start_date" value="{{ $start_date_string }}">
             </div>
 
-            <div class="form-item">
+            <div class="form-group">
                 <label for="end_date">End Date</label>
                 <input id="end_date" type="date" name="end_date" value="{{ $end_date_string }}">
-            </div>
-
-            <div class="form-item">
-                <label for="association_id">Association</label>
-                <select id="association_id" name="association_id">
-                    <option value="">- No Association -</option>
-                    <?php foreach($associations as $association): ?>
-                <option value="<?php echo $association->id; ?>"<?php if ($association_id == $association->id): ?> selected<?php endif; ?>><?php echo $association->name; ?></option>
-                    <?php endforeach; ?>
-                </select>
             </div>
 
             Schedules
@@ -67,7 +65,7 @@
             <?php endif; ?>
 
             <div class="form-actions">
-                <div class="form-item">
+                <div class="form-group">
                     <input id="submit" type="submit" value="Submit"/>
                 </div>
             </div>
