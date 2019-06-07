@@ -23,4 +23,8 @@ class Association extends Model
         return $this->hasMany('App\Team');
     }
 
+    public function schedules() {
+        return $this->hasMany('App\Schedule');
+    }
+
 }

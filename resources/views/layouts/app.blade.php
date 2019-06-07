@@ -14,47 +14,66 @@
         <link href="https://fonts.googleapis.com/css?family=Nunito:200,600" rel="stylesheet">
 
         <!-- Styles -->
-        <link href="/css/laravel.css" rel="stylesheet">
+        <link href="/css/frontend.css" rel="stylesheet">
     </head>
     <body>
-        <div class="flex-center position-ref full-height">
-            @section('links')
-                <div class="top-right links">
-                    <a href="{{ url('/') }}">Home</a>
-                    <a href="{{ route('standings') }}">Standings</a>
-                    <a href="{{ route('schedule') }}">Schedule</a>
-                    <!-- Authentication Links -->
-                    @guest
+        <header>
+            @section('main-menu')
+                <nav class="main-menu">
+                    <ul>
+                        <li>
+                            <a href="{{ url('/') }}">Home</a>
+                        </li>
+                        <li>
+                            <a href="{{ route('standings') }}">Standings</a>
+                        </li>
+                        <li>
+                            <a href="{{ route('schedule') }}">Schedule</a>
+                        </li>
 
-                        <a class="nav-link" href="{{ route('login') }}">{{ __('Login') }}</a>
-                        @if (Route::has('register'))
-                            <a class="nav-link" href="{{ route('register') }}">{{ __('Register') }}</a>
-                        @endif
-                    @else
-                        <a id="navbarDropdown" class="nav-link dropdown-toggle" href="{{ route('user', [ 'id' => Auth::user()->id ]) }}" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" v-pre>
-                            {{ Auth::user()->name }} <span class="caret"></span>
-                        </a>
-                        <a class="dropdown-item" href="{{ route('logout') }}"
-                            onclick="event.preventDefault();
-                                            document.getElementById('logout-form').submit();">
-                            {{ __('Logout') }}
-                        </a>
-                        <form id="logout-form" action="{{ route('logout') }}" method="POST" style="display: none;">
-                            @csrf
-                        </form>
-                    @endguest
-                </div>
+                        <!-- Authentication Links -->
+                        @guest
+                        <li>
+                            <a class="nav-link" href="{{ route('login') }}">{{ __('Login') }}</a>
+                        </li>
+                            @if (Route::has('register'))
+                            <li>
+                                <a class="nav-link" href="{{ route('register') }}">{{ __('Register') }}</a>
+                            </li>
+                            @endif
+                        @else
+                            <li>
+                                <a id="navbarDropdown" class="nav-link dropdown-toggle" href="{{ route('user', [ 'id' => Auth::user()->id ]) }}" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" v-pre>
+                                    {{ Auth::user()->name }} <span class="caret"></span>
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item" href="{{ route('logout') }}"
+                                    onclick="event.preventDefault();
+                                                    document.getElementById('logout-form').submit();">
+                                    {{ __('Logout') }}
+                                </a>
+                                <form id="logout-form" action="{{ route('logout') }}" method="POST" style="display: none;">
+                                    @csrf
+                                </form>
+                            </li>
+                        @endguest
+                    </ul>
+
+
+
+
+                </nav>
             @show
+        </header>
+        <div class="content">
+            @if (session('message'))
+                <div class="alert alert-message" role="alert">
+                    {{ session('message') }}
+                </div>
+            @endif
 
-            <div class="content">
-                @if (session('message'))
-                    <div class="alert alert-message" role="alert">
-                        {{ session('message') }}
-                    </div>
-                @endif
-
-                @yield('content')
-            </div>
+            @yield('content')
         </div>
     </body>
 </html>

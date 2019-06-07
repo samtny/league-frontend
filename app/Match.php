@@ -34,11 +34,11 @@ class Match extends Model
     }
 
     public function homeTeam() {
-        return $this->hasOne('App\Team', 'home_team_id');
+        return $this->belongsTo('App\Team', 'home_team_id');
     }
 
     public function awayTeam() {
-        return $this->hasOne('App\Team', 'away_team_id');
+        return $this->belongsTo('App\Team', 'away_team_id');
     }
 
 }

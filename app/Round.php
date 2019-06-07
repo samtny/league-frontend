@@ -19,4 +19,8 @@ class Round extends Model
         return $this->belongsTo('App\Schedule');
     }
 
+    public function matches() {
+        return $this->hasMany('App\Match');
+    }
+
 }

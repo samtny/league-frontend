@@ -1,6 +1,6 @@
 {
     "/js/app.js": "/js/app.js",
-    "/css/app.css": "/css/app.css",
-    "/css/laravel.css": "/css/laravel.css",
+    "/css/admin.css": "/css/admin.css",
+    "/css/frontend.css": "/css/frontend.css",
     "/css/association/slope.css": "/css/association/slope.css"
 }

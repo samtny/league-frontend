@@ -18,7 +18,7 @@ class Schedule extends Model
     }
 
     public function division() {
-        return $this->hasOne('App\Division');
+        return $this->belongsTo('App\Division');
     }
 
     public function rounds() {

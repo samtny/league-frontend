@@ -14,7 +14,7 @@
         <link href="https://fonts.googleapis.com/css?family=Nunito:200,600" rel="stylesheet">
 
         <!-- Styles -->
-        <link href="/css/app.css" rel="stylesheet">
+        <link href="/css/admin.css" rel="stylesheet">
     </head>
     <body>
         <div id="app">

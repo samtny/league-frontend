@@ -17,6 +17,6 @@
 
     <div class="links">
         <a href="{{ route('standings') }}">Standings</a>
-        <a href="{{ route('schedule') }}">Schedule</a>
+        <a href="{{ route('association.schedule') }}">Schedule</a>
     </div>
 @endsection
