@@ -91,10 +91,25 @@
             </div>
         <?php endif; ?>
     </div>
+    <div class="teams">
+        Association Teams
+        <?php if (!empty($association->teams)): ?>
+            <?php foreach ($association->teams as $index => $item): ?>
+                <a href="/association/<?php echo $association->id; ?>/team/<?php echo($item->id); ?>/edit">
+                    <?php echo ('<div class="team">' . $item->name . '</div>'); ?>
+                </a>
+            <?php endforeach; ?>
+        <?php else: ?>
+            <div class="message">
+                No teams for this association.
+            </div>
+        <?php endif; ?>
+    </div>
     <div class="links">
         <a href="{{ route('series.create') }}">Create Series</a>
         <a href="{{ route('division.create', ['association' => $association ]) }}">Create Division</a>
         <a href="{{ route('venue.create', ['association' => $association ]) }}">Create Venue</a>
+        <a href="{{ route('team.create', ['association' => $association ]) }}">Create Team</a>
         <a href="{{ route('association.delete', [ 'association' => $association ]) }}">Delete Association</a>
     </div>
 @endsection

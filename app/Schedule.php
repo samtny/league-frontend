@@ -10,7 +10,7 @@ class Schedule extends Model
     protected $fillable = array('name', 'association_id', 'series_id', 'division_id', 'start_date', 'end_date', 'sequence');
 
     public function association() {
-        return $this->hasOne('App\Association');
+        return $this->belongsTo('App\Association');
     }
 
     public function series() {

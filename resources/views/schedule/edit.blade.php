@@ -44,7 +44,18 @@
                             <th scope="row"><?php echo $venue->name ?></th>
                             <?php foreach ($schedule->rounds as $index => $round): ?>
                             <td>
-                                <?php echo ('<div class="round">' . $round->name . '</div>'); ?> — <?php echo date('Y-m-d', strtotime($round->start_date)); ?>
+                                <select id="team_id" name="team_id">
+                                    <option value="">- No team -</option>
+                                    <?php foreach($schedule->association->teams->sortBy('name') as $team): ?>
+                                    <option value="<?php echo $team->id; ?>"><?php echo $team->name; ?></option>
+                                    <?php endforeach; ?>
+                                </select>
+                                <select id="team_id" name="team_id">
+                                    <option value="">- No team -</option>
+                                    <?php foreach($schedule->association->teams->sortBy('name') as $team): ?>
+                                    <option value="<?php echo $team->id; ?>"><?php echo $team->name; ?></option>
+                                    <?php endforeach; ?>
+                                </select>
                             </td>
                             <?php endforeach; ?>
                         </tr>
