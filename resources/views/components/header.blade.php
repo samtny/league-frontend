@@ -11,7 +11,7 @@
                 <li>
                     <a href="{{ route('schedule') }}">Schedule</a>
                 </li>
-
+<?php /*
                 <!-- Authentication Links -->
                 @guest
                 <li>
@@ -39,6 +39,7 @@
                         </form>
                     </li>
                 @endguest
+*/ ?>
             </ul>
         </nav>
     @show

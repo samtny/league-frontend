@@ -1,9 +1,12 @@
-@extends('layouts.association')
-
-@section('title', 'Standings')
+@extends('layouts.full', ['name' => 'standings'])
 
 @section('content')
-    <div class="title m-b-md">
-        Standings
+    @component('page-title')
+        @slot('title')
+            Standings - <?php echo $association->name; ?>
+        @endslot
+    @endcomponent
+    <div class="standings">
+        TBD
     </div>
 @endsection
