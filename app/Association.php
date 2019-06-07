@@ -15,4 +15,9 @@ class Association extends Model
         return $this->hasOne('User');
     }
 
+    public function venues()
+    {
+        return $this->hasMany('App\Venue');
+    }
+
 }

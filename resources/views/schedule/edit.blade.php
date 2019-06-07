@@ -25,14 +25,26 @@
             </div>
 
             <?php if (!empty($schedule->rounds)): ?>
-                <?php foreach ($schedule->rounds as $index => $round): ?>
-                    <a href="/round/<?php echo($round->id); ?>">
-                        <?php echo ('<div class="round">' . $round->name . '</div>'); ?> — <?php echo date('Y-m-d', strtotime($round->start_date)); ?>
-                    </a>
-                    <a href="/round/<?php echo($round->id); ?>/edit">
-                        Edit
-                    </a>
-                <?php endforeach; ?>
+
+                <table class="table">
+                    <thead>
+                        <th></th>
+                        <?php foreach ($schedule->rounds as $index => $round): ?>
+                        <th>
+                            <?php echo ('<div class="round">' . $round->name . '</div>'); ?> — <?php echo date('Y-m-d', strtotime($round->start_date)); ?>
+                        </th>
+                        <?php endforeach; ?>
+                    </thead>
+                    <tbody>
+                        <th scope="row">Venue X</th>
+                        <?php foreach ($schedule->rounds as $index => $round): ?>
+                        <td>
+                            <?php echo ('<div class="round">' . $round->name . '</div>'); ?> — <?php echo date('Y-m-d', strtotime($round->start_date)); ?>
+                        </td>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+
             <?php else: ?>
                 <div class="message">
                     No rounds.

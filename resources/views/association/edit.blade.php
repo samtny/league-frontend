@@ -77,9 +77,24 @@
             </div>
         <?php endif; ?>
     </div>
+    <div class="venues">
+        Association Venues
+        <?php if (!empty($venues)): ?>
+            <?php foreach ($venues as $index => $item): ?>
+                <a href="/association/<?php echo $association->id; ?>/venue/<?php echo($item->id); ?>/edit">
+                    <?php echo ('<div class="venue">' . $item->name . '</div>'); ?>
+                </a>
+            <?php endforeach; ?>
+        <?php else: ?>
+            <div class="message">
+                No venues for this association.
+            </div>
+        <?php endif; ?>
+    </div>
     <div class="links">
         <a href="{{ route('series.create') }}">Create Series</a>
         <a href="{{ route('division.create', ['association' => $association ]) }}">Create Division</a>
+        <a href="{{ route('venue.create', ['association' => $association ]) }}">Create Venue</a>
         <a href="{{ route('association.delete', [ 'association' => $association ]) }}">Delete Association</a>
     </div>
 @endsection
