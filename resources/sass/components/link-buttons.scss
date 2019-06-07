@@ -1,0 +1,15 @@
+.link-buttons {
+    ul {
+        margin: 0;
+        padding: 0;
+        list-style: none;
+        
+        li {
+            margin: 0 0 rem(16px) 0;
+
+            a {
+                width: rem(120px);
+            }
+        }
+    }
+}
