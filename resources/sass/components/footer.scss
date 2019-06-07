@@ -1,0 +1,11 @@
+body > footer {
+    display: flex;
+    height: rem(150px);
+
+    .footer-copyright {
+        flex-basis: 100%;
+        margin-top: auto;
+        padding: rem(20px) 0 rem(20px) 0;
+        text-align: center;
+    }
+}

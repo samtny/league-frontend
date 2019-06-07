@@ -13,6 +13,8 @@
             </div>
         @endcomponent
     @endcomponent
+    @component('components/footer')
+    @endcomponent
 </body>
 @component('components/html-footer')
 @endcomponent
