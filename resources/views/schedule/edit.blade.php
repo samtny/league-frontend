@@ -26,24 +26,32 @@
 
             <?php if (!empty($schedule->rounds)): ?>
 
+            <div class="table-responsive">
                 <table class="table">
                     <thead>
-                        <th></th>
-                        <?php foreach ($schedule->rounds as $index => $round): ?>
-                        <th>
-                            <?php echo ('<div class="round">' . $round->name . '</div>'); ?> — <?php echo date('Y-m-d', strtotime($round->start_date)); ?>
-                        </th>
-                        <?php endforeach; ?>
+                        <tr>
+                            <th></th>
+                            <?php foreach ($schedule->rounds as $index => $round): ?>
+                            <th>
+                                <?php echo ('<div class="round">' . $round->name . '</div>'); ?> — <?php echo date('Y-m-d', strtotime($round->start_date)); ?>
+                            </th>
+                            <?php endforeach; ?>
+                        </tr>
                     </thead>
                     <tbody>
-                        <th scope="row">Venue X</th>
-                        <?php foreach ($schedule->rounds as $index => $round): ?>
-                        <td>
-                            <?php echo ('<div class="round">' . $round->name . '</div>'); ?> — <?php echo date('Y-m-d', strtotime($round->start_date)); ?>
-                        </td>
+                        <?php foreach ($schedule->series->association->venues->sortBy('name') as $venue): ?>
+                        <tr>
+                            <th scope="row"><?php echo $venue->name ?></th>
+                            <?php foreach ($schedule->rounds as $index => $round): ?>
+                            <td>
+                                <?php echo ('<div class="round">' . $round->name . '</div>'); ?> — <?php echo date('Y-m-d', strtotime($round->start_date)); ?>
+                            </td>
+                            <?php endforeach; ?>
+                        </tr>
                         <?php endforeach; ?>
                     </tbody>
                 </table>
+            </div>
 
             <?php else: ?>
                 <div class="message">

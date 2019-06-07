@@ -14,7 +14,7 @@ class Schedule extends Model
     }
 
     public function series() {
-        return $this->hasOne('App\Series');
+        return $this->belongsTo('App\Series');
     }
 
     public function division() {

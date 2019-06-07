@@ -11,7 +11,11 @@ class Series extends Model
 
     // Series relates to an association:
     public function association() {
-        return $this->hasOne('Association');
+        return $this->belongsTo('App\Association');
+    }
+
+    public function schedules() {
+        return $this->hasMany('App\Schedule');
     }
 
 }
