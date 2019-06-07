@@ -9,11 +9,11 @@
     text-decoration: none;
     text-align: center;
     color: #6D1327;
-    height: 3.125rem;
-    padding-right: 1.25rem;
-    padding-left: 1.25rem;
+    height: rem(50px);
+    padding-right: rem(20px);
+    padding-left: rem(20px);
     transition: background-color 0.1s ease-in-out;
-    border: 1px solid #6D1327;
+    border: rem(1px) solid #6D1327;
     border-radius: rem(9px);
     white-space: normal;
 }
