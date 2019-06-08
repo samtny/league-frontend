@@ -11,9 +11,10 @@
                 <li>
                     <a href="{{ route('schedule') }}">Schedule</a>
                 </li>
-<?php /*
+
                 <!-- Authentication Links -->
                 @guest
+                <?php /*
                 <li>
                     <a class="nav-link" href="{{ route('login') }}">{{ __('Login') }}</a>
                 </li>
@@ -22,6 +23,7 @@
                         <a class="nav-link" href="{{ route('register') }}">{{ __('Register') }}</a>
                     </li>
                     @endif
+                */ ?>
                 @else
                     <li>
                         <a id="navbarDropdown" class="nav-link dropdown-toggle" href="{{ route('user', [ 'id' => Auth::user()->id ]) }}" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" v-pre>
@@ -39,7 +41,7 @@
                         </form>
                     </li>
                 @endguest
-*/ ?>
+
             </ul>
         </nav>
     @show

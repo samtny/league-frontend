@@ -10,6 +10,15 @@ use Illuminate\Http\Request;
 class AdminController extends Controller
 {
 
+    public function overview() {
+        if (Bouncer::can('view-admin-pages')) {
+            return view('admin.overview');
+        }
+        else {
+            return view('denied');
+        }
+    }
+
     public function users() {
         if (Bouncer::can('administer-users')) {
             return view('admin.users', [

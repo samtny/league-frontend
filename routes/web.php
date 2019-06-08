@@ -104,6 +104,7 @@ Route::prefix('user')->group(function () {
 });
 
 Route::prefix('admin')->group(function () {
+    Route::get('/', 'AdminController@overview')->name('admin');
     Route::get('users', 'AdminController@users')->name('admin.users');
     Route::get('associations/deleted', 'AdminController@associationsDeleted')->name('admin.associations.deleted');
 });
