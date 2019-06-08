@@ -60,39 +60,9 @@
     </div>
 
 
-    <div class="venues">
-        Association Venues
-        <?php if (!empty($venues)): ?>
-            <?php foreach ($venues as $item): ?>
-                <a href="{{ route('venue.edit', ['association' => $association, 'venue' => $item]) }}">
-                    <?php echo ('<div class="venue">' . $item->name . '</div>'); ?>
-                </a>
-            <?php endforeach; ?>
-        <?php else: ?>
-            <div class="message">
-                No venues for this association.
-            </div>
-        <?php endif; ?>
-    </div>
-    <div class="teams">
-        Association Teams
-        <?php if (!empty($association->teams)): ?>
-            <?php foreach ($association->teams as $item): ?>
-                <a href="{{ route('team.edit', ['association' => $association, 'team' => $item]) }}">
-                    <?php echo ('<div class="team">' . $item->name . '</div>'); ?>
-                </a>
-            <?php endforeach; ?>
-        <?php else: ?>
-            <div class="message">
-                No teams for this association.
-            </div>
-        <?php endif; ?>
-    </div>
+
+
     <div class="links">
-        <a href="{{ route('series.create') }}">Create Series</a>
-        <a href="{{ route('division.create', ['association' => $association ]) }}">Create Division</a>
-        <a href="{{ route('venue.create', ['association' => $association ]) }}">Create Venue</a>
-        <a href="{{ route('team.create', ['association' => $association ]) }}">Create Team</a>
         <a href="{{ route('association.delete', [ 'association' => $association ]) }}">Delete Association</a>
     </div>
 @endsection

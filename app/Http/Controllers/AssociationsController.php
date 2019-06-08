@@ -35,6 +35,14 @@ class AssociationsController extends Controller
         return view('association.divisions', ['association' => $association]);
     }
 
+    public function teams(Association $association) {
+        return view('association.teams', ['association' => $association]);
+    }
+
+    public function venues(Association $association) {
+        return view('association.venues', ['association' => $association]);
+    }
+
     public function submitScore() {
         return view('association.home', ['association' => $this->association]);
     }

@@ -19,16 +19,16 @@ class Association extends Model
         return $this->hasMany('App\Division');
     }
 
-    public function series() {
-        return $this->hasMany('App\Series');
+    public function teams() {
+        return $this->hasMany('App\Team');
     }
 
     public function venues() {
         return $this->hasMany('App\Venue');
     }
 
-    public function teams() {
-        return $this->hasMany('App\Team');
+    public function series() {
+        return $this->hasMany('App\Series');
     }
 
     public function schedules() {

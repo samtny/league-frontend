@@ -64,6 +64,8 @@ Route::prefix('admin')->group(function () {
 
         Route::get('{association}/edit', 'AssociationsController@edit')->name('association.edit');
         Route::get('{association}/divisions', 'AssociationsController@divisions')->name('association.divisions');
+        Route::get('{association}/teams', 'AssociationsController@teams')->name('association.teams');
+        Route::get('{association}/venues', 'AssociationsController@venues')->name('association.venues');
         Route::get('{association}/series', 'AssociationsController@series')->name('association.series');
         Route::get('create', 'AssociationsController@create')->name('association.create');
         Route::post('create', 'AssociationsController@store');
