@@ -10,7 +10,11 @@
         <?php foreach ($association->schedules->sortBy('start_date') as $schedule): ?>
             <div class="schedule">
 
-                <h2 class="division"><?php echo $schedule->division->name; ?></h2>
+                <?php if (!empty($schedule->division)): ?>
+                <h2 class="schedule-title division"><?php echo $schedule->division->name; ?></h2>
+                <?php else: ?>
+                <h2 class="schedule-title no-division">Schedule</h2>
+                <?php endif; ?>
 
                 <?php foreach ($schedule->rounds->sortBy('start_date') as $round): ?>
 

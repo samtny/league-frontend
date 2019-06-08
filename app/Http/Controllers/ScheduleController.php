@@ -34,7 +34,7 @@ class ScheduleController extends Controller
 
     public function store(Series $series, Request $request) {
 
-        $association_id = $request->association_id;
+        $association_id = $series->association->id;
         $division_id = $request->division_id;
         $start_date = $request->start_date;
         $end_date = $request->end_date;
