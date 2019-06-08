@@ -4,6 +4,7 @@
     @component('components/header-admin')
     @endcomponent
     @component('layouts/base-admin')
+        @yield('breadcrumb')
         @yield('content')
     @endcomponent
     @component('components/footer-admin')

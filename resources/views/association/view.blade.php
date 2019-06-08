@@ -1,5 +1,9 @@
 @extends('layouts.admin')
 
+@section('breadcrumb')
+    {{ Breadcrumbs::render('association', $association) }}
+@endsection
+
 @section('title', $association->name)
 
 @section('content')

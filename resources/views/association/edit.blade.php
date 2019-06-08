@@ -2,6 +2,10 @@
 
 @section('title', 'Edit Association')
 
+@section('breadcrumb')
+    {{ Breadcrumbs::render('association.edit', $association) }}
+@endsection
+
 @section('content')
     <div class="row">
         <h1 class="col"><?php echo $association->name; ?></h1>
