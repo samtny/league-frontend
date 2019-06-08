@@ -18,7 +18,7 @@ class BouncerSeeder extends Seeder
         Bouncer::allow('admin')->to('view-users');
         Bouncer::allow('admin')->to('create', Association::class);
 
-        Bouncer::allow('assocadmin')->to('create', Association::class);
+        Bouncer::disallow('assocadmin')->to('create', Association::class);
         Bouncer::allow('assocadmin')->toOwn(Association::class);
         Bouncer::allow('assocadmin')->to('view-admin-pages');
 

@@ -29,9 +29,11 @@
                 No Associations.
             </div>
         <?php endif; ?>
+        @can ('create', App\Association::class)
         <div class="links">
             <a href="{{ route('association.create') }}">Create Association</a>
         </div>
+        @endcan
     </div>
 
     <div class="series">
@@ -50,9 +52,11 @@
                 No Series.
             </div>
         <?php endif; ?>
+        @can ('create', App\Series::class)
         <div class="links">
             <a href="{{ route('series.create') }}">Create Series</a>
         </div>
+        @endcan
     </div>
 
 @endsection
