@@ -3,15 +3,15 @@
 <body>
     @component('components/header')
     @endcomponent
-    @component('layout', ['name' => 'full'])
-        @component('template', ['name' => $name ])
+    @component('layouts/base', ['name' => 'full'])
+        <div class="t--template t--{{ $name }}">
             <div class="content">
                 @component('components/alert')
                 @endcomponent
 
                 @yield('content')
             </div>
-        @endcomponent
+        </div>
     @endcomponent
     @component('components/footer')
     @endcomponent

@@ -1,4 +1,4 @@
-@extends('layouts.app')
+@extends('layouts.full', ['name' => 'schedule'])
 
 @section('title', 'Schedule')
 

@@ -1,7 +1,9 @@
 @extends('layouts.full', ['name' => 'home'])
 
+@section('title', $association->name)
+
 @section('content')
-    @component('page-title')
+    @component('components/page-title')
         @slot('title')
             <?php echo $association->name; ?>
         @endslot

@@ -1,4 +1,4 @@
-@extends('layouts.app')
+@extends('layouts.full', ['name' => 'denied'])
 
 @section('title', 'Access Denied')
 

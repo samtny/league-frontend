@@ -1,7 +1,7 @@
 @extends('layouts.full', ['name' => 'home'])
 
 @section('content')
-    @component('page-title')
+    @component('components/page-title')
         @slot('title')
             Pinball League
         @endslot

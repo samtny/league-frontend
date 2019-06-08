@@ -1,6 +1,6 @@
-@extends('layouts.app')
+@extends('layouts.admin')
 
-@section('title', 'Create Association')
+@section('title', 'Edit Association')
 
 @section('content')
     <div class="title m-b-md">

@@ -1,6 +1,6 @@
-@extends('layouts.bootstrap')
+@extends('layouts.admin')
 
-@section('title', 'Create Series')
+@section('title', 'Edit Series')
 
 @section('content')
     <div class="row">
@@ -21,10 +21,12 @@
                 </select>
             </div>
 
+            <?php if (!empty($series->association)): ?>
             <div class="form-group">
                 <label for="association">Association</label>
                 <input type="text" readonly value="<?php echo $series->association->name; ?>">
             </div>
+            <?php endif; ?>
 
             <input type="hidden" name="id" value="{{ $series->id }}">
 

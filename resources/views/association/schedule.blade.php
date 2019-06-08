@@ -1,7 +1,7 @@
 @extends('layouts.full', ['name' => 'schedule'])
 
 @section('content')
-    @component('page-title')
+    @component('components/page-title')
         @slot('title')
             Schedule - <?php echo $association->name; ?>
         @endslot
