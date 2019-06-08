@@ -58,7 +58,7 @@
         Association Series
         <?php if (!empty($series)): ?>
             <?php foreach ($series as $index => $item): ?>
-                <a href="/series/<?php echo($item->id); ?>/edit">
+                <a href="{{ route('series.edit', ['series' => $item]) }}">
                     <?php echo ('<div class="series">' . $item->name . '</div>'); ?>
                 </a>
             <?php endforeach; ?>
@@ -71,8 +71,8 @@
     <div class="divisions">
         Association Divisions
         <?php if (!empty($divisions)): ?>
-            <?php foreach ($divisions as $index => $item): ?>
-                <a href="/association/<?php echo $association->id; ?>/division/<?php echo($item->id); ?>/edit">
+            <?php foreach ($divisions as $item): ?>
+                <a href="{{ route('division.edit', ['association' => $association, 'division' => $item]) }}">
                     <?php echo ('<div class="division">' . $item->name . '</div>'); ?>
                 </a>
             <?php endforeach; ?>
@@ -85,8 +85,8 @@
     <div class="venues">
         Association Venues
         <?php if (!empty($venues)): ?>
-            <?php foreach ($venues as $index => $item): ?>
-                <a href="/association/<?php echo $association->id; ?>/venue/<?php echo($item->id); ?>/edit">
+            <?php foreach ($venues as $item): ?>
+                <a href="{{ route('venue.edit', ['association' => $association, 'venue' => $item]) }}">
                     <?php echo ('<div class="venue">' . $item->name . '</div>'); ?>
                 </a>
             <?php endforeach; ?>
@@ -99,8 +99,8 @@
     <div class="teams">
         Association Teams
         <?php if (!empty($association->teams)): ?>
-            <?php foreach ($association->teams as $index => $item): ?>
-                <a href="/association/<?php echo $association->id; ?>/team/<?php echo($item->id); ?>/edit">
+            <?php foreach ($association->teams as $item): ?>
+                <a href="{{ route('team.edit', ['association' => $association, 'team' => $item]) }}">
                     <?php echo ('<div class="team">' . $item->name . '</div>'); ?>
                 </a>
             <?php endforeach; ?>

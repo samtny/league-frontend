@@ -38,9 +38,11 @@ Route::prefix('schedule')->group(function () {
 Route::prefix('association')->group(function () {
     Route::get('{association}/venue/create', 'VenuesController@create')->name('venue.create');
     Route::post('{association}/venue/create', 'VenuesController@store');
+    Route::get('{association}/venue/{venue}/edit', 'VenuesController@edit')->name('venue.edit');
 
     Route::get('{association}/team/create', 'TeamsController@create')->name('team.create');
     Route::post('{association}/team/create', 'TeamsController@store');
+    Route::get('{association}/team/{team}/edit', 'TeamsController@edit')->name('team.edit');
 
     Route::get('{association}/division/create', 'DivisionsController@create')->name('division.create');
     Route::post('{association}/division/create', 'DivisionsController@store');
@@ -64,47 +66,42 @@ Route::prefix('association')->group(function () {
     Route::get('{association}', 'AssociationsController@view')->name('association.view');
 });
 
-Route::prefix('schedule')->group(function () {
-    Route::get('{schedule}/edit', 'ScheduleController@edit')->name('schedule.edit');
-    Route::post('{schedule}/update', 'ScheduleController@update');
-});
-
-Route::prefix('series')->group(function () {
-    Route::get('{series}/schedule/create', 'ScheduleController@create')->name('schedule.create');
-    Route::post('{series}/schedule/create', 'ScheduleController@store');
-
-    Route::get('{series}/edit', 'SeriesController@edit')->name('series.edit');
-    Route::get('create', 'SeriesController@create')->name('series.create');
-    Route::post('create', 'SeriesController@store');
-    Route::post('update', 'SeriesController@update');
-    Route::get('{series}', 'SeriesController@view')->name('series.view');
-    Route::get('delete', 'SeriesController@delete')->name('series.delete');
-});
-
-Route::prefix('onboard')->group(function () {
-
-    Route::get('association/{association}', function (App\Association $association) {
-        return view('onboard.association', ['association' => $association]);
-    })->name('onboard.association');
-
-    Route::get('series/{series}', function (App\Series $series) {
-        return view('onboard.series', ['series' => $series]);
-    })->name('onboard.series');
-
-});
-
 Auth::routes();
 
 Route::get('/home', 'HomeController@index')->name('home');
 
-Route::prefix('user')->group(function () {
-
-    Route::get('{user}', 'UsersController@view')->name('user');
-
-});
-
 Route::prefix('admin')->group(function () {
-    Route::get('/', 'AdminController@overview')->name('admin');
+    Route::prefix('user')->group(function () {
+        Route::get('create', 'UsersController@create')->name('user');
+        Route::get('{user}', 'UsersController@view')->name('user');
+    });
+
+    Route::prefix('series')->group(function () {
+        Route::get('{series}/schedule/create', 'ScheduleController@create')->name('schedule.create');
+        Route::post('{series}/schedule/create', 'ScheduleController@store');
+        Route::get('{series}/edit', 'SeriesController@edit')->name('series.edit');
+        Route::get('create', 'SeriesController@create')->name('series.create');
+        Route::post('create', 'SeriesController@store');
+        Route::post('update', 'SeriesController@update');
+        Route::get('{series}', 'SeriesController@view')->name('series.view');
+        Route::get('delete', 'SeriesController@delete')->name('series.delete');
+    });
+
+    Route::prefix('schedule')->group(function () {
+        Route::get('{schedule}/edit', 'ScheduleController@edit')->name('schedule.edit');
+        Route::post('{schedule}/update', 'ScheduleController@update');
+    });
+
+    Route::prefix('onboard')->group(function () {
+        Route::get('association/{association}', function (App\Association $association) {
+            return view('onboard.association', ['association' => $association]);
+        })->name('onboard.association');
+        Route::get('series/{series}', function (App\Series $series) {
+            return view('onboard.series', ['series' => $series]);
+        })->name('onboard.series');
+    });
+
     Route::get('users', 'AdminController@users')->name('admin.users');
     Route::get('associations/deleted', 'AdminController@associationsDeleted')->name('admin.associations.deleted');
+    Route::get('/', 'AdminController@overview')->name('admin');
 });

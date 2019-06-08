@@ -20,7 +20,7 @@
                 <a href="/association/<?php echo($association->id); ?>">
                     <?php echo ('<div class="association">' . $association->name . '</div>'); ?>
                 </a>
-                <a href="/association/<?php echo($association->id); ?>/edit">
+                <a href="{{ route('association.edit', ['association' => $association]) }}">
                     Edit
                 </a>
             <?php endforeach; ?>
@@ -38,10 +38,10 @@
         Series
         <?php if (!empty($series)): ?>
             <?php foreach ($series as $index => $item): ?>
-                <a href="/series/<?php echo($item->id); ?>">
+                <a href="{{ route('series.view', ['series' => $item]) }}">
                     <?php echo ('<div class="series">' . $item->name . '</div>'); ?>
                 </a>
-                <a href="/series/<?php echo($item->id); ?>/edit">
+                <a href="{{ route('series.edit', ['series' => $item]) }}">
                     Edit
                 </a>
             <?php endforeach; ?>
