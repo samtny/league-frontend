@@ -1,10 +1,5 @@
 <?php
 
-// Home
-Breadcrumbs::for('home', function ($trail) {
-    $trail->push('Home', route('home'));
-});
-
 // Home > About
 Breadcrumbs::for('about', function ($trail) {
     $trail->parent('home');
@@ -29,7 +24,12 @@ Breadcrumbs::for('post', function ($trail, $post) {
     $trail->push($post->title, route('post', $post->id));
 });
 
+Breadcrumbs::for('home', function ($trail) {
+    $trail->push('Home', url('/'));
+});
+
 Breadcrumbs::for('admin', function ($trail) {
+    $trail->parent('home');
     $trail->push('Admin', route('admin'));
 });
 
