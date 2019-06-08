@@ -56,12 +56,14 @@ Route::prefix('admin')->group(function () {
         Route::post('{association}/team/create', 'TeamsController@store');
         Route::get('{association}/team/{team}/edit', 'TeamsController@edit')->name('team.edit');
 
+
         Route::get('{association}/division/create', 'DivisionsController@create')->name('division.create');
         Route::post('{association}/division/create', 'DivisionsController@store');
         Route::get('{association}/division/{division}/edit', 'DivisionsController@edit')->name('division.edit');
         Route::post('{association}/division/{division}/update', 'DivisionsController@update')->name('division.update');
 
         Route::get('{association}/edit', 'AssociationsController@edit')->name('association.edit');
+        Route::get('{association}/divisions', 'AssociationsController@divisions')->name('association.divisions');
         Route::get('{association}/series', 'AssociationsController@series')->name('association.series');
         Route::get('create', 'AssociationsController@create')->name('association.create');
         Route::post('create', 'AssociationsController@store');

@@ -31,6 +31,10 @@ class AssociationsController extends Controller
         return view('association.series', ['association' => $association]);
     }
 
+    public function divisions(Association $association) {
+        return view('association.divisions', ['association' => $association]);
+    }
+
     public function submitScore() {
         return view('association.home', ['association' => $this->association]);
     }

@@ -43,6 +43,11 @@ Breadcrumbs::for('association.edit', function ($trail, $association) {
     $trail->push('Edit', route('association.edit', $association));
 });
 
+Breadcrumbs::for('association.divisions', function ($trail, $association) {
+    $trail->parent('association', $association);
+    $trail->push('Divisions', route('association.divisions', $association));
+});
+
 Breadcrumbs::for('association.series', function ($trail, $association) {
     $trail->parent('association', $association);
     $trail->push('Series', route('association.series', $association));

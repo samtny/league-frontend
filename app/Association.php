@@ -15,6 +15,14 @@ class Association extends Model
         return $this->hasOne('User');
     }
 
+    public function divisions() {
+        return $this->hasMany('App\Division');
+    }
+
+    public function series() {
+        return $this->hasMany('App\Series');
+    }
+
     public function venues() {
         return $this->hasMany('App\Venue');
     }

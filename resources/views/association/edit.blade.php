@@ -58,34 +58,8 @@
 
         </form>
     </div>
-    <div class="series">
-        Association Series
-        <?php if (!empty($series)): ?>
-            <?php foreach ($series as $index => $item): ?>
-                <a href="{{ route('series.edit', ['series' => $item]) }}">
-                    <?php echo ('<div class="series">' . $item->name . '</div>'); ?>
-                </a>
-            <?php endforeach; ?>
-        <?php else: ?>
-            <div class="message">
-                No Series for this association.
-            </div>
-        <?php endif; ?>
-    </div>
-    <div class="divisions">
-        Association Divisions
-        <?php if (!empty($divisions)): ?>
-            <?php foreach ($divisions as $item): ?>
-                <a href="{{ route('division.edit', ['association' => $association, 'division' => $item]) }}">
-                    <?php echo ('<div class="division">' . $item->name . '</div>'); ?>
-                </a>
-            <?php endforeach; ?>
-        <?php else: ?>
-            <div class="message">
-                No Divisions for this association.
-            </div>
-        <?php endif; ?>
-    </div>
+
+
     <div class="venues">
         Association Venues
         <?php if (!empty($venues)): ?>
