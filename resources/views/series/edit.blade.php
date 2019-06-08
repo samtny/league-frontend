@@ -53,10 +53,10 @@
             Schedules
             <?php if (!empty($schedules)): ?>
                 <?php foreach ($schedules as $index => $item): ?>
-                    <a href="/schedule/<?php echo($item->id); ?>">
+                    <a href="{{ route('schedule', ['schedule' => $item ])}}">
                         <?php echo ('<div class="schedule">' . $item->name . '</div>'); ?> — <?php echo date('Y-m-d', strtotime($item->start_date)); ?>
                     </a>
-                    <a href="/schedule/<?php echo($item->id); ?>/edit">
+                    <a href="{{ route('schedule.edit', ['schedule' => $item ])}}">
                         Edit
                     </a>
                 <?php endforeach; ?>

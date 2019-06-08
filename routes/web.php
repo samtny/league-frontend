@@ -89,7 +89,7 @@ Route::prefix('admin')->group(function () {
 
     Route::prefix('schedule')->group(function () {
         Route::get('{schedule}/edit', 'ScheduleController@edit')->name('schedule.edit');
-        Route::post('{schedule}/update', 'ScheduleController@update');
+        Route::post('{schedule}/update', 'ScheduleController@update')->name('schedule.update');
     });
 
     Route::prefix('onboard')->group(function () {

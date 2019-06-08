@@ -65,7 +65,10 @@ class SeriesController extends Controller
 
         $series->name = $request->name;
         $series->user_id = $request->user_id;
-        $series->association_id = $request->association_id;
+
+        if (isset($request->association_id)) {
+            $series->association_id = $request->association_id;
+        }
 
         if ($request->start_date !== NULL) {
             //$start_date_timestamp = strtotime($request->start_date);
