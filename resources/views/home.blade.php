@@ -1,22 +1,9 @@
-@extends('layouts.app')
-
-@section('title', 'Home')
+@extends('layouts.full', ['name' => 'home'])
 
 @section('content')
-    <div class="title m-b-md">
-        Home
-    </div>
-
-    <div class="auth">
-        @if (session('status'))
-            <div class="alert alert-success" role="alert">
-                {{ session('status') }}
-            </div>
-        @endif
-    </div>
-
-    <div class="links">
-        <a href="{{ route('standings') }}">Standings</a>
-        <a href="{{ route('association.schedule') }}">Schedule</a>
-    </div>
+    @component('page-title')
+        @slot('title')
+            Pinball League
+        @endslot
+    @endcomponent
 @endsection
