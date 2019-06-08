@@ -51,6 +51,12 @@ DOCROOT=$config_league_frontend_docroot
 
 RSYNC_EXCLUDE=""
 
+if [ "$CONFIG" == "production" ]; then
+  npm run production
+else
+  npm run dev
+fi
+
 if [ "$CONFIG" != "local" ]; then
   rsync -ruvz --files-from "deploy.files" . "${USER}@${HOST}:${DOCROOT}"
 else

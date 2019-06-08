@@ -14,7 +14,8 @@
         <link href="https://fonts.googleapis.com/css?family=Nunito:200,600" rel="stylesheet">
 
         <!-- Styles -->
-        <link href="/css/admin.css" rel="stylesheet">
+        <link href="{{ mix('/css/admin.css') }}" rel="stylesheet">
+
     </head>
     <body>
         <div id="app">
@@ -75,6 +76,6 @@
                 </div>
             </main>
         </div>
-        <script type="text/javascript" src="/js/app.js"></script>
+        <script type="text/javascript" src="{{ mix('/js/app.css') }}"></script>
     </body>
 </html>

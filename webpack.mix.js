@@ -24,3 +24,7 @@ for (var i=0; i<files.length; i++) {
     mix.sass('resources/sass/association/' + files[i], 'public/css/association');
   }
 }
+
+if (mix.inProduction()) {
+    mix.version();
+}
