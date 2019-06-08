@@ -1,4 +1,6 @@
 body > footer {
+    @include maxwidth;
+
     display: flex;
     height: rem(150px);
 

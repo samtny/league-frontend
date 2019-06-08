@@ -1,4 +1,6 @@
 body > header {
+    @include maxwidth;
+
     nav.main-menu {
         width: 100%;
 

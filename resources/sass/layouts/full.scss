@@ -1,5 +1,6 @@
 .l--full {
     .content {
+        @include maxwidth;
         padding: 0 rem(40px) 0 rem(40px);
     }
 }

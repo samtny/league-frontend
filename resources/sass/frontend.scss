@@ -1,8 +1,10 @@
 @import 'base/normalize/normalize';
 
-@import 'mixins/_rem.scss';
-
 @import 'base/variables.scss';
+
+@import 'mixins/rem';
+@import 'mixins/maxwidth';
+
 @import 'base/layout.scss';
 @import 'base/typography.scss' ;
 @import 'base/buttons.scss';
