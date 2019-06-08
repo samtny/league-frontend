@@ -16,7 +16,10 @@
                 <h2 class="schedule-title no-division">Schedule</h2>
                 <?php endif; ?>
 
-                <?php foreach ($schedule->rounds->sortBy('start_date') as $round): ?>
+                <?php foreach ($schedule->rounds
+                    ->where('start_date','>=', date('Y-m-d', strtotime('-1 week')))
+                    ->where('start_date', '<=', date('Y-m-d', strtotime("+2 weeks")))
+                    ->sortBy('start_date') as $round): ?>
 
                     <h3><?php echo date('l, F j, Y', strtotime($round->start_date)); ?></h3>
 
