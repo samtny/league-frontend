@@ -46,6 +46,8 @@ Route::prefix('admin')->group(function () {
     });
 
     Route::prefix('association')->group(function () {
+
+
         Route::get('{association}/venue/create', 'VenuesController@create')->name('venue.create');
         Route::post('{association}/venue/create', 'VenuesController@store');
         Route::get('{association}/venue/{venue}/edit', 'VenuesController@edit')->name('venue.edit');
@@ -60,6 +62,7 @@ Route::prefix('admin')->group(function () {
         Route::post('{association}/division/{division}/update', 'DivisionsController@update')->name('division.update');
 
         Route::get('{association}/edit', 'AssociationsController@edit')->name('association.edit');
+        Route::get('{association}/series', 'AssociationsController@series')->name('association.series');
         Route::get('create', 'AssociationsController@create')->name('association.create');
         Route::post('create', 'AssociationsController@store');
         Route::post('{association}/update', 'AssociationsController@update')->name('association.update');
@@ -79,6 +82,7 @@ Route::prefix('admin')->group(function () {
     Route::prefix('series')->group(function () {
         Route::get('{series}/schedule/create', 'ScheduleController@create')->name('schedule.create');
         Route::post('{series}/schedule/create', 'ScheduleController@store');
+
         Route::get('{series}/edit', 'SeriesController@edit')->name('series.edit');
         Route::get('create', 'SeriesController@create')->name('series.create');
         Route::post('create', 'SeriesController@store');

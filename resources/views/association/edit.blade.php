@@ -3,11 +3,11 @@
 @section('title', 'Edit Association')
 
 @section('content')
-    <div class="title m-b-md">
-        Edit Association
+    <div class="row">
+        <h1 class="col"><?php echo $association->name; ?></h1>
     </div>
-    <div class="form">
-        <form method="POST" action="{{ route('association.update', ['association' => $association]) }}" enctype="multipart/form-data">
+    <div class="form row">
+        <form class="col" method="POST" action="{{ route('association.update', ['association' => $association]) }}" enctype="multipart/form-data">
             @csrf
 
             <input type="hidden" name="url" value="{{ URL::previous() }}">
