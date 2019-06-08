@@ -7,7 +7,7 @@
         Create Schedule
     </div>
     <div class="form">
-        <form method="POST" action="/series/<?php echo $series->id; ?>/schedule/create">
+        <form method="POST" action="{{ route('schedule.create', ['series' => $series ]) }}">
             @csrf
 
             <input type="hidden" name="association_id" value="<?php echo $association_id; ?>" />

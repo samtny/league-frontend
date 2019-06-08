@@ -10,7 +10,7 @@
         <a href="{{ route('association.view', [ 'association' => $association ]) }}">Cancel</a>
     </div>
     <div class="form">
-        <form method="POST" action="/association/<?php echo $association->id; ?>/delete">
+        <form method="POST" action="{{ route('association.delete', ['association' => $association])}}">
             @csrf
 
             <input type="hidden" name="url" value="{{ URL::previous() }}">

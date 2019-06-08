@@ -7,7 +7,7 @@
         Create Series
     </div>
     <div class="form">
-        <form method="POST" action="/series/create">
+        <form method="POST" action="{{ route('series.create') }}">
             @csrf
 
             <input type="hidden" name="url" value="{{ URL::previous() }}">

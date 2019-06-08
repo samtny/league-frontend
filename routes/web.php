@@ -57,7 +57,7 @@ Route::prefix('admin')->group(function () {
         Route::get('{association}/division/create', 'DivisionsController@create')->name('division.create');
         Route::post('{association}/division/create', 'DivisionsController@store');
         Route::get('{association}/division/{division}/edit', 'DivisionsController@edit')->name('division.edit');
-        Route::post('{association}/division/{division}/update', 'DivisionsController@update');
+        Route::post('{association}/division/{division}/update', 'DivisionsController@update')->name('division.update');
 
         Route::get('{association}/edit', 'AssociationsController@edit')->name('association.edit');
         Route::get('create', 'AssociationsController@create')->name('association.create');
@@ -82,7 +82,7 @@ Route::prefix('admin')->group(function () {
         Route::get('{series}/edit', 'SeriesController@edit')->name('series.edit');
         Route::get('create', 'SeriesController@create')->name('series.create');
         Route::post('create', 'SeriesController@store');
-        Route::post('update', 'SeriesController@update');
+        Route::post('update', 'SeriesController@update')->name('series.update');
         Route::get('{series}', 'SeriesController@view')->name('series.view');
         Route::get('delete', 'SeriesController@delete')->name('series.delete');
     });

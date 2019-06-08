@@ -7,7 +7,7 @@
         Create Association
     </div>
     <div class="form">
-        <form method="POST" action="/association/create">
+        <form method="POST" action="{{ route('association.create') }}">
             @csrf
 
             <input type="hidden" name="url" value="{{ URL::previous() }}">

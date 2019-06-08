@@ -7,7 +7,7 @@
         Create Division
     </div>
     <div class="form">
-        <form method="POST" action="/association/<?php echo($association->id) ?>/division/create">
+        <form method="POST" action="{{ route('division.create', ['association' => $association]) }}">
             @csrf
 
             <input type="hidden" name="url" value="{{  URL::previous()  }}">

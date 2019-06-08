@@ -7,7 +7,7 @@
         Edit Division
     </div>
     <div class="form">
-        <form method="POST" action="/association/<?php echo($association->id); ?>/division/<?php echo($division->id); ?>/update">
+        <form method="POST" action="{{ route('division.update', ['association' => $association, 'division' => $division])}}">
             @csrf
 
             <input type="hidden" name="url" value="{{  URL::previous()  }}">

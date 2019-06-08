@@ -11,7 +11,7 @@
         </div>
     </div>
     <div class="form">
-        <form method="POST" action="/series/<?php echo $series->id; ?>/update">
+        <form method="POST" action="{{ route('series.update', ['series' => $series ]) }}">
             @csrf
 
             <div class="form-group">

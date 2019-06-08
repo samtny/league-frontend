@@ -7,7 +7,7 @@
         Create Venue
     </div>
     <div class="form">
-        <form method="POST" action="/association/<?php echo($association->id) ?>/venue/create">
+        <form method="POST" action="{{ route('venue.create', ['association' => $association]) }}">
             @csrf
 
             <input type="hidden" name="url" value="{{  URL::previous()  }}">

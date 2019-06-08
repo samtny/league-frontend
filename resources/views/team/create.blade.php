@@ -7,7 +7,7 @@
         Create Team
     </div>
     <div class="form">
-        <form method="POST" action="/association/<?php echo($association->id) ?>/team/create">
+        <form method="POST" action="{{ route('team.create', ['association' => $association]) }}">
             @csrf
 
             <input type="hidden" name="url" value="{{  URL::previous()  }}">

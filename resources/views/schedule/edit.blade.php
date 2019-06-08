@@ -9,7 +9,7 @@
         </div>
     </div>
     <div class="form">
-        <form method="POST" action="/schedule/<?php echo $schedule->id; ?>/update">
+        <form method="POST" action="{{ route('schedule.update', ['schedule' => $schedule]) }}">
             @csrf
 
             <input type="hidden" name="id" value="<?php echo $schedule->id; ?>">
