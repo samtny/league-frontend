@@ -76,7 +76,7 @@ class AssociationsController extends Controller
         $association->user_id = $request->user_id;
 
         if (isset($request->subdomain)) {
-            $association->subdomain = $request->subdomain;   
+            $association->subdomain = $request->subdomain;
         }
 
         if (isset($request->home_image_file)) {

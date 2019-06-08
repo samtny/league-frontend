@@ -35,37 +35,6 @@ Route::prefix('schedule')->group(function () {
     })->name('schedule');
 });
 
-Route::prefix('association')->group(function () {
-    Route::get('{association}/venue/create', 'VenuesController@create')->name('venue.create');
-    Route::post('{association}/venue/create', 'VenuesController@store');
-    Route::get('{association}/venue/{venue}/edit', 'VenuesController@edit')->name('venue.edit');
-
-    Route::get('{association}/team/create', 'TeamsController@create')->name('team.create');
-    Route::post('{association}/team/create', 'TeamsController@store');
-    Route::get('{association}/team/{team}/edit', 'TeamsController@edit')->name('team.edit');
-
-    Route::get('{association}/division/create', 'DivisionsController@create')->name('division.create');
-    Route::post('{association}/division/create', 'DivisionsController@store');
-    Route::get('{association}/division/{division}/edit', 'DivisionsController@edit')->name('division.edit');
-    Route::post('{association}/division/{division}/update', 'DivisionsController@update');
-
-    Route::get('{association}/edit', 'AssociationsController@edit')->name('association.edit');
-    Route::get('create', 'AssociationsController@create')->name('association.create');
-    Route::post('create', 'AssociationsController@store');
-    Route::post('update', 'AssociationsController@update');
-    Route::get('{association}/delete', 'AssociationsController@deleteConfirm')->name('association.deleteConfirm');
-    Route::post('{association}/delete', 'AssociationsController@delete')->name('association.delete');
-    Route::get('{association}/undelete', function () {
-        Route::bind('trashed_user', function ($id) {
-            return App\User::onlyTrashed()->find($id);
-        });
-    });
-
-    Route::get('{association}/undelete', 'AssociationsController@undeleteConfirm')->name('association.undeleteConfirm');
-    Route::post('{association}/undelete', 'AssociationsController@undelete')->name('association.undelete');
-    Route::get('{association}', 'AssociationsController@view')->name('association.view');
-});
-
 Auth::routes();
 
 Route::get('/home', 'HomeController@index')->name('home');
@@ -74,6 +43,37 @@ Route::prefix('admin')->group(function () {
     Route::prefix('user')->group(function () {
         Route::get('create', 'UsersController@create')->name('user');
         Route::get('{user}', 'UsersController@view')->name('user');
+    });
+
+    Route::prefix('association')->group(function () {
+        Route::get('{association}/venue/create', 'VenuesController@create')->name('venue.create');
+        Route::post('{association}/venue/create', 'VenuesController@store');
+        Route::get('{association}/venue/{venue}/edit', 'VenuesController@edit')->name('venue.edit');
+
+        Route::get('{association}/team/create', 'TeamsController@create')->name('team.create');
+        Route::post('{association}/team/create', 'TeamsController@store');
+        Route::get('{association}/team/{team}/edit', 'TeamsController@edit')->name('team.edit');
+
+        Route::get('{association}/division/create', 'DivisionsController@create')->name('division.create');
+        Route::post('{association}/division/create', 'DivisionsController@store');
+        Route::get('{association}/division/{division}/edit', 'DivisionsController@edit')->name('division.edit');
+        Route::post('{association}/division/{division}/update', 'DivisionsController@update');
+
+        Route::get('{association}/edit', 'AssociationsController@edit')->name('association.edit');
+        Route::get('create', 'AssociationsController@create')->name('association.create');
+        Route::post('create', 'AssociationsController@store');
+        Route::post('{association}/update', 'AssociationsController@update')->name('association.update');
+        Route::get('{association}/delete', 'AssociationsController@deleteConfirm')->name('association.deleteConfirm');
+        Route::post('{association}/delete', 'AssociationsController@delete')->name('association.delete');
+        Route::get('{association}/undelete', function () {
+            Route::bind('trashed_user', function ($id) {
+                return App\User::onlyTrashed()->find($id);
+            });
+        });
+
+        Route::get('{association}/undelete', 'AssociationsController@undeleteConfirm')->name('association.undeleteConfirm');
+        Route::post('{association}/undelete', 'AssociationsController@undelete')->name('association.undelete');
+        Route::get('{association}', 'AssociationsController@view')->name('association.view');
     });
 
     Route::prefix('series')->group(function () {

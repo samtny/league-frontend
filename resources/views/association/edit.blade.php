@@ -7,7 +7,7 @@
         Edit Association
     </div>
     <div class="form">
-        <form method="POST" action="/association/update" enctype="multipart/form-data">
+        <form method="POST" action="{{ route('association.update', ['association' => $association]) }}" enctype="multipart/form-data">
             @csrf
 
             <input type="hidden" name="url" value="{{ URL::previous() }}">
