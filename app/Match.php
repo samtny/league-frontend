@@ -41,4 +41,7 @@ class Match extends Model
         return $this->belongsTo('App\Team', 'away_team_id');
     }
 
+    public function result() {
+        return $this->hasOne('App\Result');
+    }
 }

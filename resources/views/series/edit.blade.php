@@ -63,6 +63,9 @@
                     <a href="{{ route('schedule.edit', ['schedule' => $item ])}}">
                         Edit
                     </a>
+                    <a href="{{ route('results.edit', ['schedule' => $item ])}}">
+                        Edit Results
+                    </a>
                 <?php endforeach; ?>
             <?php else: ?>
                 <div class="message">

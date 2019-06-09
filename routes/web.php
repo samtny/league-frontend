@@ -107,6 +107,11 @@ Route::prefix('admin')->group(function () {
         Route::post('{schedule}/update', 'ScheduleController@update')->name('schedule.update');
     });
 
+    Route::prefix('results')->group(function () {
+        Route::get('{schedule}/edit', 'ResultsController@edit')->name('results.edit');
+        Route::post('{schedule}/update', 'ResultsController@update')->name('results.update');
+    });
+
     Route::prefix('onboard')->group(function () {
         Route::get('association/{association}', function (App\Association $association) {
             return view('onboard.association', ['association' => $association]);

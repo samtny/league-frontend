@@ -1,36 +1,22 @@
 @extends('layouts.admin')
 
-@section('title', 'Edit Schedule')
+@section('title', 'Edit Results')
 
 @section('breadcrumb')
-    {{ Breadcrumbs::render('schedule.edit', $schedule) }}
+    {{ Breadcrumbs::render('results.edit', $schedule) }}
 @endsection
 
 @section('content')
     <div class="row">
-        <h1 class="col">Edit Schedule</h1>
+        <h1 class="col">Edit Results</h1>
     </div>
     <div class="form">
-        <form method="POST" action="{{ route('schedule.update', ['schedule' => $schedule]) }}">
+        <form method="POST" action="{{ route('results.update', ['schedule' => $schedule]) }}">
             @csrf
 
             <input type="hidden" name="id" value="<?php echo $schedule->id; ?>">
 
             <input type="hidden" name="url" value="{{ URL::previous() }}">
-
-            <div class="row">
-                <div class="col-md-3">
-                    <label for="start_date">Start Date</label>
-                    <input id="start_date" class="form-control" type="date" name="start_date" value="<?php echo $schedule->start_date != null ? date('Y-m-d', strtotime($schedule->start_date)) : null ?>">
-                </div>
-            </div>
-
-            <div class="row">
-                <div class="col-md-3">
-                    <label for="end_date">End Date</label>
-                    <input id="end_date" class="form-control" type="date" name="end_date" value="<?php echo $schedule->end_date != null ? date('Y-m-d', strtotime($schedule->end_date)) : null ?>">
-                </div>
-            </div>
 
             <?php if (!empty($schedule->rounds)): ?>
 
@@ -59,18 +45,23 @@
                                         'venue_id' => $venue->id,
                                         'sequence' => 1,
                                         ])->first();?>
-                                    <select id="match_<?php echo $match->id; ?>__home_team_id" name="match_<?php echo $match->id; ?>__home_team_id">
-                                        <option value="">- No team -</option>
-                                        <?php foreach($schedule->association->teams->sortBy('name') as $team): ?>
-                                        <option value="<?php echo $team->id; ?>"<?php if($match->home_team_id == $team->id) echo ' selected'; ?>><?php echo $team->name; ?></option>
-                                        <?php endforeach; ?>
-                                    </select>
-                                    <select id="match_<?php echo $match->id; ?>__away_team_id" name="match_<?php echo $match->id; ?>__away_team_id">
-                                        <option value="">- No team -</option>
-                                        <?php foreach($schedule->association->teams->sortBy('name') as $team): ?>
-                                        <option value="<?php echo $team->id; ?>"<?php if($match->away_team_id == $team->id) echo ' selected'; ?>><?php echo $team->name; ?></option>
-                                        <?php endforeach; ?>
-                                    </select>
+
+                                    <?php if (!empty($match->home_team_id)): ?>
+                                        <div class="form-group form-inline">
+                                            <input type="hidden" name="match_<?php echo $match->id; ?>__home_team_id" value="<?php echo $match->home_team_id; ?>" readonly>
+                                            <label for="match_<?php echo $match->id; ?>__home_team_score"><?php echo $schedule->association->teams->find($match->home_team_id)->name; ?></label>
+                                            <input type="text" name="match_<?php echo $match->id; ?>__home_team_score" value="<?php echo(!empty($match->result) ? $match->result->home_team_score : null); ?>">
+                                        </div>
+                                    <?php endif; ?>
+
+                                    <?php if (!empty($match->away_team_id)): ?>
+                                        <div class="form-group form-inline">
+                                            <input type="hidden" name="match_<?php echo $match->id; ?>__away_team_id" value="<?php echo $match->away_team_id; ?>" readonly>
+                                            <label for="match_<?php echo $match->id; ?>__away_team_score"><?php echo $schedule->association->teams->find($match->away_team_id)->name; ?></label>
+                                            <input type="text" name="match_<?php echo $match->id; ?>__away_team_score" value="<?php echo(!empty($match->result) ? $match->result->away_team_score : null); ?>">
+                                        </div>
+                                    <?php endif; ?>
+
                                 </td>
                                 <?php endforeach; ?>
                             </tr>

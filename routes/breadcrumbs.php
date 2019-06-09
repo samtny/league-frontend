@@ -70,5 +70,10 @@ Breadcrumbs::for('series.edit', function ($trail, $series) {
 
 Breadcrumbs::for('schedule.edit', function ($trail, $schedule) {
     $trail->parent('series.edit', $schedule->series);
-    $trail->push('Schedule', route('schedule.edit', $schedule));
+    $trail->push(__('Schedule - :start_date', ['start_date' => date('Y-m-d', strtotime($schedule->start_date))]), route('schedule.edit', $schedule));
+});
+
+Breadcrumbs::for('results.edit', function ($trail, $schedule) {
+    $trail->parent('series.edit', $schedule->series);
+    $trail->push(__('Results - :start_date', ['start_date' => date('Y-m-d', strtotime($schedule->start_date))]), route('results.edit', $schedule));
 });
