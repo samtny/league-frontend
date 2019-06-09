@@ -1,12 +1,14 @@
 @extends('layouts.admin')
 
-@section('title', 'Edit Schedule')
+@section('title', 'Edit Division')
+
+@section('breadcrumb')
+    {{ Breadcrumbs::render('schedule.edit', $schedule) }}
+@endsection
 
 @section('content')
     <div class="row">
-        <div class="title m-b-md h1">
-            Edit Schedule
-        </div>
+        <h1 class="col">Edit Schedule</h1>
     </div>
     <div class="form">
         <form method="POST" action="{{ route('schedule.update', ['schedule' => $schedule]) }}">

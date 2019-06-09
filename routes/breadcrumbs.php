@@ -62,3 +62,13 @@ Breadcrumbs::for('association.series', function ($trail, $association) {
     $trail->parent('association', $association);
     $trail->push('Series', route('association.series', $association));
 });
+
+Breadcrumbs::for('series.edit', function ($trail, $series) {
+    $trail->parent('association.series', $series->association);
+    $trail->push($series->name, route('series.edit', $series));
+});
+
+Breadcrumbs::for('schedule.edit', function ($trail, $schedule) {
+    $trail->parent('series.edit', $schedule->series);
+    $trail->push('Schedule', route('schedule.edit', $schedule));
+});

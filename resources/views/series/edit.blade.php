@@ -2,6 +2,10 @@
 
 @section('title', 'Edit Series')
 
+@section('breadcrumb')
+    {{ Breadcrumbs::render('series.edit', $series) }}
+@endsection
+
 @section('content')
     <div class="row">
         <div class="col-md-12">
