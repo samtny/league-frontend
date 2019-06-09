@@ -4,9 +4,11 @@ namespace App\Http\Controllers;
 
 use App\Association;
 use App\Division;
+use App\Match;
+use App\Result;
+use App\Round;
 use App\Series;
 use App\Schedule;
-use App\Round;
 use App\Venue;
 use Bouncer;
 use Illuminate\Http\Request;
@@ -98,6 +100,57 @@ class AssociationsController extends Controller
                 'association' => $this->association,
                 'rounds' => $rounds,
                 ]);
+        }
+        else {
+            abort(404);
+        }
+    }
+
+    public function submitScoreStep3(Request $request) {
+        if (!empty($this->association)) {
+            $match = Match::find($request->match_id);
+
+            return view('forms.results.input-scores', [
+                'association' => $this->association,
+                'match' => $match,
+                ]);
+        }
+        else {
+            abort(404);
+        }
+    }
+
+    public function submitScoreStep4(Request $request) {
+        if (!empty($this->association)) {
+            $match_id = $request->match_id;
+
+            if (!empty($match_id)) {
+                $home_team_id = $request->home_team_id;
+                $away_team_id = $request->away_team_id;
+                $home_team_score = $request->home_team_score;
+                $away_team_score = $request->away_team_score;
+
+                $result = Result::where('match_id', $match_id)->first();
+
+                if (empty($result)) {
+                    $result = new result;
+                    $result->match_id = $match_id;
+                }
+
+                $result->home_team_id = $home_team_id;
+                $result->away_team_id = $away_team_id;
+                $result->home_team_score = $home_team_score;
+                $result->away_team_score = $away_team_score;
+
+                $result->save();
+
+                return view('forms.results.thanks', [
+                    'association' => $this->association,
+                    ]);
+            }
+            else {
+                abort(404);
+            }
         }
         else {
             abort(404);

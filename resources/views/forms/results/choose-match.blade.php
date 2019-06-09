@@ -1,4 +1,4 @@
-@extends('layouts.full', ['name' => 'choose-match'])
+@extends('layouts.full', ['name' => 'scores'])
 
 @section('title', __('Match'))
 
@@ -8,7 +8,7 @@
             <?php echo __('Match'); ?>
         @endslot
     @endcomponent
-    <form method="POST" action="{{ route('association.submit.score.step3', ['association' => $association]) }}">
+    <form class="step" method="POST" action="{{ route('association.submit.score.step3', ['association' => $association]) }}">
         @csrf
         <input type="hidden" name="match_id" id="match_id" value="">
         <input type="submit" name="step2_submit" id="step2_submit" value="Choose">
