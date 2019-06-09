@@ -13,7 +13,9 @@
 
 Route::domain('{subdomain}.pinballleague.org')->middleware('subdomain')->group(function() {
     Route::get('/', 'AssociationsController@home')->name('association.home');
-    Route::get('/submit', 'AssociationsController@submitScore')->name('association.submit.score');
+    Route::get('/submit', 'AssociationsController@submitScoreBegin')->name('association.submit.score.step1');
+    Route::post('/submit/step1', 'AssociationsController@submitScoreStep2')->name('association.submit.score.step2');
+    Route::post('/submit/step2', 'AssociationsController@submitScoreStep3')->name('association.submit.score.step3');
     Route::get('/standings', 'AssociationsController@standings')->name('association.standings');
     Route::get('/schedule', 'AssociationsController@schedule')->name('association.schedule');
     Route::get('/css/association.css', 'AssociationsController@css')->name('association.css');

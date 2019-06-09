@@ -17,7 +17,7 @@
         <nav class="association-nav">
             <ul>
                 <li>
-                    <a class="button" href="{{ route('association.submit.score') }}">Submit Scores</a>
+                    <a class="button" href="{{ route('association.submit.score.step1') }}">Submit Scores</a>
                 </li>
                 <li>
                     <a class="button" href="{{ route('association.standings') }}">Standings</a>

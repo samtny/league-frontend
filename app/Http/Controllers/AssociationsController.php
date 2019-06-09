@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use App\Association;
 use App\Division;
 use App\Series;
+use App\Schedule;
+use App\Round;
 use App\Venue;
 use Bouncer;
 use Illuminate\Http\Request;
@@ -43,8 +45,63 @@ class AssociationsController extends Controller
         return view('association.venues', ['association' => $association]);
     }
 
-    public function submitScore() {
-        return view('association.home', ['association' => $this->association]);
+    public function submitScoreBegin(Request $request) {
+        if (!empty($this->association)) {
+            // get schedules with start_date < today, end_date > today
+            $schedules = $this->association->schedules
+            ->where('start_date', '<', date('Y-m-d', strtotime('today')))
+            ->where('end_date', '>', date('Y-m-d', strtotime('today')));
+
+            // get rounds with start_date < today, but greater than today - 1 week
+            $rounds = Round::whereIn('schedule_id', $schedules->pluck('id'))
+                ->where('start_date','>', date('Y-m-d', strtotime('-1 week')))
+                ->where('start_date', '<', date('Y-m-d', strtotime("today")))->get();
+
+            $divisions = Division::whereIn('id', $rounds->pluck('division_id'))->get();
+
+            if (count($divisions) === 1) {
+                // FIXME: we know the division already so skip a step:
+                return view('forms.results.choose-division', [
+                    'association' => $this->association,
+                    'divisions' => $divisions,
+                    ]);
+            }
+            else {
+                return view('forms.results.choose-division', [
+                    'association' => $this->association,
+                    'divisions' => $divisions,
+                    ]);
+            }
+        }
+        else {
+            abort(404);
+        }
+    }
+
+    public function submitScoreStep2(Request $request) {
+        if (!empty($this->association)) {
+            $division = Division::find($request->division_id);
+
+            // get schedules with start_date < today, end_date > today, matching division
+            $schedules = $this->association->schedules
+                ->where('start_date', '<', date('Y-m-d', strtotime('today')))
+                ->where('end_date', '>', date('Y-m-d', strtotime('today')))
+                ->where('division_id', $division->id);
+
+            // get rounds with start_date < today, but greater than today - 1 week
+            $rounds = Round::whereIn('schedule_id', $schedules->pluck('id'))
+                ->where('start_date','>', date('Y-m-d', strtotime('-1 week')))
+                ->where('start_date', '<', date('Y-m-d', strtotime("today")))->
+                get();
+
+            return view('forms.results.choose-match', [
+                'association' => $this->association,
+                'rounds' => $rounds,
+                ]);
+        }
+        else {
+            abort(404);
+        }
     }
 
     public function standings() {
