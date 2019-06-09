@@ -36,4 +36,54 @@ class VenuesController extends Controller
         }
     }
 
+    public function edit(Association $association, Venue $venue) {
+        if (Bouncer::can('edit', Venue::class)) {
+            return view('venue.edit', ['venue' => $venue]);
+        }
+        else {
+            return view('denied');
+        }
+    }
+
+    public function update(Venue $venue, Request $request) {
+        if (Bouncer::can('update', Venue::class)) {
+            $venue = Venue::where(['id' => $venue->id])->first();
+
+            $venue->name = $request->name;
+
+            $venue->save();
+
+            if (!empty($request->url)) {
+                return redirect($request->url)->with('success', 'Data saved successfully!');
+            }
+
+            return redirect()->route('admin');
+        }
+        else {
+            return view('denied');
+        }
+    }
+
+    public function deleteConfirm(Venue $venue) {
+        if (Bouncer::can('delete', $venue)) {
+            return view('venue.delete', ['venue' => $venue]);
+        }
+        else {
+            return view('denied');
+        }
+    }
+
+    public function delete(Venue $venue) {
+        if (Bouncer::can('delete', $venue)) {
+            $association = $venue->association;
+
+            $venue->delete();
+
+            return redirect()->route('association.venues', ['association' => $association])->with('success', 'Venue deleted successfully.');
+        }
+        else {
+            return view('denied');
+        }
+    }
+
 }

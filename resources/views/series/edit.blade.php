@@ -68,7 +68,7 @@
 
             <div class="form-actions">
                 <div class="form-group">
-                    <input id="submit" type="submit" value="Submit"/>
+                    <input id="submit" type="submit" value="Update"/>
                 </div>
             </div>
 

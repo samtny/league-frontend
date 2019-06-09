@@ -1,20 +1,20 @@
 @extends('layouts.admin')
 
-@section('title', 'Edit Team')
+@section('title', 'Edit Venue')
 
 @section('content')
     <div class="row">
-        <h1 class="col"><?php echo $team->name; ?></h1>
+        <h1 class="col"><?php echo $venue->name; ?></h1>
     </div>
     <div class="form">
-        <form method="POST" action="{{ route('team.update', ['association' => $team->association, 'team' => $team])}}">
+        <form method="POST" action="{{ route('venue.update', ['venue' => $venue])}}">
             @csrf
 
             <input type="hidden" name="url" value="{{  URL::previous()  }}">
 
             <div class="form-item">
                 <label for="name">Name</label>
-                <input id="name" type="text" name="name" value="{{ $team->name }}" class="@error('name') is-invalid @enderror">
+                <input id="name" type="text" name="name" value="{{ $venue->name }}" class="@error('name') is-invalid @enderror">
                 @error('name')
                     <div class="alert alert-danger">{{ $message }}</div>
                 @enderror
@@ -25,7 +25,7 @@
                     <input id="submit" type="submit" value="Update"/>
                 </div>
                 <div class="form-item">
-                    <a href="{{ route('team.deleteConfirm', ['association' => $team->association, 'team' => $team]) }}">Delete Team</a>
+                    <a href="{{ route('venue.deleteConfirm', ['venue' => $venue]) }}">Delete Venue</a>
                 </div>
             </div>
 

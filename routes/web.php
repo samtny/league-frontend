@@ -51,6 +51,9 @@ Route::prefix('admin')->group(function () {
         Route::get('{association}/venue/create', 'VenuesController@create')->name('venue.create');
         Route::post('{association}/venue/create', 'VenuesController@store');
         Route::get('{association}/venue/{venue}/edit', 'VenuesController@edit')->name('venue.edit');
+        Route::post('venue/{venue}/update', 'VenuesController@update')->name('venue.update');
+        Route::get('venue/{venue}/delete', 'VenuesController@deleteConfirm')->name('venue.deleteConfirm');
+        Route::post('venue/{venue}/delete', 'VenuesController@delete')->name('venue.delete');
 
         Route::get('{association}/team/create', 'TeamsController@create')->name('team.create');
         Route::post('{association}/team/create', 'TeamsController@store');

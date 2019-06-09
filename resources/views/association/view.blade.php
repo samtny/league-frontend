@@ -11,12 +11,14 @@
         <h1 class="col"><?php echo $association->name; ?></h1>
     </div>
     <div class="links row">
-        <div class="col-md-5">
-            <a class="btn btn-primary btn-block" href="{{ route('association.edit', ['association' => $association]) }}">Edit Details</a>
-            <a class="btn btn-primary btn-block" href="{{ route('association.divisions', ['association' => $association]) }}">Divisions</a>
-            <a class="btn btn-primary btn-block" href="{{ route('association.teams', ['association' => $association]) }}">Teams</a>
-            <a class="btn btn-primary btn-block" href="{{ route('association.venues', ['association' => $association]) }}">Venues</a>
-            <a class="btn btn-primary btn-block" href="{{ route('association.series', ['association' => $association]) }}">Series</a>
+        <div class="col">
+            <div class="list-group">
+                <a class="list-group-item list-group-item-action" href="{{ route('association.edit', ['association' => $association]) }}">Edit Details</a>
+                <a class="list-group-item list-group-item-action" href="{{ route('association.divisions', ['association' => $association]) }}">Divisions</a>
+                <a class="list-group-item list-group-item-action" href="{{ route('association.teams', ['association' => $association]) }}">Teams</a>
+                <a class="list-group-item list-group-item-action" href="{{ route('association.venues', ['association' => $association]) }}">Venues</a>
+                <a class="list-group-item list-group-item-action" href="{{ route('association.series', ['association' => $association]) }}">Series</a>
+            </div>
         </div>
     </div>
 @endsection

@@ -32,7 +32,7 @@
 
             <div class="form-actions">
                 <div class="form-item">
-                    <input id="submit" type="submit" value="Submit"/>
+                    <input id="submit" type="submit" value="Update"/>
                 </div>
                 <div class="form-item">
                     <a href="{{ route('division.deleteConfirm', ['association' => $association, 'division' => $division]) }}">Delete Division</a>

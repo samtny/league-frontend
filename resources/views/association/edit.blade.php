@@ -52,7 +52,7 @@
 
             <div class="form-actions">
                 <div class="form-item">
-                    <input id="submit" type="submit" value="Submit"/>
+                    <input id="submit" type="submit" value="Update"/>
                 </div>
             </div>
 
