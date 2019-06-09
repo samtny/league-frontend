@@ -11,7 +11,7 @@ class Division extends Model
 
     // Division relates to an association:
     public function association() {
-        return $this->hasOne('Association');
+        return $this->belongsTo('App\Association');
     }
 
 }

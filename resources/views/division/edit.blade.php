@@ -3,8 +3,8 @@
 @section('title', 'Edit Division')
 
 @section('content')
-    <div class="title m-b-md">
-        Edit Division
+    <div class="row">
+        <h1 class="col"><?php echo $division->name; ?></h1>
     </div>
     <div class="form">
         <form method="POST" action="{{ route('division.update', ['association' => $association, 'division' => $division])}}">
@@ -33,6 +33,9 @@
             <div class="form-actions">
                 <div class="form-item">
                     <input id="submit" type="submit" value="Submit"/>
+                </div>
+                <div class="form-item">
+                    <a href="{{ route('division.deleteConfirm', ['association' => $association, 'division' => $division]) }}">Delete Division</a>
                 </div>
             </div>
 

@@ -55,12 +55,16 @@ Route::prefix('admin')->group(function () {
         Route::get('{association}/team/create', 'TeamsController@create')->name('team.create');
         Route::post('{association}/team/create', 'TeamsController@store');
         Route::get('{association}/team/{team}/edit', 'TeamsController@edit')->name('team.edit');
-
+        Route::post('{association}/team/{team}/update', 'TeamsController@update')->name('team.update');
+        Route::get('{association}/team/{team}/delete', 'TeamsController@deleteConfirm')->name('team.deleteConfirm');
+        Route::post('{association}/team/{team}/delete', 'TeamsController@delete')->name('team.delete');
 
         Route::get('{association}/division/create', 'DivisionsController@create')->name('division.create');
         Route::post('{association}/division/create', 'DivisionsController@store');
         Route::get('{association}/division/{division}/edit', 'DivisionsController@edit')->name('division.edit');
         Route::post('{association}/division/{division}/update', 'DivisionsController@update')->name('division.update');
+        Route::get('{association}/division/{division}/delete', 'DivisionsController@deleteConfirm')->name('division.deleteConfirm');
+        Route::post('{association}/division/{division}/delete', 'DivisionsController@delete')->name('division.delete');
 
         Route::get('{association}/edit', 'AssociationsController@edit')->name('association.edit');
         Route::get('{association}/divisions', 'AssociationsController@divisions')->name('association.divisions');

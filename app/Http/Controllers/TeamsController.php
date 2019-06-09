@@ -37,4 +37,47 @@ class TeamsController extends Controller
         }
     }
 
+    public function update(Association $association, Team $team, Request $request) {
+        if (Bouncer::can('update', Team::class)) {
+            $team = Team::where(['id' => $team->id])->first();
+
+            $team->name = $request->name;
+
+            $team->save();
+
+            if (!empty($request->url)) {
+                return redirect($request->url)->with('success', 'Data saved successfully!');
+            }
+
+            return redirect()->route('user', ['id' => \Auth::user()->id]);
+        }
+        else {
+            return view('denied');
+        }
+    }
+
+    public function edit(Association $association, Team $team) {
+        return view('team.edit', ['team' => $team]);
+    }
+
+    public function deleteConfirm(Association $association, Team $team) {
+        if (Bouncer::can('delete', $team)) {
+            return view('team.delete', ['team' => $team]);
+        }
+        else {
+            return view('denied');
+        }
+    }
+
+    public function delete(Association $association, Team $team) {
+        if (Bouncer::can('delete', $team)) {
+            $team->delete();
+
+            return redirect()->route('association.teams', ['association' => $association])->with('success', 'Team deleted successfully.');
+        }
+        else {
+            return view('denied');
+        }
+    }
+
 }

@@ -148,7 +148,7 @@ class AssociationsController extends Controller
     public function delete(Association $association) {
         $association->delete();
 
-        return redirect()->route('user', ['user' => \Auth::user()])->with('success', 'Association deleted successfully.');
+        return redirect()->route('admin')->with('success', 'Association deleted successfully.');
     }
 
     public function undeleteConfirm(Association $association) {

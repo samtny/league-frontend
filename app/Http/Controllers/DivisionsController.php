@@ -68,4 +68,24 @@ class DivisionsController extends Controller
         }
     }
 
+    public function deleteConfirm(Association $association, Division $division) {
+        if (Bouncer::can('delete', $division)) {
+            return view('division.delete', ['division' => $division]);
+        }
+        else {
+            return view('denied');
+        }
+    }
+
+    public function delete(Association $association, Division $division) {
+        if (Bouncer::can('delete', $division)) {
+            $division->delete();
+
+            return redirect()->route('association.divisions', ['association' => $association])->with('success', 'Division deleted successfully.');
+        }
+        else {
+            return view('denied');
+        }
+    }
+
 }
