@@ -36,12 +36,12 @@
                                 if (empty($results_table[$result->home_team_id])) {
                                     $results_table[$result->home_team_id] = 0;
                                 }
-                                $results_table[$result->home_team_id] = $results_table[$result->home_team_id] + $result->home_team_score;
+                                $results_table[$result->home_team_id] = $results_table[$result->home_team_id] + intval($result->home_team_score);
 
                                 if (empty($results_table[$result->away_team_id])) {
                                     $results_table[$result->away_team_id] = 0;
                                 }
-                                $results_table[$result->away_team_id] = $results_table[$result->away_team_id] + $result->away_team_score;
+                                $results_table[$result->away_team_id] = $results_table[$result->away_team_id] + intval($result->away_team_score);
                             }
                         }
                     }
@@ -51,10 +51,24 @@
                 ?>
 
                 <?php if (!empty($results_table)): ?>
-                    <?php foreach($results_table as $team_id => $points): ?>
-                        <?php echo $association->teams->find($team_id)->name; ?>
-                        <?php echo $points; ?>
-                    <?php endforeach; ?>
+
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Team</th>
+                                <th>Points</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php foreach($results_table as $team_id => $points): ?>
+                            <tr>
+                                <td><?php echo $association->teams->find($team_id)->name; ?></td>
+                                <td><?php echo $points; ?></td>
+                            </tr>
+                            <?php endforeach; ?>
+                        </tbody>
+                    </table>
+
                 <?php else: ?>
                     No results to report.
                 <?php endif; ?>
