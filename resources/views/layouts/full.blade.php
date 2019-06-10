@@ -1,6 +1,5 @@
 @component('components/html-header')
 @endcomponent
-<body>
     @component('components/header')
     @endcomponent
     @component('layouts/base', ['name' => 'full'])
@@ -15,6 +14,5 @@
     @endcomponent
     @component('components/footer')
     @endcomponent
-</body>
 @component('components/html-footer')
 @endcomponent
