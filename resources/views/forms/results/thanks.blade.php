@@ -9,6 +9,6 @@
         @endslot
     @endcomponent
     <div class="message">
-        Your score was submitted.
+        Your score was submitted to the league operator.
     </div>
 @endsection

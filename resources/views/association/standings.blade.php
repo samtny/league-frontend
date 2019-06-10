@@ -23,13 +23,13 @@
                     $result = $match->result;
 
                     if (!empty($result)) {
-                        $create_datetime = new \DateTime($result->created_at);
+                        $updated_datetime = new \DateTime($result->updated_at);
 
-                        $since_created = $create_datetime->diff(new \DateTime('-15 seconds'));
+                        $since_updated = $updated_datetime->diff(new \DateTime('-15 minutes'));
 
-                        $minutes = $since_created->days * 24 * 60;
-                        $minutes += $since_created->h * 60;
-                        $minutes += $since_created->i;
+                        $minutes = $since_updated->days * 24 * 60;
+                        $minutes += $since_updated->h * 60;
+                        $minutes += $since_updated->i;
 
                         if ($minutes > 15) {
                             if (!empty($result->home_team_score) && is_numeric($result->home_team_score)) {
