@@ -1,14 +1,13 @@
 @extends('layouts.full', ['name' => 'scores'])
 
-@section('title', __('Scores'))
+@section('title', __('Score Submit'))
 
 @section('content')
     @component('components/page-title')
         @slot('title')
-            <?php echo __('Scores'); ?>
+            <?php echo __('Score Submit'); ?>
         @endslot
     @endcomponent
-
     <form class="scores" method="POST" action="{{ route('association.submit.score.step4', ['association' => $association]) }}">
         @csrf
 

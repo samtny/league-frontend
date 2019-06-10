@@ -1,11 +1,11 @@
 @extends('layouts.full', ['name' => 'scores'])
 
-@section('title', __('Match'))
+@section('title', __('Score Submit'))
 
 @section('content')
     @component('components/page-title')
         @slot('title')
-            <?php echo __('Match'); ?>
+            <?php echo __('Score Submit'); ?>
         @endslot
     @endcomponent
     <form class="step" method="POST" action="{{ route('association.submit.score.step3', ['association' => $association]) }}">

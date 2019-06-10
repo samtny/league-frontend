@@ -1,5 +1,7 @@
 @extends('layouts.full', ['name' => 'standings'])
 
+@section('title', __(':association Standings', ['association' => $association->name]))
+
 @section('content')
     @component('components/page-title')
         @slot('title')
