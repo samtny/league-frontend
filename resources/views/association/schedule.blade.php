@@ -47,6 +47,30 @@
                                         <?php echo $match->venue->name; ?>
                                     </td>
                                     <td>
+                                        <?php
+                                            $result = $match->result;
+
+                                            if (!empty($result)) {
+                                                if (
+                                                    !empty($result->away_team_score)
+                                                    && is_numeric($result->away_team_score)
+                                                    && !empty($result->home_team_score)
+                                                    && is_numeric($result->home_team_score)
+                                                    ) {
+                                                    $updated_datetime = new \DateTime($result->updated_at);
+
+                                                    $since_updated = $updated_datetime->diff(new \DateTime('-15 minutes'));
+
+                                                    $minutes = $since_updated->days * 24 * 60;
+                                                    $minutes += $since_updated->h * 60;
+                                                    $minutes += $since_updated->i;
+
+                                                    if ($minutes > 15) {
+                                                        echo $result->away_team_score . ' - <strong>' . $result->home_team_score . '</strong>';
+                                                    }
+                                                }
+                                            }
+                                         ?>
                                     </td>
                                 </tr>
                                 <?php endif; ?>
