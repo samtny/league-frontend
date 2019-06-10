@@ -1,5 +1,7 @@
 @extends('layouts.full', ['name' => 'schedule'])
 
+@section('title', __(':association Schedule', ['association' => $association->name]))
+
 @section('content')
     @component('components/page-title')
         @slot('title')

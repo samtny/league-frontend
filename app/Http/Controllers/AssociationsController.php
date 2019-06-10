@@ -56,17 +56,15 @@ class AssociationsController extends Controller
 
             // get rounds with start_date < today, but greater than today - 1 week
             $rounds = Round::whereIn('schedule_id', $schedules->pluck('id'))
-                ->where('start_date','>', date('Y-m-d', strtotime('-1 week')))
-                ->where('start_date', '<', date('Y-m-d', strtotime("today")))->get();
+                ->where('start_date','>=', date('Y-m-d', strtotime('-1 week')))
+                ->where('start_date', '<=', date('Y-m-d', strtotime("today")))->get();
 
             $divisions = Division::whereIn('id', $rounds->pluck('division_id'))->get();
 
             if (count($divisions) === 1) {
-                // FIXME: we know the division already so skip a step:
-                return view('forms.results.choose-division', [
-                    'association' => $this->association,
-                    'divisions' => $divisions,
-                    ]);
+                $request->division_id = $divisions[0]->id;
+
+                return $this->submitScoreStep2($request);
             }
             else {
                 return view('forms.results.choose-division', [
@@ -86,15 +84,16 @@ class AssociationsController extends Controller
 
             // get schedules with start_date < today, end_date > today, matching division
             $schedules = $this->association->schedules
-                ->where('start_date', '<', date('Y-m-d', strtotime('today')))
-                ->where('end_date', '>', date('Y-m-d', strtotime('today')))
+                ->where('start_date', '<=', date('Y-m-d', strtotime('today')))
+                ->where('end_date', '>=', date('Y-m-d', strtotime('today')))
                 ->where('division_id', $division->id);
 
             // get rounds with start_date < today, but greater than today - 1 week
             $rounds = Round::whereIn('schedule_id', $schedules->pluck('id'))
-                ->where('start_date','>', date('Y-m-d', strtotime('-1 week')))
-                ->where('start_date', '<', date('Y-m-d', strtotime("today")))->
-                get();
+                ->where('start_date','>=', date('Y-m-d', strtotime('-1 week')))
+                ->where('start_date', '<=', date('Y-m-d', strtotime("today")))
+                ->orderBy('start_date', 'DESC')
+                ->get();
 
             return view('forms.results.choose-match', [
                 'association' => $this->association,

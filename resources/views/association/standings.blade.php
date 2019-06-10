@@ -11,9 +11,9 @@
             <div class="standings">
 
                 <?php if (!empty($schedule->division)): ?>
-                <h2 class="schedule-title division"><?php echo $schedule->division->name; ?></h2>
+                <h2 class="schedule-title"><?php echo $schedule->division->name; ?></h2>
                 <?php else: ?>
-                <h2 class="schedule-title no-division">Standings</h2>
+                <h2 class="schedule-title no-division"><?php echo date('l, M j', strtotime($schedule->start_date)); ?></h2>
                 <?php endif; ?>
 
                 <?php
@@ -23,16 +23,26 @@
                     $result = $match->result;
 
                     if (!empty($result)) {
-                        if (!empty($result->home_team_score) && is_numeric($result->home_team_score)) {
-                            if (empty($results_table[$result->home_team_id])) {
-                                $results_table[$result->home_team_id] = 0;
-                            }
-                            $results_table[$result->home_team_id] = $results_table[$result->home_team_id] + $result->home_team_score;
+                        $create_datetime = new \DateTime($result->created_at);
 
-                            if (empty($results_table[$result->away_team_id])) {
-                                $results_table[$result->away_team_id] = 0;
+                        $since_created = $create_datetime->diff(new \DateTime('-15 seconds'));
+
+                        $minutes = $since_created->days * 24 * 60;
+                        $minutes += $since_created->h * 60;
+                        $minutes += $since_created->i;
+
+                        if ($minutes > 15) {
+                            if (!empty($result->home_team_score) && is_numeric($result->home_team_score)) {
+                                if (empty($results_table[$result->home_team_id])) {
+                                    $results_table[$result->home_team_id] = 0;
+                                }
+                                $results_table[$result->home_team_id] = $results_table[$result->home_team_id] + $result->home_team_score;
+
+                                if (empty($results_table[$result->away_team_id])) {
+                                    $results_table[$result->away_team_id] = 0;
+                                }
+                                $results_table[$result->away_team_id] = $results_table[$result->away_team_id] + $result->away_team_score;
                             }
-                            $results_table[$result->away_team_id] = $results_table[$result->away_team_id] + $result->away_team_score;
                         }
                     }
                 }

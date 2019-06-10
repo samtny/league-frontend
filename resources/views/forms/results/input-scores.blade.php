@@ -8,6 +8,7 @@
             <?php echo __('Scores'); ?>
         @endslot
     @endcomponent
+
     <form class="scores" method="POST" action="{{ route('association.submit.score.step4', ['association' => $association]) }}">
         @csrf
 
