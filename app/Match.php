@@ -44,4 +44,8 @@ class Match extends Model
     public function result() {
         return $this->hasOne('App\Result');
     }
+
+    public function resultSubmissions() {
+        return $this->hasMany('App\ResultSubmission');
+    }
 }

@@ -52,7 +52,6 @@ Route::prefix('admin')->group(function () {
 
     Route::prefix('association')->group(function () {
 
-
         Route::get('{association}/venue/create', 'VenuesController@create')->name('venue.create');
         Route::post('{association}/venue/create', 'VenuesController@store');
         Route::get('{association}/venue/{venue}/edit', 'VenuesController@edit')->name('venue.edit');
@@ -115,6 +114,7 @@ Route::prefix('admin')->group(function () {
     Route::prefix('results')->group(function () {
         Route::get('{schedule}/edit', 'ResultsController@edit')->name('results.edit');
         Route::post('{schedule}/update', 'ResultsController@update')->name('results.update');
+        Route::get('{association}/results/submissions', 'ResultSubmissionsController@index')->name('result_submissions.list');
     });
 
     Route::prefix('onboard')->group(function () {

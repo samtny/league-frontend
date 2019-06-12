@@ -6,6 +6,7 @@ use App\Association;
 use App\Division;
 use App\Match;
 use App\Result;
+use App\ResultSubmission;
 use App\Round;
 use App\Series;
 use App\Schedule;
@@ -129,19 +130,12 @@ class AssociationsController extends Controller
                 $home_team_score = $request->home_team_score;
                 $away_team_score = $request->away_team_score;
 
-                $result = Result::where('match_id', $match_id)->first();
+                $submission = new ResultSubmission();
+                $submission->match_id = $match_id;
+                $submission->home_team_score = $home_team_score;
+                $submission->away_team_score = $away_team_score;
 
-                if (empty($result)) {
-                    $result = new result;
-                    $result->match_id = $match_id;
-                }
-
-                $result->home_team_id = $home_team_id;
-                $result->away_team_id = $away_team_id;
-                $result->home_team_score = $home_team_score;
-                $result->away_team_score = $away_team_score;
-
-                $result->save();
+                $submission->save();
 
                 return view('forms.results.thanks', [
                     'association' => $this->association,

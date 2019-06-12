@@ -18,6 +18,7 @@
                 <a class="list-group-item list-group-item-action" href="{{ route('association.teams', ['association' => $association]) }}">Teams</a>
                 <a class="list-group-item list-group-item-action" href="{{ route('association.venues', ['association' => $association]) }}">Venues</a>
                 <a class="list-group-item list-group-item-action" href="{{ route('association.series', ['association' => $association]) }}">Series</a>
+                <a class="list-group-item list-group-item-action" href="{{ route('result_submissions.list', ['association' => $association]) }}">Approve Results</a>
             </div>
         </div>
     </div>

@@ -77,3 +77,8 @@ Breadcrumbs::for('results.edit', function ($trail, $schedule) {
     $trail->parent('series.edit', $schedule->series);
     $trail->push(__('Results - :start_date', ['start_date' => date('Y-m-d', strtotime($schedule->start_date))]), route('results.edit', $schedule));
 });
+
+Breadcrumbs::for('result_submissions.approve', function ($trail, $association) {
+    $trail->parent('association', $association);
+    $trail->push(__('Result Submissions', ['association', $association]));
+});
