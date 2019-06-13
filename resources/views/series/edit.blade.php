@@ -20,7 +20,7 @@
 
             <div class="form-group">
                 <label for="user_id">Owner</label>
-                <select id="user_id" name="user_id">
+                <select class="form-control" id="user_id" name="user_id">
                     <option value="<?php echo($current_user->id); ?>"><?php echo($current_user->name); ?></option>
                 </select>
             </div>
@@ -28,7 +28,7 @@
             <?php if (!empty($series->association)): ?>
             <div class="form-group">
                 <label for="association">Association</label>
-                <input type="text" readonly value="<?php echo $series->association->name; ?>">
+                <input class="form-control" type="text" readonly value="<?php echo $series->association->name; ?>">
             </div>
             <?php endif; ?>
 
@@ -38,46 +38,47 @@
 
             <div class="form-group">
                 <label for="name">Name</label>
-                <input id="name" type="text" name="name" value="{{ $series->name }}" class="@error('name') is-invalid @enderror">
+                <input class="form-control" id="name" type="text" name="name" value="{{ $series->name }}" class="@error('name') is-invalid @enderror">
                 @error('name')
                     <div class="alert alert-danger">{{ $message }}</div>
                 @enderror
             </div>
 
-            <div class="form-group">
-                <label for="start_date">Start Date</label>
-                <input id="start_date" type="date" name="start_date" value="{{ $start_date_string }}">
-            </div>
-
-            <div class="form-group">
-                <label for="end_date">End Date</label>
-                <input id="end_date" type="date" name="end_date" value="{{ $end_date_string }}">
-            </div>
-
-            Schedules
-            <?php if (!empty($schedules)): ?>
-                <?php foreach ($schedules as $index => $item): ?>
-                    <a href="{{ route('schedule', ['schedule' => $item ])}}">
-                        <?php echo ('<div class="schedule">' . $item->name . '</div>'); ?> — <?php echo date('Y-m-d', strtotime($item->start_date)); ?>
-                    </a>
-                    <a href="{{ route('schedule.edit', ['schedule' => $item ])}}">
-                        Edit
-                    </a>
-                    <a href="{{ route('results.edit', ['schedule' => $item ])}}">
-                        Edit Results
-                    </a>
-                <?php endforeach; ?>
-            <?php else: ?>
-                <div class="message">
-                    No schedules.
+            <div class="form-row">
+                <div class="col-md-6">
+                    <label for="start_date">Start Date</label>
+                    <input class="form-control" id="start_date" type="date" name="start_date" value="{{ $start_date_string }}">
                 </div>
-            <?php endif; ?>
-
-            <div class="form-actions">
-                <div class="form-group">
-                    <input id="submit" type="submit" value="Update"/>
+                <div class="col-md-6">
+                    <label for="end_date">End Date</label>
+                    <input class="form-control" id="end_date" type="date" name="end_date" value="{{ $end_date_string }}">
                 </div>
             </div>
+
+            <button class="btn btn-primary" id="submit" type="submit">Update</button>
+
+            <div class="form-group">
+                <h2>Schedules</h2>
+                <?php if (!empty($schedules)): ?>
+                    <?php foreach ($schedules as $index => $item): ?>
+                        <a href="{{ route('schedule', ['schedule' => $item ])}}">
+                            <?php echo ('<div class="schedule">' . $item->name . '</div>'); ?> — <?php echo date('Y-m-d', strtotime($item->start_date)); ?>
+                        </a>
+                        <a href="{{ route('schedule.edit', ['schedule' => $item ])}}">
+                            Edit
+                        </a>
+                        <a href="{{ route('results.edit', ['schedule' => $item ])}}">
+                            Edit Results
+                        </a>
+                    <?php endforeach; ?>
+                <?php else: ?>
+                    <div class="message">
+                        No schedules.
+                    </div>
+                <?php endif; ?>
+            </div>
+
+
 
         </form>
     </div>
