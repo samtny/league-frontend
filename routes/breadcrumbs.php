@@ -80,5 +80,5 @@ Breadcrumbs::for('results.edit', function ($trail, $schedule) {
 
 Breadcrumbs::for('result_submissions.approve', function ($trail, $association) {
     $trail->parent('association', $association);
-    $trail->push(__('Result Submissions', ['association', $association]));
+    $trail->push(__('Score Submissions', ['association', $association]));
 });

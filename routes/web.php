@@ -44,6 +44,10 @@ Auth::routes();
 
 Route::get('/home', 'HomeController@index')->name('home');
 
+Route::prefix('result_submission')->group(function () {
+    Route::post('{id}', 'ResultSubmissionsController@update')->name('result_submission.update');
+});
+
 Route::prefix('admin')->group(function () {
     Route::prefix('user')->group(function () {
         Route::get('create', 'UsersController@create')->name('user');

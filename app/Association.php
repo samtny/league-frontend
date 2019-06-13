@@ -35,4 +35,8 @@ class Association extends Model
         return $this->hasMany('App\Schedule');
     }
 
+    public function resultSubmissions() {
+        return $this->hasMany('App\ResultSubmission');
+    }
+
 }

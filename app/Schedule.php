@@ -29,4 +29,8 @@ class Schedule extends Model
         return $this->hasMany('App\Match');
     }
 
+    public function resultSubmissions() {
+        return $this->hasMany('App\ResultSubmission');
+    }
+
 }

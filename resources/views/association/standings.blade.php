@@ -33,7 +33,7 @@
                         $minutes += $since_updated->h * 60;
                         $minutes += $since_updated->i;
 
-                        if ($minutes > 15) {
+                        //if ($minutes > 15) {
                             if (!empty($result->home_team_score) && is_numeric($result->home_team_score)) {
                                 if (empty($results_table[$result->home_team_id])) {
                                     $results_table[$result->home_team_id] = 0;
@@ -45,7 +45,7 @@
                                 }
                                 $results_table[$result->away_team_id] = $results_table[$result->away_team_id] + intval($result->away_team_score);
                             }
-                        }
+                        //}
                     }
                 }
 

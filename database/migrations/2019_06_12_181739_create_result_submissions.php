@@ -16,6 +16,8 @@ class CreateResultSubmissions extends Migration
         Schema::create('result_submissions', function (Blueprint $table) {
             $table->bigIncrements('id');
             $table->timestamps();
+            $table->bigInteger('association_id');
+            $table->bigInteger('schedule_id');
             $table->bigInteger('match_id');
             $table->string('home_team_score')->nullable();
             $table->string('away_team_score')->nullable();

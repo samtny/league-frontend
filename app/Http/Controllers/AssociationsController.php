@@ -131,6 +131,8 @@ class AssociationsController extends Controller
                 $away_team_score = $request->away_team_score;
 
                 $submission = new ResultSubmission();
+                $submission->association_id = $this->association->id;
+                $submission->schedule_id = Match::find($match_id)->schedule_id;
                 $submission->match_id = $match_id;
                 $submission->home_team_score = $home_team_score;
                 $submission->away_team_score = $away_team_score;

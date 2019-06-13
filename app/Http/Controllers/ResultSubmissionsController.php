@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Association;
+use App\Result;
+use App\ResultSubmission;
 use Illuminate\Http\Request;
 
 class ResultSubmissionsController extends Controller
@@ -69,7 +71,37 @@ class ResultSubmissionsController extends Controller
      */
     public function update(Request $request, $id)
     {
-        //
+        $submission = ResultSubmission::find($id);
+
+        if ($request->delete == 'delete') {
+            $submission->delete();
+        }
+        else {
+            $result = Result::where('match_id', $submission->match_id)->first();
+
+            if (empty($result)) {
+                $result = new Result();
+                $result->match_id = $submission->match_id;
+            }
+
+            $result->home_team_id = $submission->match->home_team_id;
+            $result->away_team_id = $submission->match->away_team_id;
+            $result->home_team_score = $submission->home_team_score;
+            $result->away_team_score = $submission->away_team_score;
+
+            $result->save();
+
+            $submission->approved = TRUE;
+            $submission->save();
+        }
+
+        $url = $request->url;
+
+        if (!empty($url)) {
+            return redirect($url)->with('success', 'Data saved successfully!');
+        }
+
+        return redirect()->route('user', ['id' => \Auth::user()->id]);
     }
 
     /**

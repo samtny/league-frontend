@@ -9,6 +9,14 @@ class ResultSubmission extends Model
 
     protected $fillable = array('match_id', 'home_team_score', 'away_team_score', 'approved');
 
+    public function association() {
+        return $this->belongsTo('App\Association');
+    }
+
+    public function schedule() {
+        return $this->belongsTo('App\Schedule');
+    }
+
     public function match() {
         return $this->belongsTo('App\Match');
     }
