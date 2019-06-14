@@ -12,6 +12,12 @@ use Illuminate\Http\Request;
 class SeriesController extends Controller
 {
 
+    public function view(Series $series) {
+        return view('series.view', [
+            'series' => $series,
+        ]);
+    }
+
     /**
      * Store a new series.
      *
@@ -102,10 +108,8 @@ class SeriesController extends Controller
 
     }
 
-    public function view(Series $series) {
-        return view('series.view', [
-            'series' => $series,
-        ]);
+    public function schedules(Series $series) {
+        return view('series.schedules', ['series' => $series]);
     }
 
 }

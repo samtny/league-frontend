@@ -23,6 +23,25 @@ class AssociationsController extends Controller
         $this->association = Association::where('subdomain', $subdomain)->first();
     }
 
+    public function view(Association $association) {
+        return view('association.view', ['association' => $association]);
+    }
+
+    public function edit(Association $association) {
+        if (Bouncer::can('edit', $association)) {
+            return view('association.edit', [
+                'association' => $association,
+                'series' => Series::where('association_id', $association->id)->get(),
+                'divisions' => Division::orderBy('sequence', 'ASC')->where('association_id', $association->id)->get(),
+                'venues' => Venue::orderBy('name', 'ASC')->where('association_id', $association->id)->get(),
+                'current_user' => \Auth::user()
+            ]);
+        }
+        else {
+            return view('denied');
+        }
+    }
+
     public function home() {
         if (!empty($this->association)) {
             return view('association.home', ['association' => $this->association]);
@@ -30,10 +49,6 @@ class AssociationsController extends Controller
         else {
             abort(404);
         }
-    }
-
-    public function series(Association $association) {
-        return view('association.series', ['association' => $association]);
     }
 
     public function divisions(Association $association) {
@@ -46,6 +61,10 @@ class AssociationsController extends Controller
 
     public function venues(Association $association) {
         return view('association.venues', ['association' => $association]);
+    }
+
+    public function series(Association $association) {
+        return view('association.series', ['association' => $association]);
     }
 
     public function submitScoreBegin(Request $request) {
@@ -222,21 +241,6 @@ class AssociationsController extends Controller
 
     }
 
-    public function edit(Association $association) {
-        if (Bouncer::can('edit', $association)) {
-            return view('association.edit', [
-                'association' => $association,
-                'series' => Series::where('association_id', $association->id)->get(),
-                'divisions' => Division::orderBy('sequence', 'ASC')->where('association_id', $association->id)->get(),
-                'venues' => Venue::orderBy('name', 'ASC')->where('association_id', $association->id)->get(),
-                'current_user' => \Auth::user()
-            ]);
-        }
-        else {
-            return view('denied');
-        }
-    }
-
     public function create() {
         if (Bouncer::can('create', Association::class)) {
             return view('association.create', ['current_user' => \Auth::user()]);
@@ -266,8 +270,6 @@ class AssociationsController extends Controller
         return redirect()->route('user', ['user' => \Auth::user()])->with('success', 'Association restored successfully.');
     }
 
-    public function view(Association $association) {
-        return view('association.view', ['association' => $association]);
-    }
+
 
 }

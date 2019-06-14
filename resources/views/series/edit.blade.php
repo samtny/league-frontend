@@ -18,20 +18,6 @@
         <form method="POST" action="{{ route('series.update', ['series' => $series ]) }}">
             @csrf
 
-            <div class="form-group">
-                <label for="user_id">Owner</label>
-                <select class="form-control" id="user_id" name="user_id">
-                    <option value="<?php echo($current_user->id); ?>"><?php echo($current_user->name); ?></option>
-                </select>
-            </div>
-
-            <?php if (!empty($series->association)): ?>
-            <div class="form-group">
-                <label for="association">Association</label>
-                <input class="form-control" type="text" readonly value="<?php echo $series->association->name; ?>">
-            </div>
-            <?php endif; ?>
-
             <input type="hidden" name="id" value="{{ $series->id }}">
 
             <input type="hidden" name="url" value="{{  URL::previous()  }}">
@@ -56,34 +42,9 @@
             </div>
 
             <button class="btn btn-primary" id="submit" type="submit">Update</button>
-
-            <div class="form-group">
-                <h2>Schedules</h2>
-                <?php if (!empty($schedules)): ?>
-                    <?php foreach ($schedules as $index => $item): ?>
-                        <a href="{{ route('schedule', ['schedule' => $item ])}}">
-                            <?php echo ('<div class="schedule">' . $item->name . '</div>'); ?> — <?php echo date('Y-m-d', strtotime($item->start_date)); ?>
-                        </a>
-                        <a href="{{ route('schedule.edit', ['schedule' => $item ])}}">
-                            Edit
-                        </a>
-                        <a href="{{ route('results.edit', ['schedule' => $item ])}}">
-                            Edit Results
-                        </a>
-                    <?php endforeach; ?>
-                <?php else: ?>
-                    <div class="message">
-                        No schedules.
-                    </div>
-                <?php endif; ?>
-            </div>
-
-
-
         </form>
     </div>
     <div class="links">
-        <a href="{{ route('schedule.create', [ 'series' => $series ]) }}">Create Schedule</a>
-        <a href="{{ route('series.delete', [ 'series' => $series ]) }}">Delete Series</a>
+        <a class="btn btn-warning" href="{{ route('series.delete', [ 'series' => $series ]) }}">Delete Series</a>
     </div>
 @endsection

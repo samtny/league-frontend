@@ -12,6 +12,7 @@
     </div>
     <div class="associations row">
         <div class="col">
+            <h2>{{ __('Associations') }}</h2>
             <?php $associations = \App\Association::get(); ?>
             <div class="list-group">
             <?php foreach ($associations as $association): ?>

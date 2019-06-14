@@ -1,10 +1,10 @@
 @extends('layouts.admin')
 
 @section('breadcrumb')
-    {{ Breadcrumbs::render('association.view', $association) }}
+    {{ Breadcrumbs::render('series.overview', $series) }}
 @endsection
 
-@section('title', $association->name)
+@section('title', $series->name)
 
 @section('content')
     <div class="row">

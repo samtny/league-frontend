@@ -49,10 +49,7 @@ Route::prefix('result_submission')->group(function () {
 });
 
 Route::prefix('admin')->group(function () {
-    Route::prefix('user')->group(function () {
-        Route::get('create', 'UsersController@create')->name('user');
-        Route::get('{user}', 'UsersController@view')->name('user');
-    });
+    Route::get('/', 'AdminController@admin')->name('admin');
 
     Route::prefix('association')->group(function () {
 
@@ -82,6 +79,7 @@ Route::prefix('admin')->group(function () {
         Route::get('{association}/teams', 'AssociationsController@teams')->name('association.teams');
         Route::get('{association}/venues', 'AssociationsController@venues')->name('association.venues');
         Route::get('{association}/series', 'AssociationsController@series')->name('association.series');
+
         Route::get('create', 'AssociationsController@create')->name('association.create');
         Route::post('create', 'AssociationsController@store');
         Route::post('{association}/update', 'AssociationsController@update')->name('association.update');
@@ -95,12 +93,22 @@ Route::prefix('admin')->group(function () {
 
         Route::get('{association}/undelete', 'AssociationsController@undeleteConfirm')->name('association.undeleteConfirm');
         Route::post('{association}/undelete', 'AssociationsController@undelete')->name('association.undelete');
+
         Route::get('{association}', 'AssociationsController@view')->name('association.view');
     });
+
+    Route::prefix('user')->group(function () {
+        Route::get('create', 'UsersController@create')->name('user');
+        Route::get('{user}', 'UsersController@view')->name('user');
+    });
+
+
 
     Route::prefix('series')->group(function () {
         Route::get('{series}/schedule/create', 'ScheduleController@create')->name('schedule.create');
         Route::post('{series}/schedule/create', 'ScheduleController@store');
+
+        Route::get('{series}/schedules', 'SeriesController@schedules')->name('series.schedules');
 
         Route::get('{series}/edit', 'SeriesController@edit')->name('series.edit');
         Route::get('create', 'SeriesController@create')->name('series.create');
@@ -132,5 +140,5 @@ Route::prefix('admin')->group(function () {
 
     Route::get('users', 'AdminController@users')->name('admin.users');
     Route::get('associations/deleted', 'AdminController@associationsDeleted')->name('admin.associations.deleted');
-    Route::get('/', 'AdminController@overview')->name('admin');
+
 });
