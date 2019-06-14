@@ -32,11 +32,13 @@
                         </a>
                     </li>
                     */ ?>
+                    @can('view-admin-pages')
                     <li>
                         <a id="navbarDropdown" class="nav-link dropdown-toggle" href="{{ route('admin') }}" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" v-pre>
                             {{ __('Admin') }}
                         </a>
                     </li>
+                    @endcan
                     <li>
                         <a class="dropdown-item" href="{{ route('logout') }}"
                             onclick="event.preventDefault();

@@ -7,11 +7,9 @@
 @endsection
 
 @section('content')
-    <div class="row">
-        <h1 class="col">Administration</h1>
-    </div>
+    <h1>Administration</h1>
     <div class="associations row">
-        <div class="col">
+        <div class="col-md-12">
             <h2>{{ __('Associations') }}</h2>
             <?php $associations = \App\Association::get(); ?>
             <div class="list-group">
@@ -22,6 +20,16 @@
                     </a>
                 @endcan
             <?php endforeach; ?>
+            </div>
+        </div>
+    </div>
+    <div class="users row">
+        <div class="col-md-12">
+            <h2>{{ __('Users') }}</h2>
+            <div class="list-group">
+                <a class="list-group-item list-group-item-action" href="{{ route('admin.users') }}">
+                    {{ __('User Management') }}
+                </a>
             </div>
         </div>
     </div>

@@ -33,6 +33,11 @@ Breadcrumbs::for('admin', function ($trail) {
     $trail->push('Admin', route('admin'));
 });
 
+Breadcrumbs::for('admin.users', function ($trail) {
+    $trail->parent('admin');
+    $trail->push('User Management', route('admin.users'));
+});
+
 Breadcrumbs::for('association.view', function ($trail, $association) {
     $trail->parent('admin');
     $trail->push($association->name, route('association.view', $association));

@@ -1,29 +1,18 @@
 @extends('layouts.admin')
 
-@section('title', 'Administer Users')
+@section('title', 'User Management')
+
+@section('breadcrumb')
+    {{ Breadcrumbs::render('admin.users') }}
+@endsection
 
 @section('content')
-    <div class="title m-b-md">
-        Administer Users
-    </div>
-
-    <div class="auth">
-        @if (session('status'))
-            <div class="alert alert-success" role="alert">
-                {{ session('status') }}
-            </div>
-        @endif
-    </div>
-
-    <div class="users">
-        Users
+    <h1>User Management</h1>
+    <div class="users list-group">
         <?php if (!empty($users)): ?>
             <?php foreach ($users as $index => $user): ?>
-                <a href="/user/<?php echo($user->id); ?>">
+                <a class="list-group-item" href="/user/<?php echo($user->id); ?>/edit">
                     <?php echo ('<div class="user">' . $user->name . '</div>'); ?>
-                </a>
-                <a href="/user/<?php echo($user->id); ?>/edit">
-                    Edit
                 </a>
             <?php endforeach; ?>
         <?php else: ?>
