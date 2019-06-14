@@ -13,6 +13,10 @@ use Illuminate\Http\Request;
 class ScheduleController extends Controller
 {
 
+    public function view(Schedule $schedule) {
+        return view('schedule.view', ['schedule' => $schedule]);
+    }
+
     public function create(Series $series) {
         $association_id = $series->association_id;
         $available_series = \App\Series::where(['association_id' => $series->association_id])->get()->all();
@@ -28,6 +32,12 @@ class ScheduleController extends Controller
 
     public function edit(Schedule $schedule) {
         return view('schedule.edit', [
+            'schedule' => $schedule,
+        ]);
+    }
+
+    public function rounds(Schedule $schedule) {
+        return view('schedule.rounds', [
             'schedule' => $schedule,
         ]);
     }

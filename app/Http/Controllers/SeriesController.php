@@ -70,7 +70,7 @@ class SeriesController extends Controller
         $series = series::find($request->id);
 
         $series->name = $request->name;
-        $series->user_id = $request->user_id;
+        //$series->user_id = $request->user_id;
 
         if (isset($request->association_id)) {
             $series->association_id = $request->association_id;

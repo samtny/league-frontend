@@ -119,8 +119,13 @@ Route::prefix('admin')->group(function () {
     });
 
     Route::prefix('schedule')->group(function () {
+        Route::get('{schedule}/round/{round}/edit', 'RoundsController@edit')->name('round.edit');
+        Route::post('{schedule}/round/{id}/update', 'RoundsController@update')->name('round.update');
+        Route::get('{schedule}/rounds', 'ScheduleController@rounds')->name('schedule.rounds');
+
         Route::get('{schedule}/edit', 'ScheduleController@edit')->name('schedule.edit');
         Route::post('{schedule}/update', 'ScheduleController@update')->name('schedule.update');
+        Route::get('{schedule}', 'ScheduleController@view')->name('schedule.view');
     });
 
     Route::prefix('results')->group(function () {

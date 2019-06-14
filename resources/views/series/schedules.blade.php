@@ -10,7 +10,7 @@
     <?php if (!empty($series->schedules)): ?>
     <div class="list-group">
         <?php foreach ($series->schedules as $index => $item): ?>
-            <a class="list-group-item list-group-action" href="{{ route('schedule.edit', ['schedule' => $item ])}}">
+            <a class="list-group-item list-group-action" href="{{ route('schedule.view', ['schedule' => $item ])}}">
                 {{ $item->name }}
             </a>
         <?php endforeach; ?>

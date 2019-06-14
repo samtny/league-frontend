@@ -78,9 +78,29 @@ Breadcrumbs::for('series.schedules', function ($trail, $series) {
     $trail->push(__('Schedules'), route('series.schedules', $series));
 });
 
+Breadcrumbs::for('schedule.view', function ($trail, $schedule) {
+    $trail->parent('series.schedules', $schedule->series);
+    $trail->push($schedule->name, route('schedule.view', $schedule));
+});
+
 Breadcrumbs::for('schedule.edit', function ($trail, $schedule) {
-    $trail->parent('series.edit', $schedule->series);
-    $trail->push(__('Schedule - :start_date', ['start_date' => date('Y-m-d', strtotime($schedule->start_date))]), route('schedule.edit', $schedule));
+    $trail->parent('schedule.view', $schedule);
+    $trail->push(__('Edit'), route('schedule.edit', $schedule));
+});
+
+Breadcrumbs::for('schedule.rounds', function ($trail, $schedule) {
+    $trail->parent('schedule.view', $schedule);
+    $trail->push(__('Rounds'), route('schedule.rounds', $schedule));
+});
+
+Breadcrumbs::for('round.view', function ($trail, $schedule, $round) {
+    $trail->parent('schedule.rounds', $schedule);
+    $trail->push($round->start_date);
+});
+
+Breadcrumbs::for('round.edit', function ($trail, $schedule, $round) {
+    $trail->parent('round.view', $schedule, $round);
+    $trail->push(__('Edit'), route('round.edit', ['schedule' => $schedule, 'round' => $round]));
 });
 
 Breadcrumbs::for('results.edit', function ($trail, $schedule) {
