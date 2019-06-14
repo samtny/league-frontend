@@ -6,7 +6,7 @@ use Tests\TestCase;
 use Illuminate\Foundation\Testing\WithFaker;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
-class AnonymousTest extends TestCase
+class ResultSubmissionsTest extends TestCase
 {
     /**
      * A basic feature test example.
@@ -15,8 +15,8 @@ class AnonymousTest extends TestCase
      */
     public function testExample()
     {
-        $response = $this->get('/admin');
+        $response = $this->get('/admin/results/14/results/submissions');
 
-        $response->assertStatus(302);
+        $response->assertStatus(200);
     }
 }
