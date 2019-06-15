@@ -1,5 +1,7 @@
 <?php
 
+use Spatie\Honeypot\ProtectAgainstSpam;
+
 /*
 |--------------------------------------------------------------------------
 | Web Routes
@@ -17,7 +19,8 @@ Route::domain('{subdomain}.pinballleague.org')->middleware('subdomain')->group(f
     Route::get('/submit', 'AssociationsController@submitScoreBegin')->name('association.submit.score.step1');
     Route::post('/submit/step2', 'AssociationsController@submitScoreStep2')->name('association.submit.score.step2');
     Route::post('/submit/step3', 'AssociationsController@submitScoreStep3')->name('association.submit.score.step3');
-    Route::post('/submit/step4', 'AssociationsController@submitScoreStep4')->name('association.submit.score.step4');
+    Route::post('/submit/step4', 'AssociationsController@submitScoreStep4')->name('association.submit.score.step4')
+        ->middleware(ProtectAgainstSpam::class);
 
     Route::get('/standings', 'AssociationsController@standings')->name('association.standings');
     Route::get('/schedule', 'AssociationsController@schedule')->name('association.schedule');
@@ -79,6 +82,7 @@ Route::prefix('admin')->middleware('admin')->group(function () {
         Route::get('{association}/teams', 'AssociationsController@teams')->name('association.teams');
         Route::get('{association}/venues', 'AssociationsController@venues')->name('association.venues');
         Route::get('{association}/series', 'AssociationsController@series')->name('association.series');
+        Route::get('{association}/users', 'AssociationsController@users')->name('association.users');
 
         Route::get('create', 'AssociationsController@create')->name('association.create');
         Route::post('create', 'AssociationsController@store');
@@ -90,6 +94,8 @@ Route::prefix('admin')->middleware('admin')->group(function () {
                 return App\User::onlyTrashed()->find($id);
             });
         });
+
+        Route::get('{association}/user/add', 'AssociationsController@addUser')->name('association.user.add');
 
         Route::get('{association}/undelete', 'AssociationsController@undeleteConfirm')->name('association.undeleteConfirm');
         Route::post('{association}/undelete', 'AssociationsController@undelete')->name('association.undelete');

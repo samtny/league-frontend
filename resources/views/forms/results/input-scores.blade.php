@@ -10,6 +10,7 @@
     @endcomponent
     <form class="scores" method="POST" action="{{ route('association.submit.score.step4', ['association' => $association]) }}">
         @csrf
+        @honeypot
 
         <input type="hidden" name="match_id" id="match_id" value="<?php echo $match->id; ?>">
         <input type="hidden" name="home_team_id" id="home_team_id" value="<?php echo $match->homeTeam->id; ?>">

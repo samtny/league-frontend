@@ -39,4 +39,9 @@ class Association extends Model
         return $this->hasMany('App\ResultSubmission');
     }
 
+    public function users()
+    {
+        return $this->hasManyThrough('App\User', 'App\AssociationUser', 'association_id', 'id', 'id', 'user_id');
+    }
+
 }

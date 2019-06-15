@@ -67,6 +67,14 @@ class AssociationsController extends Controller
         return view('association.series', ['association' => $association]);
     }
 
+    public function users(Association $association) {
+        return view('association.users', ['association' => $association]);
+    }
+
+    public function addUser(Association $association) {
+        return view('association.user.add', ['association' => $association]);
+    }
+
     public function submitScoreBegin(Request $request) {
         if (!empty($this->association)) {
             // get schedules with start_date < today, end_date > today
