@@ -52,22 +52,32 @@
                                         'venue_id' => $venue->id,
                                         'sequence' => 1,
                                         ])->first();?>
-                                <td>
-                                    <select id="match_<?php echo $match->id; ?>__home_team_id" name="match_<?php echo $match->id; ?>__home_team_id">
-                                        <option value="">- No team -</option>
-                                        <?php foreach($schedule->association->teams->sortBy('name') as $team): ?>
-                                        <option value="<?php echo $team->id; ?>"<?php if($match->home_team_id == $team->id) echo ' selected'; ?>><?php echo $team->name; ?></option>
-                                        <?php endforeach; ?>
-                                    </select>
-                                </td>
-                                <td>
-                                    <select id="match_<?php echo $match->id; ?>__away_team_id" name="match_<?php echo $match->id; ?>__away_team_id">
-                                        <option value="">- No team -</option>
-                                        <?php foreach($schedule->association->teams->sortBy('name') as $team): ?>
-                                        <option value="<?php echo $team->id; ?>"<?php if($match->away_team_id == $team->id) echo ' selected'; ?>><?php echo $team->name; ?></option>
-                                        <?php endforeach; ?>
-                                    </select>
-                                </td>
+
+                                <?php if (!empty($match)): ?>
+                                    <td>
+                                        <select id="match_<?php echo $match->id; ?>__home_team_id" name="match_<?php echo $match->id; ?>__home_team_id">
+                                            <option value="">- No team -</option>
+                                            <?php foreach($schedule->association->teams->sortBy('name') as $team): ?>
+                                            <option value="<?php echo $team->id; ?>"<?php if($match->home_team_id == $team->id) echo ' selected'; ?>><?php echo $team->name; ?></option>
+                                            <?php endforeach; ?>
+                                        </select>
+                                    </td>
+                                    <td>
+                                        <select id="match_<?php echo $match->id; ?>__away_team_id" name="match_<?php echo $match->id; ?>__away_team_id">
+                                            <option value="">- No team -</option>
+                                            <?php foreach($schedule->association->teams->sortBy('name') as $team): ?>
+                                            <option value="<?php echo $team->id; ?>"<?php if($match->away_team_id == $team->id) echo ' selected'; ?>><?php echo $team->name; ?></option>
+                                            <?php endforeach; ?>
+                                        </select>
+                                    </td>
+                                <?php else: ?>
+                                    <td>
+                                        No Match
+                                    </td>
+                                    <td>
+                                        No Match
+                                    </td>
+                                <?php endif; ?>
                             </tr>
                             <?php endforeach; ?>
                         </tbody>
