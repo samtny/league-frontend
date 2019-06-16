@@ -1,11 +1,10 @@
 app/
-bootstrap/
+bootstrap/app.php
 config/
 database/
 public/
 resources/
 routes/
-storage/
 tests/
 .env.example
 artisan
