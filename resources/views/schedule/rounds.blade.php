@@ -27,4 +27,9 @@
             <?php endif; ?>
         </div>
     </div>
+    <div class="row actions">
+        <div class="col">
+            <a class="btn btn-primary" href="{{ route('round.create', ['schedule' => $schedule]) }}">Create Round</a>
+        </div>
+    </div>
 @endsection

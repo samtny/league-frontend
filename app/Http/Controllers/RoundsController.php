@@ -23,9 +23,11 @@ class RoundsController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function create()
+    public function create(Schedule $schedule)
     {
-        //
+        return view('round.create', [
+            'schedule' => $schedule,
+        ]);
     }
 
     /**
@@ -34,9 +36,17 @@ class RoundsController extends Controller
      * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\Response
      */
-    public function store(Request $request)
+    public function store(Request $request, Schedule $schedule)
     {
-        //
+        $round = new Round();
+
+        $round->schedule_id = $schedule->id;
+        $round->start_date = $request->start_date;
+        $round->end_date = $request->end_date;
+
+        $round->name = 'Round X';
+
+        $round->save();
     }
 
     /**
@@ -69,6 +79,11 @@ class RoundsController extends Controller
     public function update(Request $request, $schedule, $id)
     {
         $round = Round::find($id);
+
+        $round->start_date = $request->start_date;
+        $round->end_date = $request->end_date;
+
+        $round->save();
 
         foreach ($round->matches as $match) {
             $home_team_id = $request->{'match_' . $match->id . '__home_team_id'};

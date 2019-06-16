@@ -103,6 +103,9 @@ Route::prefix('admin')->middleware('admin')->group(function () {
 
     // FIXME: route schedule under {association}:
     Route::prefix('schedule')->middleware('admin.association')->group(function () {
+        Route::get('{schedule}/round/create', 'RoundsController@create')->name('round.create');
+        Route::post('{schedule}/round', 'RoundsController@store')->name('round.store');
+
         Route::get('{schedule}/round/{round}/edit', 'RoundsController@edit')->name('round.edit');
         Route::post('{schedule}/round/{id}/update', 'RoundsController@update')->name('round.update');
         Route::get('{schedule}/rounds', 'ScheduleController@rounds')->name('schedule.rounds');

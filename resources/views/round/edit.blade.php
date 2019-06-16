@@ -19,6 +19,20 @@
             <input type="hidden" name="url" value="{{ URL::previous() }}">
 
             <div class="row">
+                <div class="col-md-3">
+                    <label for="start_date">Start Date</label>
+                    <input id="start_date" class="form-control" type="date" name="start_date" value="<?php echo $round->start_date != null ? date('Y-m-d', strtotime($round->start_date)) : null ?>">
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-3">
+                    <label for="end_date">End Date</label>
+                    <input id="end_date" class="form-control" type="date" name="end_date" value="<?php echo $round->end_date != null ? date('Y-m-d', strtotime($round->end_date)) : null ?>">
+                </div>
+            </div>
+
+            <div class="row">
                 <div class="table-responsive">
                     <table class="table">
                         <thead>

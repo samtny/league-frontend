@@ -123,6 +123,11 @@ Breadcrumbs::for('round.view', function ($trail, $schedule, $round) {
     $trail->push($round->start_date);
 });
 
+Breadcrumbs::for('round.create', function ($trail, $schedule) {
+    $trail->parent('schedule.rounds', $schedule);
+    $trail->push(__('Create'), route('round.create', ['schedule' => $schedule]));
+});
+
 Breadcrumbs::for('round.edit', function ($trail, $schedule, $round) {
     $trail->parent('round.view', $schedule, $round);
     $trail->push(__('Edit'), route('round.edit', ['schedule' => $schedule, 'round' => $round]));
