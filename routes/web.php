@@ -29,7 +29,6 @@ Route::domain('{subdomain}.pinballleague.org')->middleware('subdomain')->group(f
 });
 
 Route::prefix('admin')->middleware('admin')->group(function () {
-    Route::get('/', 'AdminController@admin')->name('admin');
 
     Route::prefix('association')->middleware('admin.association')->group(function () {
 
@@ -87,7 +86,8 @@ Route::prefix('admin')->middleware('admin')->group(function () {
         Route::get('{user}', 'UsersController@view')->name('user');
     });
 
-    Route::prefix('series')->group(function () {
+    // FIXME: route series under {association}:
+    Route::prefix('series')->middleware('admin.association')->group(function () {
         Route::get('{series}/schedule/create', 'ScheduleController@create')->name('schedule.create');
         Route::post('{series}/schedule/create', 'ScheduleController@store');
 
@@ -101,7 +101,8 @@ Route::prefix('admin')->middleware('admin')->group(function () {
         Route::get('delete', 'SeriesController@delete')->name('series.delete');
     });
 
-    Route::prefix('schedule')->group(function () {
+    // FIXME: route schedule under {association}:
+    Route::prefix('schedule')->middleware('admin.association')->group(function () {
         Route::get('{schedule}/round/{round}/edit', 'RoundsController@edit')->name('round.edit');
         Route::post('{schedule}/round/{id}/update', 'RoundsController@update')->name('round.update');
         Route::get('{schedule}/rounds', 'ScheduleController@rounds')->name('schedule.rounds');
@@ -111,7 +112,8 @@ Route::prefix('admin')->middleware('admin')->group(function () {
         Route::get('{schedule}', 'ScheduleController@view')->name('schedule.view');
     });
 
-    Route::prefix('results')->group(function () {
+    // FIXME: route results under {association}:
+    Route::prefix('results')->middleware('admin.association')->group(function () {
         Route::get('{schedule}/edit', 'ResultsController@edit')->name('results.edit');
         Route::post('{schedule}/update', 'ResultsController@update')->name('results.update');
         Route::get('{association}/results/submissions', 'ResultSubmissionsController@index')->name('result_submissions.list');
@@ -128,6 +130,8 @@ Route::prefix('admin')->middleware('admin')->group(function () {
 
     Route::get('users', 'AdminController@users')->name('admin.users');
     Route::get('associations/deleted', 'AdminController@associationsDeleted')->name('admin.associations.deleted');
+
+    Route::get('/', 'AdminController@admin')->name('admin');
 
 });
 

@@ -4,6 +4,7 @@ namespace App\Http\Middleware;
 
 use Bouncer;
 use Closure;
+use App\Association;
 
 class CheckAssociation
 {
@@ -17,6 +18,13 @@ class CheckAssociation
     public function handle($request, Closure $next)
     {
         $association = $request->route('association');
+
+        if (empty($association)) {
+            // FIXME: redo routes so we always get association from there instead:
+            $subdomain = array_first(explode('.', $request->getHost()));
+
+            $association = Association::where('subdomain', $subdomain)->first();
+        }
 
         if (Bouncer::can('manage', $association)) {
             return $next($request);

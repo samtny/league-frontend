@@ -40,22 +40,17 @@ class SeriesController extends Controller
     }
 
     public function edit(Series $series) {
-        if (Bouncer::can('edit', $series)) {
-            return view('series.edit', [
-                'current_user' => \Auth::user(),
-                'series' => $series,
-                //'start_date_string' => $series->start_date !== NULL ? date('Y-m-d', $series->start_date) : NULL,
-                'start_date_string' => $series->start_date !== NULL ? date('Y-m-d', strtotime($series->start_date)) : NULL,
-                //'end_date_string' => $series->end_date !== NULL ? date('Y-m-d', $series->end_date) : NULL,
-                'end_date_string' => $series->end_date !== NULL ? date('Y-m-d', strtotime($series->end_date)) : NULL,
-                'associations' => Association::where('user_id', \Auth::user()->id)->get(),
-                'association_id' => $series->association_id,
-                'schedules' => Schedule::where('series_id', $series->id)->orderBy('sequence', 'ASC')->orderBy('start_date', 'ASC')->get(),
-            ]);
-        }
-        else {
-            return view('denied');
-        }
+        return view('series.edit', [
+            'current_user' => \Auth::user(),
+            'series' => $series,
+            //'start_date_string' => $series->start_date !== NULL ? date('Y-m-d', $series->start_date) : NULL,
+            'start_date_string' => $series->start_date !== NULL ? date('Y-m-d', strtotime($series->start_date)) : NULL,
+            //'end_date_string' => $series->end_date !== NULL ? date('Y-m-d', $series->end_date) : NULL,
+            'end_date_string' => $series->end_date !== NULL ? date('Y-m-d', strtotime($series->end_date)) : NULL,
+            'associations' => Association::where('user_id', \Auth::user()->id)->get(),
+            'association_id' => $series->association_id,
+            'schedules' => Schedule::where('series_id', $series->id)->orderBy('sequence', 'ASC')->orderBy('start_date', 'ASC')->get(),
+        ]);
     }
 
     public function create() {
