@@ -10,6 +10,7 @@ use App\ResultSubmission;
 use App\Round;
 use App\Series;
 use App\Schedule;
+use App\User;
 use App\Venue;
 use Bouncer;
 use Illuminate\Http\Request;
@@ -69,6 +70,31 @@ class AssociationsController extends Controller
 
     public function users(Association $association) {
         return view('association.users', ['association' => $association]);
+    }
+
+    public function editUser(Association $association, User $user) {
+        return view('association.user.edit', ['association' => $association, 'user' => $user]);
+    }
+
+    public function updateUser(Request $request, Association $association, User $user) {
+
+        if (isset($request->assoc_admin)) {
+            Bouncer::assign('assocadmin')->to($user);
+            Bouncer::allow($user)->toManage($association);
+        }
+        else {
+            Bouncer::disallow($user)->toManage($association);
+            Bouncer::retract('assocadmin')->from($user);
+        }
+
+        $url = $request->url;
+
+        if (!empty($url)) {
+            return redirect($url)->with('success', 'Data saved successfully!');
+        }
+
+        return redirect()->route('user', ['id' => \Auth::user()->id]);
+
     }
 
     public function addUser(Association $association) {

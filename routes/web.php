@@ -25,36 +25,13 @@ Route::domain('{subdomain}.pinballleague.org')->middleware('subdomain')->group(f
     Route::get('/standings', 'AssociationsController@standings')->name('association.standings');
     Route::get('/schedule', 'AssociationsController@schedule')->name('association.schedule');
     Route::get('/css/association.css', 'AssociationsController@css')->name('association.css');
-});
 
-Route::get('/', function () {
-    return view('home');
-})->name('home');
-
-Route::get('/standings', function () {
-    return view('standings');
-})->name('standings');
-
-Route::prefix('schedule')->group(function () {
-
-
-    Route::get('/', function () {
-        return view('schedule');
-    })->name('schedule');
-});
-
-Auth::routes();
-
-Route::get('/home', 'HomeController@index')->name('home');
-
-Route::prefix('result_submission')->group(function () {
-    Route::post('{id}', 'ResultSubmissionsController@update')->name('result_submission.update');
 });
 
 Route::prefix('admin')->middleware('admin')->group(function () {
     Route::get('/', 'AdminController@admin')->name('admin');
 
-    Route::prefix('association')->group(function () {
+    Route::prefix('association')->middleware('admin.association')->group(function () {
 
         Route::get('{association}/venue/create', 'VenuesController@create')->name('venue.create');
         Route::post('{association}/venue/create', 'VenuesController@store');
@@ -95,6 +72,8 @@ Route::prefix('admin')->middleware('admin')->group(function () {
             });
         });
 
+        Route::get('{association}/user/{user}/edit', 'AssociationsController@editUser')->name('association.user.edit');
+        Route::post('{association}/user/{user}/update', 'AssociationsController@updateUser')->name('association.user.update');
         Route::get('{association}/user/add', 'AssociationsController@addUser')->name('association.user.add');
 
         Route::get('{association}/undelete', 'AssociationsController@undeleteConfirm')->name('association.undeleteConfirm');
@@ -107,8 +86,6 @@ Route::prefix('admin')->middleware('admin')->group(function () {
         Route::get('create', 'UsersController@create')->name('user');
         Route::get('{user}', 'UsersController@view')->name('user');
     });
-
-
 
     Route::prefix('series')->group(function () {
         Route::get('{series}/schedule/create', 'ScheduleController@create')->name('schedule.create');
@@ -153,3 +130,28 @@ Route::prefix('admin')->middleware('admin')->group(function () {
     Route::get('associations/deleted', 'AdminController@associationsDeleted')->name('admin.associations.deleted');
 
 });
+
+Route::get('/', function () {
+    return view('home');
+})->name('home');
+
+Route::get('/standings', function () {
+    return view('standings');
+})->name('standings');
+
+Route::prefix('schedule')->group(function () {
+
+
+    Route::get('/', function () {
+        return view('schedule');
+    })->name('schedule');
+});
+
+Auth::routes();
+
+Route::get('/home', 'HomeController@index')->name('home');
+
+Route::prefix('result_submission')->group(function () {
+    Route::post('{id}', 'ResultSubmissionsController@update')->name('result_submission.update');
+});
+
