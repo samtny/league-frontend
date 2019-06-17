@@ -108,6 +108,10 @@ Route::prefix('admin')->middleware('admin')->group(function () {
 
         Route::get('{schedule}/round/{round}/edit', 'RoundsController@edit')->name('round.edit');
         Route::post('{schedule}/round/{id}/update', 'RoundsController@update')->name('round.update');
+
+        Route::get('{schedule}/round/{round}/delete-confirm', 'RoundsController@deleteConfirm')->name('round.delete-confirm');
+        Route::post('{schedule}/round/{round}/delete', 'RoundsController@destroy')->name('round.delete');
+
         Route::get('{schedule}/rounds', 'ScheduleController@rounds')->name('schedule.rounds');
 
         Route::get('{schedule}/edit', 'ScheduleController@edit')->name('schedule.edit');

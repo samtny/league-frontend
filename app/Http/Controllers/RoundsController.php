@@ -150,14 +150,21 @@ class RoundsController extends Controller
         return redirect()->route('user', ['id' => \Auth::user()->id]);
     }
 
-    /**
-     * Remove the specified resource from storage.
-     *
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
-     */
-    public function destroy($id)
+    public function deleteConfirm(Schedule $schedule, Round $round) {
+        return view('round.delete-confirm', [
+            'schedule' => $schedule,
+            'round' => $round,
+        ]);
+    }
+
+    public function destroy(Schedule $schedule, Round $round)
     {
-        //
+        $round = Round::find($round->id);
+
+        if (!empty($round)) {
+            $round->delete();
+        }
+
+        return redirect()->route('schedule.rounds', ['schedule' => $schedule]);
     }
 }

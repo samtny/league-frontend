@@ -105,6 +105,9 @@
                 <div class="form-group">
                     <input id="submit" class="form-control" type="submit" value="Update"/>
                 </div>
+                <div class="form-group">
+                    <a class="form-control btn btn-warning" type="submit" href="{{ route('round.delete-confirm', ['schedule' => $schedule, 'round' => $round]) }}">Delete Round</a>
+                </div>
             </div>
 
         </form>
