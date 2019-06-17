@@ -16,7 +16,7 @@
                 <div class="list-group">
                 <?php foreach ($schedule->rounds->sortBy('start_date') as $round): ?>
                     <a class="list-group-item list-group-item-action" href="{{ route('round.edit', ['schedule' => $schedule, 'round' => $round]) }}">
-                        <?php echo ('<div class="round">' . $round->start_date . '</div>'); ?>
+                        <?php echo ('<div class="round">' . (!empty($round->name) ? ($round->name . ' - ') : '') . (!empty($round->start_date) ? $round->start_date->format('m-d-Y') : '') . '</div>'); ?>
                     </a>
                 <?php endforeach; ?>
                 </div>

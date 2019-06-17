@@ -20,7 +20,7 @@
 
             <div class="form-group">
                 <label for="name">Name</label>
-                <input class="form-control" id="name" type="text" name="name" value="{{ $round->name }}" class="@error('name') is-invalid @enderror">
+                <input class="form-control" id="name" type="text" name="name" value="{{ old('name', $round->name) }}" class="@error('name') is-invalid @enderror">
                 @error('name')
                     <div class="alert alert-danger">{{ $message }}</div>
                 @enderror
@@ -29,15 +29,23 @@
             <div class="row">
                 <div class="col-md-3">
                     <label for="start_date">Start Date</label>
-                    <input id="start_date" class="form-control" type="date" name="start_date" value="<?php echo $round->start_date != null ? date('Y-m-d', strtotime($round->start_date)) : null ?>">
+                    <?php $start_date_value = $round->start_date != null ? date('Y-m-d', strtotime($round->start_date)) : null ?>
+                    <input id="start_date" class="form-control" type="date" name="start_date" value="{{ old('start_date', $start_date_value) }}">
                 </div>
+                @error('start_date')
+                    <div class="alert alert-danger">{{ $message }}</div>
+                @enderror
             </div>
 
             <div class="row">
                 <div class="col-md-3">
                     <label for="end_date">End Date</label>
-                    <input id="end_date" class="form-control" type="date" name="end_date" value="<?php echo $round->end_date != null ? date('Y-m-d', strtotime($round->end_date)) : null ?>">
+                    <?php $end_date_value = $round->end_date != null ? date('Y-m-d', strtotime($round->end_date)) : null ?>
+                    <input id="end_date" class="form-control" type="date" name="end_date" value="{{ old('end_date', $end_date_value) }}">
                 </div>
+                @error('end_date')
+                    <div class="alert alert-danger">{{ $message }}</div>
+                @enderror
             </div>
 
             <div class="row">

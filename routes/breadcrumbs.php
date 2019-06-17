@@ -120,7 +120,7 @@ Breadcrumbs::for('schedule.rounds', function ($trail, $schedule) {
 
 Breadcrumbs::for('round.view', function ($trail, $schedule, $round) {
     $trail->parent('schedule.rounds', $schedule);
-    $trail->push($round->start_date);
+    $trail->push(!empty($round->start_date) ? $round->start_date : '<empty>');
 });
 
 Breadcrumbs::for('round.create', function ($trail, $schedule) {

@@ -115,6 +115,12 @@ class RoundsController extends Controller
      */
     public function update(Request $request, $schedule, $id)
     {
+        $validatedData = $request->validate([
+            'name' => 'required|max:255',
+            'start_date' => 'required|date',
+            'end_date' => 'required|date',
+        ]);
+
         $round = Round::find($id);
 
         $round->name = $request->name;
