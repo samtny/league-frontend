@@ -3,6 +3,14 @@ language: php
 php:
   - 7.2
 
+before_install:
+  - wget https://raw.githubusercontent.com/nvm-sh/nvm/v0.34.0/install.sh -O ~/.nvm/nvm.sh
+  - source ~/.nvm/nvm.sh
+  - nvm install
+  - node --version
+  - npm install
+  - npm run dev
+
 before_script:
   - cp .env.travis .env
   - composer self-update
