@@ -9,6 +9,16 @@ class Round extends Model
 
     protected $fillable = array('name', 'start_date', 'end_date', 'association_id', 'series_id', 'division_id', 'schedule_id');
 
+    /**
+     * The attributes that should be mutated to dates.
+     *
+     * @var array
+     */
+    protected $dates = [
+        'start_date',
+        'end_date',
+    ];
+
     // Round belongs to a series:
     public function series() {
         return $this->hasOne('App\Series');

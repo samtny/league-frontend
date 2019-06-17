@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Match;
 use App\Round;
 use App\Schedule;
 use Illuminate\Http\Request;
@@ -40,13 +41,49 @@ class RoundsController extends Controller
     {
         $round = new Round();
 
+        $round->name = $request->name;
         $round->schedule_id = $schedule->id;
         $round->start_date = $request->start_date;
         $round->end_date = $request->end_date;
 
-        $round->name = 'Round X';
-
         $round->save();
+
+        $association = $schedule->association;
+        $venues = $association->venues;
+
+        foreach ($venues as $venue) {
+            $match = new Match;
+
+            $match->name = $venue->name . ' – ' . $round->start_date->format('m-d-Y');
+            $match->association_id = $association->id;
+
+            if (!empty($schedule->series)) {
+                $match->series_id = $schedule->series->id;
+
+                if (!empty($schedule->series->division)) {
+                    $match->division_id = $schedule->series->division->id;
+                }
+            }
+
+            // Unique key fields:
+            $match->schedule_id = $schedule->id;
+            $match->round_id = $round->id;
+            $match->venue_id = $venue->id;
+            $match->sequence = 1;
+
+            $match->start_date = $round->start_date;
+            $match->end_date = $round->end_date;
+
+            $match->save();
+        }
+
+        $url = $request->url;
+
+        if (!empty($url)) {
+            return redirect($url)->with('success', __('Data saved successfully!'));
+        }
+
+        return redirect()->route('user', ['id' => \Auth::user()->id]);
     }
 
     /**
@@ -80,6 +117,7 @@ class RoundsController extends Controller
     {
         $round = Round::find($id);
 
+        $round->name = $request->name;
         $round->start_date = $request->start_date;
         $round->end_date = $request->end_date;
 

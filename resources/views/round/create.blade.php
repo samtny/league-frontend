@@ -18,6 +18,14 @@
 
             <input type="hidden" name="url" value="{{ URL::previous() }}">
 
+            <div class="form-group">
+                <label for="name">Name</label>
+                <input class="form-control" id="name" type="text" name="name" value="New Round" class="@error('name') is-invalid @enderror">
+                @error('name')
+                    <div class="alert alert-danger">{{ $message }}</div>
+                @enderror
+            </div>
+
             <div class="row">
                 <div class="col-md-3">
                     <label for="start_date">Start Date</label>
