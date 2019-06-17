@@ -3,6 +3,11 @@ language: php
 php:
   - 7.2
 
+cache:
+  directories:
+    - $HOME/.composer/cache
+    - node_modules
+
 before_install:
   - nvm install
   - node --version
@@ -24,7 +29,3 @@ script:
   - vendor/bin/phpunit -v -c phpunit.xml $PHPUNIT_FLAGS
 
 sudo: false
-
-cache:
-  directories:
-    - $HOME/.composer/cache
