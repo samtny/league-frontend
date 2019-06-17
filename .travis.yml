@@ -10,6 +10,9 @@ before_script:
   - touch database/database.sqlite
   - php artisan key:generate
   - php artisan migrate
+  - php artisan db:seed
+  - php artisan storage:link
+  - php artisan config:cache
 
 script:
   - vendor/bin/phpunit -v -c phpunit.xml $PHPUNIT_FLAGS
