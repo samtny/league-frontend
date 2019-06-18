@@ -16,29 +16,31 @@
 
             <input type="hidden" name="url" value="{{ URL::previous() }}">
 
-            <div class="form-item">
+            @can ('view-association-owner')
+            <div class="form-group">
                 <label for="user_id">Owner</label>
                 <select id="user_id" name="user_id">
                     <option value="<?php echo($current_user->id); ?>"><?php echo($current_user->name); ?></option>
                 </select>
             </div>
+            @endcan
 
             <input type="hidden" name="id" value="{{ $association->id }}">
 
             <input type="hidden" name="url" value="{{  URL::previous()  }}">
 
-            <div class="form-item">
+            <div class="form-group">
                 <label for="name">Name</label>
-                <input id="name" type="text" name="name" value="{{ $association->name }}" class="@error('name') is-invalid @enderror">
+                <input id="name" type="text" class="form-control" name="name" value="{{ $association->name }}" class="@error('name') is-invalid @enderror">
                 @error('name')
                     <div class="alert alert-danger">{{ $message }}</div>
                 @enderror
             </div>
 
             @can ('administer-subdomains')
-                <div class="form-item">
+                <div class="form-group">
                     <label for="name">Subdomain</label>
-                    <input id="subdomain" type="text" name="subdomain" value="{{ $association->subdomain }}" class="@error('subdomain') is-invalid @enderror">
+                    <input id="subdomain" type="text" class="form-control" name="subdomain" value="{{ $association->subdomain }}" class="@error('subdomain') is-invalid @enderror">
                     @error('subdomain')
                         <div class="alert alert-danger">{{ $message }}</div>
                     @enderror
@@ -50,8 +52,16 @@
                 <input type="file" id="home_image_file" name="home_image_file" />
             </div>
 
+            <?php if (!empty($association->subdomain)): ?>
+            <div class="form-group">
+                <label for="favicon">Favicon</label>
+                <input id="favicon" type="file" name="favicon" />
+                <small id="faviconHelp" class="form-text text-muted">Generate an icon at https://realfavicongenerator.net/, choose the path "/storage/favicon/<?php echo $association->subdomain; ?>" and upload the archive file here.</small>
+            </div>
+            <?php endif; ?>
+
             <div class="form-actions">
-                <div class="form-item">
+                <div class="form-group">
                     <input id="submit" type="submit" value="Update"/>
                 </div>
             </div>
