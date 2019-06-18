@@ -9,5 +9,6 @@ $factory->define(Association::class, function (Faker $faker) {
     return [
         'name' => $faker->name,
         'subdomain' => strtolower($faker->word),
+        'user_id' => 1,
     ];
 });

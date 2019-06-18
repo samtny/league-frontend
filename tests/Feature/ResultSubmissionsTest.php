@@ -18,9 +18,11 @@ class ResultSubmissionsTest extends TestCase
      */
     public function testExample()
     {
-        $association = factory(Association::class)->create();
-
         $user = factory(User::class)->create();
+
+        $association = factory(Association::class)->create([
+            'user_id' => $user->id,
+        ]);
 
         Bouncer::assign('assocadmin')->to($user);
         Bouncer::allow($user)->toManage($association);
