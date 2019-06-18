@@ -19,7 +19,7 @@
             @can ('view-association-owner')
             <div class="form-group">
                 <label for="user_id">Owner</label>
-                <select id="user_id" name="user_id">
+                <select id="user_id" class="form-control" name="user_id">
                     <option value="<?php echo($current_user->id); ?>"><?php echo($current_user->name); ?></option>
                 </select>
             </div>
@@ -49,30 +49,26 @@
 
             <div class="form-group">
                 <label for="home_image_file">Homepage Image File</label>
-                <input type="file" id="home_image_file" name="home_image_file" />
+                <input type="file" class="form-control-file" id="home_image_file" name="home_image_file" />
             </div>
 
             <?php if (!empty($association->subdomain)): ?>
             <div class="form-group">
                 <label for="favicon">Favicon</label>
-                <input id="favicon" type="file" name="favicon" />
-                <small id="faviconHelp" class="form-text text-muted">Generate an icon at https://realfavicongenerator.net/, choose the path "/storage/favicon/<?php echo $association->subdomain; ?>" and upload the archive file here.</small>
+                <input id="favicon" type="file" class="form-control-file" name="favicon" />
+                <small id="faviconHelp" class="form-text text-muted">Generate an icon at https://realfavicongenerator.net, choose the path "/storage/favicon/<?php echo $association->subdomain; ?>" on the last step, and submit the archive file here.</small>
             </div>
             <?php endif; ?>
 
             <div class="form-actions">
                 <div class="form-group">
-                    <input id="submit" type="submit" value="Update"/>
+                    <input class="btn btn-primary" id="submit" type="submit" value="Update"/>
                 </div>
             </div>
 
         </form>
     </div>
-
-
-
-
     <div class="links">
-        <a href="{{ route('association.delete', [ 'association' => $association ]) }}">Delete Association</a>
+        <a class="btn btn-warning" href="{{ route('association.delete', [ 'association' => $association ]) }}">Delete Association</a>
     </div>
 @endsection
