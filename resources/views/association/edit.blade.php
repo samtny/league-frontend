@@ -47,10 +47,17 @@
                 </div>
             @endcan
 
+            @if($association->home_image_path)
+            <div class="form-group">
+                <label for="home_image_file_exists">Homepage Image File</label>
+                <input type="text" id="home_image_file_exists" class="form-control" name="home_image_file_exists" value="{{ $association->home_image_path }}" disabled="disabled" />
+            </div>
+            @else
             <div class="form-group">
                 <label for="home_image_file">Homepage Image File</label>
                 <input type="file" class="form-control-file" id="home_image_file" name="home_image_file" />
             </div>
+            @endif
 
             <?php if (!empty($association->subdomain)): ?>
             <div class="form-group">
