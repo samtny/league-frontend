@@ -19,7 +19,7 @@ class CheckAssociation
     {
         $association = $request->route('association');
 
-        if (empty($association)) {
+        if (!($association instanceof Association)) {
             // FIXME: redo routes so we always get association from there instead:
             $subdomain = array_first(explode('.', $request->getHost()));
 
