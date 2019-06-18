@@ -9,17 +9,9 @@
 
         <title>{{ config('app.name', 'Pinball League') }} — @yield('title')</title>
 
+        @section('favicon')
         <!-- Favicon -->
-        <!-- TODO: rework colors as association / subdomain properties: -->
-        <link rel="apple-touch-icon" sizes="180x180" href="/storage/favicon/{{ $subdomain }}/apple-touch-icon.png">
-        <link rel="icon" type="image/png" sizes="32x32" href="/storage/favicon/{{ $subdomain }}/favicon-32x32.png">
-        <link rel="icon" type="image/png" sizes="16x16" href="/storage/favicon/{{ $subdomain }}/favicon-16x16.png">
-        <link rel="manifest" href="/storage/favicon/{{ $subdomain }}/site.webmanifest">
-        <link rel="mask-icon" href="/storage/favicon/{{ $subdomain }}/safari-pinned-tab.svg" color="#5bbad5">
-        <link rel="shortcut icon" href="/storage/favicon/{{ $subdomain }}/favicon.ico">
-        <meta name="msapplication-TileColor" content="#ffc40d">
-        <meta name="msapplication-config" content="/storage/favicon/{{ $subdomain }}/browserconfig.xml">
-        <meta name="theme-color" content="#ebebeb">
+        @show
 
         @if (config('app.env') == 'production')
         <!-- Google Tag Manager -->
