@@ -22,7 +22,7 @@
                     <?php if (!empty($match->homeTeam) && !empty($match->awayTeam)): ?>
                     <li>
                         <a class="button" href="#" onclick="document.getElementById('match_id').value = '<?php echo $match->id; ?>'; document.getElementById('step2_submit').click();">
-                            <?php echo $match->awayTeam->name; ?> @&nbsp;<strong><?php echo $match->homeTeam->name; ?></strong>
+                            <span class="away-team"><?php echo $match->awayTeam->name; ?>&nbsp;@&nbsp;</span><strong><?php echo $match->homeTeam->name; ?></strong>
                         </a>
                     </li>
                     <?php endif; ?>
