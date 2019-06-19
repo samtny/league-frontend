@@ -61,9 +61,11 @@ class ScheduleController extends Controller
         $division = Division::where(['id' => $division_id])->first();
 
         if (!empty($division)) {
+            $schedule->name = $division->name;
             $schedule->sequence = $division->sequence;
         }
         else {
+            $schedule->name = $schedule->start_date;
             $schedule->sequence = null;
         }
 
@@ -121,11 +123,7 @@ class ScheduleController extends Controller
             $start_datetime->add(new \DateInterval('P1D'));
         }
 
-        if (!empty($url)) {
-            return redirect($url)->with('success', __('Schedule saved successfully!'));
-        }
-
-        return redirect()->route('user', ['id' => \Auth::user()->id]);
+        return redirect()->route('series.schedules', ['series' => $series]);
     }
 
     public function update(Request $request) {

@@ -133,9 +133,14 @@ Breadcrumbs::for('series.schedules', function ($trail, $series) {
     $trail->push(__('Schedules'), route('series.schedules', $series));
 });
 
+Breadcrumbs::for('schedule.create', function ($trail, $series) {
+    $trail->parent('series.schedules', $series);
+    $trail->push(__('Create'), route('schedule.create', $series));
+});
+
 Breadcrumbs::for('schedule.view', function ($trail, $schedule) {
     $trail->parent('series.schedules', $schedule->series);
-    $trail->push($schedule->name, route('schedule.view', $schedule));
+    $trail->push($schedule->name ? $schedule->name : '<noname>', route('schedule.view', $schedule));
 });
 
 Breadcrumbs::for('schedule.edit', function ($trail, $schedule) {
