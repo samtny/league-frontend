@@ -25,6 +25,9 @@ class SeriesController extends Controller
      * @return Response
      */
     public function store(Request $request) {
+        $validatedData = $request->validate([
+            'name' => 'required|max:255',
+        ]);
 
         $series = new series;
 
@@ -34,9 +37,7 @@ class SeriesController extends Controller
 
         $series->save();
 
-        // TODO: Do not necessarily "onboard" for certain roles?
-        return redirect()->route('onboard.series', ['series' => $series]);
-
+        return redirect()->route('association.series', ['association' => Association::find($request->association_id)]);
     }
 
     public function edit(Series $series) {
@@ -61,6 +62,9 @@ class SeriesController extends Controller
     }
 
     public function update(Request $request) {
+        $validatedData = $request->validate([
+            'name' => 'required|max:255',
+        ]);
 
         $series = series::find($request->id);
 
@@ -93,14 +97,7 @@ class SeriesController extends Controller
 
         $request->session()->flash('message', __('Successfully updated series :series!', ['series' => $series->name]));
 
-        $url = $request->url;
-
-        if (!empty($url)) {
-            return redirect($url)->with('success', __('Data saved successfully!'));
-        }
-
-        return redirect()->route('user', ['id' => \Auth::user()->id]);
-
+        return redirect()->route('series.view', ['series' => $series]);
     }
 
     public function schedules(Series $series) {

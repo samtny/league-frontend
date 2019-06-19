@@ -24,7 +24,7 @@
 
             <div class="form-group">
                 <label for="name">Name</label>
-                <input class="form-control" id="name" type="text" name="name" value="{{ $series->name }}" class="@error('name') is-invalid @enderror">
+                <input class="form-control @error('name') is-invalid @enderror" id="name" type="text" name="name" value="{{ old('name', $series->name) }}">
                 @error('name')
                     <div class="alert alert-danger">{{ $message }}</div>
                 @enderror
@@ -32,12 +32,12 @@
 
             <div class="form-group">
                 <label for="start_date">Start Date</label>
-                <input class="form-control" id="start_date" type="date" name="start_date" value="{{ $start_date_string }}">
+                <input class="form-control" id="start_date" type="date" name="start_date" value="{{ old('start_date', $start_date_string) }}">
             </div>
 
             <div class="form-group">
                 <label for="end_date">End Date</label>
-                <input class="form-control" id="end_date" type="date" name="end_date" value="{{ $end_date_string }}">
+                <input class="form-control" id="end_date" type="date" name="end_date" value="{{ old('end_date', $end_date_string) }}">
             </div>
 
             <div class="form-actions">
