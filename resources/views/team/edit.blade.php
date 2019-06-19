@@ -18,10 +18,20 @@
 
             <div class="form-group">
                 <label for="name">Name</label>
-                <input id="name" type="text" class="form-control" name="name" value="{{ $team->name }}" class="@error('name') is-invalid @enderror">
+                <input id="name" type="text" class="form-control" name="name" value="{{ old('name', $team->name) }}" class="@error('name') is-invalid @enderror">
                 @error('name')
                     <div class="alert alert-danger">{{ $message }}</div>
                 @enderror
+            </div>
+
+            <div class="form-group">
+                <label for="venue_id">Home Venue</label>
+                <select class="form-control" id="venue_id" name="venue_id">
+                    <option value="">- No Venue -</option>
+                    <?php foreach($team->association->venues->sortBy('name') as $venue): ?>
+                    <option value="<?php echo $venue->id; ?>"<?php echo $team->venue_id == $venue->id ? ' selected' : ''; ?>><?php echo $venue->name; ?></option>
+                    <?php endforeach; ?>
+                </select>
             </div>
 
             <div class="form-actions">

@@ -2,10 +2,14 @@
 
 @section('title', 'Create Team')
 
+@section('breadcrumb')
+    {{ Breadcrumbs::render('team.create', $association) }}
+@endsection
+
 @section('content')
-    <div class="title m-b-md">
+    <h1>
         Create Team
-    </div>
+    </h1>
     <div class="form">
         <form method="POST" action="{{ route('team.create', ['association' => $association]) }}">
             @csrf
@@ -14,18 +18,18 @@
 
             <input type="hidden" name="association_id" value="<?php echo($association->id); ?>">
 
-            <div class="form-item">
+            <div class="form-group">
                 <label for="name">Name</label>
-                <input id="name" type="text" name="name" class="@error('name') is-invalid @enderror">
+                <input id="name" type="text" class="form-control" name="name" class="@error('name') is-invalid @enderror">
                 @error('name')
                     <div class="alert alert-danger">{{ $message }}</div>
                 @enderror
-                <span class="form-item-help">Enter a name for this Team</span>
+                <small class="form-text text-muted">Enter a name for this Team</small>
             </div>
 
-            <div class="form-item">
+            <div class="form-group">
                 <label for="venue_id">Home Venue</label>
-                <select id="venue_id" name="venue_id">
+                <select class="form-control" id="venue_id" name="venue_id">
                     <option value="">- No Venue -</option>
                     <?php foreach($association->venues->sortBy('name') as $venue): ?>
                     <option value="<?php echo $venue->id; ?>"><?php echo $venue->name; ?></option>
@@ -34,8 +38,8 @@
             </div>
 
             <div class="form-actions">
-                <div class="form-item">
-                    <input id="submit" type="submit" value="Submit"/>
+                <div class="form-group">
+                    <input class="btn btn-primary" id="submit" type="submit" value="Submit"/>
                 </div>
             </div>
 
