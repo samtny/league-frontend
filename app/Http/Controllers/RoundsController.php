@@ -39,6 +39,11 @@ class RoundsController extends Controller
      */
     public function store(Request $request, Schedule $schedule)
     {
+        $validatedData = $request->validate([
+            'name' => 'required|max:255',
+            'start_date' => 'required|date',
+        ]);
+
         $round = new Round();
 
         $round->name = $request->name;
@@ -77,13 +82,7 @@ class RoundsController extends Controller
             $match->save();
         }
 
-        $url = $request->url;
-
-        if (!empty($url)) {
-            return redirect($url)->with('success', __('Data saved successfully!'));
-        }
-
-        return redirect()->route('user', ['id' => \Auth::user()->id]);
+        return redirect()->route('schedule.rounds', ['schedule' => $schedule]);
     }
 
     /**
@@ -118,7 +117,6 @@ class RoundsController extends Controller
         $validatedData = $request->validate([
             'name' => 'required|max:255',
             'start_date' => 'required|date',
-            'end_date' => 'required|date',
         ]);
 
         $round = Round::find($id);
@@ -141,13 +139,7 @@ class RoundsController extends Controller
 
         $request->session()->flash('message', __('Successfully updated round'));
 
-        $url = $request->url;
-
-        if (!empty($url)) {
-            return redirect($url)->with('success', __('Data saved successfully!'));
-        }
-
-        return redirect()->route('user', ['id' => \Auth::user()->id]);
+        return redirect()->route('schedule.rounds', ['schedule' => $schedule]);
     }
 
     public function deleteConfirm(Schedule $schedule, Round $round) {

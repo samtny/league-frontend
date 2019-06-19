@@ -20,29 +20,28 @@
 
             <div class="form-group">
                 <label for="name">Name</label>
-                <input class="form-control" id="name" type="text" name="name" value="New Round" class="@error('name') is-invalid @enderror">
+                <input class="form-control @error('name') is-invalid @enderror" id="name" type="text" name="name" value="{{ old('name') }}" placeholder="New Round">
                 @error('name')
                     <div class="alert alert-danger">{{ $message }}</div>
                 @enderror
             </div>
 
-            <div class="row">
-                <div class="col-md-3">
-                    <label for="start_date">Start Date</label>
-                    <input id="start_date" class="form-control" type="date" name="start_date">
-                </div>
+            <div class="form-group">
+                <label for="start_date">Start Date</label>
+                <input id="start_date" class="form-control @error('start_date') is-invalid @enderror" type="date" name="start_date">
+                @error('start_date')
+                    <div class="alert alert-danger">{{ $message }}</div>
+                @enderror
             </div>
 
-            <div class="row">
-                <div class="col-md-3">
-                    <label for="end_date">End Date</label>
-                    <input id="end_date" class="form-control" type="date" name="end_date">
-                </div>
+            <div class="form-group">
+                <label for="end_date">End Date</label>
+                <input id="end_date" class="form-control" type="date" name="end_date">
             </div>
 
             <div class="form-actions">
                 <div class="form-group">
-                    <input id="submit" class="form-control" type="submit" value="Create"/>
+                    <input id="submit" class="btn btn-primary" type="submit" value="Create"/>
                 </div>
             </div>
 

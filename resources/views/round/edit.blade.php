@@ -20,7 +20,7 @@
 
             <div class="form-group">
                 <label for="name">Name</label>
-                <input class="form-control" id="name" type="text" name="name" value="{{ old('name', $round->name) }}" class="@error('name') is-invalid @enderror">
+                <input class="form-control @error('name') is-invalid @enderror" id="name" type="text" name="name" value="{{ old('name', $round->name) }}">
                 @error('name')
                     <div class="alert alert-danger">{{ $message }}</div>
                 @enderror
@@ -29,7 +29,7 @@
             <div class="form-group">
                 <label for="start_date">Start Date</label>
                 <?php $start_date_value = $round->start_date != null ? date('Y-m-d', strtotime($round->start_date)) : null ?>
-                <input id="start_date" class="form-control" type="date" name="start_date" value="{{ old('start_date', $start_date_value) }}">
+                <input id="start_date" class="form-control @error('start_date') is-invalid @enderror" type="date" name="start_date" value="{{ old('start_date', $start_date_value) }}">
                 @error('start_date')
                     <div class="alert alert-danger">{{ $message }}</div>
                 @enderror
