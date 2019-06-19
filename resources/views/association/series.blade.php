@@ -10,7 +10,7 @@
     <div class="row">
         <h1 class="col"><?php echo $association->name; ?> - Series</h1>
     </div>
-    <div class="series row">
+    <div class="series row mb-3">
         <div class="col">
             <?php if (!$association->series->isEmpty()): ?>
                 <div class="list-group">
@@ -27,7 +27,7 @@
             <?php endif; ?>
         </div>
     </div>
-    <div class="actions row mt-4">
+    <div class="actions row">
         <div class="col">
             <a class="btn btn-primary" href="{{ route('series.create') }}">Create New Series</a>
         </div>

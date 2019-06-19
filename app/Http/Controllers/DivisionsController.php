@@ -18,6 +18,10 @@ class DivisionsController extends Controller
 
     public function store(Association $association, Request $request) {
         if (Bouncer::can('create', Division::class)) {
+            $validatedData = $request->validate([
+                'name' => 'required|max:255',
+            ]);
+
             $division = new Division;
 
             $division->name = $request->name;
@@ -26,11 +30,7 @@ class DivisionsController extends Controller
 
             $division->save();
 
-            if (!empty($request->url)) {
-                return redirect($request->url)->with('success', 'Data saved successfully!');
-            }
-
-            return redirect()->route('user', ['id' => \Auth::user()->id]);
+            return redirect()->route('association.divisions', ['association' => $association]);
         }
         else {
             return view('denied');
@@ -39,17 +39,17 @@ class DivisionsController extends Controller
 
     public function update(Association $association, Division $division, Request $request) {
         if (Bouncer::can('update', Division::class)) {
+            $validatedData = $request->validate([
+                'name' => 'required|max:255',
+            ]);
+
             $division->name = $request->name;
             $division->sequence = $request->sequence;
             $division->association_id = $association->id;
 
             $division->save();
 
-            if (!empty($request->url)) {
-                return redirect($request->url)->with('success', 'Data saved successfully!');
-            }
-
-            return redirect()->route('user', ['id' => \Auth::user()->id]);
+            return redirect()->route('association.divisions', ['association' => $association]);
         }
         else {
             return view('denied');

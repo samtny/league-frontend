@@ -10,7 +10,7 @@
     <div class="row">
         <h1 class="col"><?php echo $schedule->name; ?> - Rounds</h1>
     </div>
-    <div class="row rounds">
+    <div class="row rounds mb-3">
         <div class="col">
             <?php if (!$schedule->rounds->isEmpty()): ?>
                 <div class="list-group">

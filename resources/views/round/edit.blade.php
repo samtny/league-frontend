@@ -26,29 +26,25 @@
                 @enderror
             </div>
 
-            <div class="row">
-                <div class="col-md-3">
-                    <label for="start_date">Start Date</label>
-                    <?php $start_date_value = $round->start_date != null ? date('Y-m-d', strtotime($round->start_date)) : null ?>
-                    <input id="start_date" class="form-control" type="date" name="start_date" value="{{ old('start_date', $start_date_value) }}">
-                </div>
+            <div class="form-group">
+                <label for="start_date">Start Date</label>
+                <?php $start_date_value = $round->start_date != null ? date('Y-m-d', strtotime($round->start_date)) : null ?>
+                <input id="start_date" class="form-control" type="date" name="start_date" value="{{ old('start_date', $start_date_value) }}">
                 @error('start_date')
                     <div class="alert alert-danger">{{ $message }}</div>
                 @enderror
             </div>
 
-            <div class="row">
-                <div class="col-md-3">
-                    <label for="end_date">End Date</label>
-                    <?php $end_date_value = $round->end_date != null ? date('Y-m-d', strtotime($round->end_date)) : null ?>
-                    <input id="end_date" class="form-control" type="date" name="end_date" value="{{ old('end_date', $end_date_value) }}">
-                </div>
+            <div class="form-group">
+                <label for="end_date">End Date</label>
+                <?php $end_date_value = $round->end_date != null ? date('Y-m-d', strtotime($round->end_date)) : null ?>
+                <input id="end_date" class="form-control" type="date" name="end_date" value="{{ old('end_date', $end_date_value) }}">
                 @error('end_date')
                     <div class="alert alert-danger">{{ $message }}</div>
                 @enderror
             </div>
 
-            <div class="row">
+            <div class="form-group">
                 <div class="table-responsive">
                     <table class="table">
                         <thead>
@@ -103,10 +99,10 @@
 
             <div class="form-actions">
                 <div class="form-group">
-                    <input id="submit" class="form-control" type="submit" value="Update"/>
+                    <input id="submit" class="btn btn-primary" type="submit" value="Update"/>
                 </div>
                 <div class="form-group">
-                    <a class="form-control btn btn-warning" type="submit" href="{{ route('round.delete-confirm', ['schedule' => $schedule, 'round' => $round]) }}">Delete Round</a>
+                    <a class="btn btn-warning" type="submit" href="{{ route('round.delete-confirm', ['schedule' => $schedule, 'round' => $round]) }}">Delete Round</a>
                 </div>
             </div>
 

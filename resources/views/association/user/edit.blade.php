@@ -16,16 +16,18 @@
 
             <input type="hidden" name="url" value="{{ URL::previous() }}">
 
+            <div class="form-group">
             <div class="form-check">
                 <input class="form-check-input" name="assoc_admin" type="checkbox" value="assoc_admin" id="assoc_admin" <?php echo $user->isAn('assocadmin') ? ' checked' : ''; ?>>
                 <label class="form-check-label" for="assoc_admin">
                     Association Admin
                 </label>
             </div>
+            </div>
 
             <div class="form-actions">
-                <div class="form-item">
-                    <input id="submit" type="submit" value="Update"/>
+                <div class="form-group">
+                    <input class="btn btn-primary" id="submit" type="submit" value="Update"/>
                 </div>
             </div>
 

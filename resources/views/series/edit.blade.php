@@ -30,21 +30,25 @@
                 @enderror
             </div>
 
-            <div class="form-row">
-                <div class="col-md-6">
-                    <label for="start_date">Start Date</label>
-                    <input class="form-control" id="start_date" type="date" name="start_date" value="{{ $start_date_string }}">
-                </div>
-                <div class="col-md-6">
-                    <label for="end_date">End Date</label>
-                    <input class="form-control" id="end_date" type="date" name="end_date" value="{{ $end_date_string }}">
-                </div>
+            <div class="form-group">
+                <label for="start_date">Start Date</label>
+                <input class="form-control" id="start_date" type="date" name="start_date" value="{{ $start_date_string }}">
             </div>
 
-            <button class="btn btn-primary" id="submit" type="submit">Update</button>
+            <div class="form-group">
+                <label for="end_date">End Date</label>
+                <input class="form-control" id="end_date" type="date" name="end_date" value="{{ $end_date_string }}">
+            </div>
+
+            <div class="form-actions">
+                <div class="form-group">
+                    <button class="btn btn-primary" id="submit" type="submit">Update</button>
+                </div>
+                <div class="form-group">
+                    <a class="btn btn-warning" href="{{ route('series.delete', [ 'series' => $series ]) }}">Delete Series</a>
+                </div>
+            </div>
         </form>
     </div>
-    <div class="links">
-        <a class="btn btn-warning" href="{{ route('series.delete', [ 'series' => $series ]) }}">Delete Series</a>
-    </div>
+
 @endsection

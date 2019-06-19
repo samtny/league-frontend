@@ -58,6 +58,11 @@ Breadcrumbs::for('association.divisions', function ($trail, $association) {
     $trail->push('Divisions', route('association.divisions', $association));
 });
 
+Breadcrumbs::for('division.create', function ($trail, $association) {
+    $trail->parent('association.divisions', $association);
+    $trail->push('Create Division', route('division.create', ['association' => $association]));
+});
+
 Breadcrumbs::for('division.edit', function ($trail, $association, $division) {
     $trail->parent('association.divisions', $association);
     $trail->push('Edit Division', route('division.edit', ['association' => $association, 'division' => $division]));
