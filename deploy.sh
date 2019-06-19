@@ -51,7 +51,7 @@ DOCROOT=$config_league_frontend_docroot
 
 RSYNC_EXCLUDE=""
 
-if [ "$CONFIG" == "production" ]; then
+if [ "$CONFIG" = "production" ]; then
   npm run production
 else
   npm run dev
@@ -69,6 +69,11 @@ if [ "$DEPENDENCIES" = true ]; then
   else
     cd ${DOCROOT} && ./build.sh ${CONFIG}
   fi
+fi
+
+if [ "$CONFIG" = "production" ]; then
+  echo -e "Setting PRODUCTION permissions"
+  ssh ${USER}@${HOST} "cd ${DOCROOT} && sudo chown -R ubuntu:www-data storage && sudo chmod -R 0775 storage && sudo chown -R ubuntu:www-data bootstrap/cache && sudo chmod -R 0775 bootstrap/cache"
 fi
 
 if [ "$INITIALIZE" = true ]; then

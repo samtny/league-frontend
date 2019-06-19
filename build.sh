@@ -52,10 +52,6 @@ else
   ${php} -d allow_url_fopen=On composer.phar install
 fi
 
-if [ "$config_league_frontend_runmode" = "production" ]; then
-  echo -e "Setting PRODUCTION permissions"
-  sudo chown -R ubuntu:www-data storage
-  sudo chmod -R 0775 storage
-fi
+
 
 exit 0
