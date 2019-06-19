@@ -18,6 +18,10 @@ class VenuesController extends Controller
 
     public function store(Association $association, Request $request) {
         if (Bouncer::can('create', Venue::class)) {
+            $validatedData = $request->validate([
+                'name' => 'required|max:255',
+            ]);
+
             $venue = new venue;
 
             $venue->name = $request->name;
@@ -25,11 +29,7 @@ class VenuesController extends Controller
 
             $venue->save();
 
-            if (!empty($request->url)) {
-                return redirect($request->url)->with('success', 'Data saved successfully!');
-            }
-
-            return redirect()->route('user', ['id' => \Auth::user()->id]);
+            return redirect()->route('association.venues', ['association' => $association]);
         }
         else {
             return view('denied');
@@ -47,17 +47,17 @@ class VenuesController extends Controller
 
     public function update(Venue $venue, Request $request) {
         if (Bouncer::can('update', Venue::class)) {
+            $validatedData = $request->validate([
+                'name' => 'required|max:255',
+            ]);
+
             $venue = Venue::where(['id' => $venue->id])->first();
 
             $venue->name = $request->name;
 
             $venue->save();
 
-            if (!empty($request->url)) {
-                return redirect($request->url)->with('success', 'Data saved successfully!');
-            }
-
-            return redirect()->route('admin');
+            return redirect()->route('association.venues', ['association' => $venue->association]);
         }
         else {
             return view('denied');

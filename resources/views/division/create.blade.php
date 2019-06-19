@@ -18,7 +18,7 @@
 
             <div class="form-group">
                 <label for="name">Name</label>
-                <input id="name" type="text" class="form-control" name="name" class="@error('name') is-invalid @enderror">
+                <input id="name" type="text" class="form-control @error('name') is-invalid @enderror" name="name" value="{{ old('name') }}">
                 @error('name')
                     <div class="alert alert-danger">{{ $message }}</div>
                 @enderror
@@ -27,7 +27,7 @@
 
             <div class="form-group">
                 <label for="sequence">Sequence</label>
-                <input id="sequence" type="text" class="form-control" name="sequence" class="@error('sequence') is-invalid @enderror">
+                <input id="sequence" type="text" class="form-control @error('sequence') is-invalid @enderror" name="sequence" value="{{ old('sequence') }}">
                 @error('sequence')
                     <div class="alert alert-danger">{{ $message }}</div>
                 @enderror
