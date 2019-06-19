@@ -10,7 +10,7 @@
     <div class="row">
         <h1 class="col"><?php echo $association->name; ?> - Divisions</h1>
     </div>
-    <div class="divisions row">
+    <div class="divisions row mb-3">
         <div class="col">
             <?php if (!$association->divisions->isEmpty()): ?>
                 <div class="list-group">
@@ -27,7 +27,7 @@
             <?php endif; ?>
         </div>
     </div>
-    <div class="actions row mt-4">
+    <div class="actions row">
         <div class="col">
             <a class="btn btn-primary" href="{{ route('division.create', ['association' => $association]) }}">Create New Division</a>
         </div>

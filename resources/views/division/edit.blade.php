@@ -2,6 +2,10 @@
 
 @section('title', 'Edit Division')
 
+@section('breadcrumb')
+    {{ Breadcrumbs::render('division.edit', $association, $division) }}
+@endsection
+
 @section('content')
     <div class="row">
         <h1 class="col"><?php echo $division->name; ?></h1>
@@ -12,30 +16,30 @@
 
             <input type="hidden" name="url" value="{{  URL::previous()  }}">
 
-            <div class="form-item">
+            <div class="form-group">
                 <label for="name">Name</label>
-                <input id="name" type="text" name="name" value="{{ $division->name }}" class="@error('name') is-invalid @enderror">
+                <input id="name" type="text" class="form-control" name="name" value="{{ $division->name }}" class="@error('name') is-invalid @enderror">
                 @error('name')
                     <div class="alert alert-danger">{{ $message }}</div>
                 @enderror
-                <span class="form-item-help">Enter a name for this Division, like <em>"A Division"</em></span>
+                <small class="form-text text-muted">Enter a name for this Division, like <em>"A Division"</em></small>
             </div>
 
-            <div class="form-item">
+            <div class="form-group">
                 <label for="sequence">Sequence</label>
-                <input id="sequence" type="text" name="sequence" value="{{ $division->sequence }}" class="@error('sequence') is-invalid @enderror">
+                <input id="sequence" type="text" class="form-control" name="sequence" value="{{ $division->sequence }}" class="@error('sequence') is-invalid @enderror">
                 @error('sequence')
                     <div class="alert alert-danger">{{ $message }}</div>
                 @enderror
-                <span class="form-item-help">Use this to order divisions in display, e.g. <em>"1"</em>, <em>"2"</em>, etc., or leave empty for alpha display.</span>
+                <small class="form-text text-muted">Use this to order divisions in display, e.g. <em>"1"</em>, <em>"2"</em>, etc., or leave empty for alpha display.</small>
             </div>
 
             <div class="form-actions">
-                <div class="form-item">
-                    <input id="submit" type="submit" value="Update"/>
+                <div class="form-group">
+                    <input class="btn btn-primary" id="submit" type="submit" value="Update"/>
                 </div>
-                <div class="form-item">
-                    <a href="{{ route('division.deleteConfirm', ['association' => $association, 'division' => $division]) }}">Delete Division</a>
+                <div class="form-group">
+                    <a class="btn btn-warning" href="{{ route('division.deleteConfirm', ['association' => $association, 'division' => $division]) }}">Delete Division</a>
                 </div>
             </div>
 

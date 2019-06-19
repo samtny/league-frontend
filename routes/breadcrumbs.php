@@ -58,14 +58,29 @@ Breadcrumbs::for('association.divisions', function ($trail, $association) {
     $trail->push('Divisions', route('association.divisions', $association));
 });
 
+Breadcrumbs::for('division.edit', function ($trail, $association, $division) {
+    $trail->parent('association.divisions', $association);
+    $trail->push('Edit Division', route('division.edit', ['association' => $association, 'division' => $division]));
+});
+
 Breadcrumbs::for('association.teams', function ($trail, $association) {
     $trail->parent('association.view', $association);
     $trail->push('Teams', route('association.teams', $association));
 });
 
+Breadcrumbs::for('team.edit', function ($trail, $team) {
+    $trail->parent('association.teams', $team->association);
+    $trail->push('Edit Team', route('team.edit', ['association' => $team->association, 'team' => $team]));
+});
+
 Breadcrumbs::for('association.venues', function ($trail, $association) {
     $trail->parent('association.view', $association);
     $trail->push('Venues', route('association.venues', $association));
+});
+
+Breadcrumbs::for('venue.edit', function ($trail, $venue) {
+    $trail->parent('association.venues', $venue->association);
+    $trail->push('Edit Venue', route('venue.edit', ['association' => $venue->association, 'venue' => $venue]));
 });
 
 Breadcrumbs::for('association.series', function ($trail, $association) {

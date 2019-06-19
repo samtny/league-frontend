@@ -10,7 +10,7 @@
     <div class="row">
         <h1 class="col"><?php echo $association->name; ?> - Teams</h1>
     </div>
-    <div class="teams row">
+    <div class="teams row mb-3">
         <div class="col">
             <?php if (!$association->teams->isEmpty()): ?>
                 <div class="list-group">
@@ -27,7 +27,7 @@
             <?php endif; ?>
         </div>
     </div>
-    <div class="actions row mt-4">
+    <div class="actions row">
         <div class="col">
             <a class="btn btn-primary" href="{{ route('team.create', ['association' => $association ]) }}">Create New Team</a>
         </div>

@@ -12,7 +12,7 @@
         <div class="col-md-12">
             <h2>{{ __('Associations') }}</h2>
             <?php $associations = \App\Association::get(); ?>
-            <div class="list-group">
+            <div class="list-group mb-3">
             <?php foreach ($associations as $association): ?>
                 @can('manage', $association)
                     <a class="list-group-item list-group-item-action" href="{{ route('association.view', ['association' => $association]) }}">
@@ -21,6 +21,10 @@
                 @endcan
             <?php endforeach; ?>
             </div>
+        </div>
+    </div>
+    <div class="association-actions row mb-3">
+        <div class="col-md-12">
             @can('create', \App\Association::class)
             <a class="btn btn-primary" href="{{ route('association.create') }}">Create Association</a>
             @endcan
