@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 class Round extends Model
 {
 
-    protected $fillable = array('name', 'start_date', 'end_date', 'association_id', 'series_id', 'division_id', 'schedule_id');
+    protected $fillable = array('name', 'start_date', 'end_date', 'association_id', 'series_id', 'division_id', 'schedule_id', 'scores_closed');
 
     /**
      * The attributes that should be mutated to dates.

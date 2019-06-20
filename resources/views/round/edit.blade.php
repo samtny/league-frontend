@@ -45,6 +45,16 @@
             </div>
 
             <div class="form-group">
+                <div class="form-check">
+                    <input class="form-check-input" name="scores_closed" type="checkbox" value="scores_closed" id="scores_closed" <?php echo old('scores_closed', $round->scores_closed) ? ' checked' : ''; ?>>
+                    <label class="form-check-label" for="assoc_admin">
+                        Close Score Submissions
+                    </label>
+                    <small class="form-text text-muted">When checked, score submission will not be available for this round.</small>
+                </div>
+            </div>
+
+            <div class="form-group">
                 <div class="table-responsive">
                     <table class="table">
                         <thead>

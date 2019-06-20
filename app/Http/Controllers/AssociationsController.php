@@ -142,10 +142,14 @@ class AssociationsController extends Controller
                 ->where('end_date', '>=', date('Y-m-d', strtotime('today')))
                 ->where('division_id', $division->id);
 
-            // get rounds with start_date < today, but greater than today - 1 week
+            // get rounds with start_date < today, but greater than today - 1 week, not closed
             $rounds = Round::whereIn('schedule_id', $schedules->pluck('id'))
-                ->where('start_date','>=', date('Y-m-d', strtotime('-1 week')))
+                ->where('start_date', '>=', date('Y-m-d', strtotime('-1 week')))
                 ->where('start_date', '<=', date('Y-m-d', strtotime("today")))
+                ->where(function ($query) {
+                    $query->where('scores_closed', 0);
+                    $query->orWhereNull('scores_closed');
+                })
                 ->orderBy('start_date', 'DESC')
                 ->get();
 

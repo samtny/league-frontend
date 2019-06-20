@@ -124,6 +124,7 @@ class RoundsController extends Controller
         $round->name = $request->name;
         $round->start_date = $request->start_date;
         $round->end_date = $request->end_date;
+        $round->scores_closed = isset($request->scores_closed);
 
         $round->save();
 
