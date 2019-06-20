@@ -13,7 +13,7 @@
         <input type="hidden" name="match_id" id="match_id" value="">
         <input type="submit" name="step2_submit" id="step2_submit" value="Choose">
     </form>
-    <?php foreach ($rounds as $round): ?>
+    @forelse($rounds as $round)
     <h2 class="round-title"><?php echo date('l, M j', strtotime($round->start_date)); ?></h2>
     <div class="link-buttons matches">
         <nav class="association-nav">
@@ -30,5 +30,9 @@
             </ul>
         </nav>
     </div>
-    <?php endforeach; ?>
+    @empty
+    <div class="message no-scores">
+        No rounds are available for score submission.
+    </div>
+    @endforelse
 @endsection
