@@ -21,7 +21,7 @@ class Round extends Model
 
     // Round belongs to a series:
     public function series() {
-        return $this->hasOne('App\Series');
+        return $this->belongsTo('App\Series');
     }
 
     public function schedule()

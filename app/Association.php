@@ -39,6 +39,16 @@ class Association extends Model
         return $this->hasMany('App\ResultSubmission');
     }
 
+    public function rounds() {
+        return $this->hasManyThrough('App\Round', 'App\Schedule', 'association_id', 'schedule_id', 'id', 'id');
+    }
+
+    public function activeRounds() {
+        return $this->rounds()
+            ->where('rounds.start_date', '>=', date('Y-m-d', strtotime('today')))
+            ->where('rounds.start_date', '<=', date('Y-m-d', strtotime('now +7 days')) );
+    }
+
     public function users() {
         return $this->hasManyThrough('App\User', 'App\AssociationUser', 'association_id', 'id', 'id', 'user_id');
     }
