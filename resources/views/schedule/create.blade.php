@@ -16,16 +16,17 @@
 
             <input type="hidden" name="association_id" value="<?php echo $association_id; ?>" />
 
+            <input type="hidden" name="series_id" value="{{ $series->id }}">
+
             <input type="hidden" name="url" value="{{ URL::previous() }}">
 
             <div class="form-group">
-                <label for="series_id">Series</label>
-                <select class="form-control" id="series_id" name="series_id">
-                    <option value="">- No series -</option>
-                    <?php foreach($available_series as $item): ?>
-                        <option value="<?php echo $item->id; ?>"<?php if($item->id === $series->id) echo ' selected'; ?>><?php echo $item->name; ?></option>
-                    <?php endforeach; ?>
-                </select>
+                <label for="name">Name</label>
+                <input id="name" type="text" class="form-control @error('name') is-invalid @enderror" name="name" value="{{ old('name') }}">
+                @error('name')
+                    <div class="alert alert-danger">{{ $message }}</div>
+                @enderror
+                <small class="form-text text-muted">Enter a name for this Schedule, like <em>"A Division"</em></small>
             </div>
 
             <div class="form-group">

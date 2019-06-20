@@ -19,6 +19,25 @@
             <input type="hidden" name="url" value="{{ URL::previous() }}">
 
             <div class="form-group">
+                <label for="name">Name</label>
+                <input id="name" type="text" class="form-control @error('name') is-invalid @enderror" name="name" value="{{ old('name', $schedule->name) }}">
+                @error('name')
+                    <div class="alert alert-danger">{{ $message }}</div>
+                @enderror
+                <small class="form-text text-muted">Enter a name for this Schedule, like <em>"A Division"</em></small>
+            </div>
+
+            <div class="form-group">
+                <label for="division_id">Division</label>
+                <select class="form-control" id="division_id" name="division_id">
+                    <option value="">- No division -</option>
+                    <?php foreach($association->divisions as $division): ?>
+                        <option value="<?php echo $division->id; ?>"<?php echo $division->id == old('division_id', $schedule->division_id) ? ' selected' : ''; ?>><?php echo $division->name; ?></option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+
+            <div class="form-group">
                 <label for="start_date">Start Date</label>
                 <input id="start_date" class="form-control" type="date" name="start_date" value="<?php echo $schedule->start_date != null ? date('Y-m-d', strtotime($schedule->start_date)) : null ?>">
             </div>

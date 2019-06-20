@@ -7,6 +7,7 @@
 @endsection
 
 @section('content')
+    <h1>Schedules</h1>
     <div class="row venues mb-3">
         <div class="col">
         <?php if (!empty($series->schedules)): ?>

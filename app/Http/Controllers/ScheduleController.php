@@ -30,8 +30,9 @@ class ScheduleController extends Controller
         ]);
     }
 
-    public function edit(Schedule $schedule) {
+    public function edit(Association $association, Schedule $schedule) {
         return view('schedule.edit', [
+            'association' => $schedule->association,
             'schedule' => $schedule,
         ]);
     }
@@ -43,7 +44,11 @@ class ScheduleController extends Controller
     }
 
     public function store(Series $series, Request $request) {
+        $validatedData = $request->validate([
+            'name' => 'required|max:255',
+        ]);
 
+        $name = $request->name;
         $association_id = $series->association->id;
         $division_id = $request->division_id;
         $start_date = $request->start_date;
@@ -52,6 +57,7 @@ class ScheduleController extends Controller
 
         $schedule = new Schedule;
 
+        $schedule->name = $name;
         $schedule->association_id = $association_id;
         $schedule->series_id = $series->id;
         $schedule->division_id = $division_id;
@@ -127,9 +133,14 @@ class ScheduleController extends Controller
     }
 
     public function update(Request $request) {
+        $validatedData = $request->validate([
+            'name' => 'required|max:255',
+        ]);
 
         $schedule = schedule::find($request->id);
 
+        $schedule->name = $request->name;
+        $schedule->division_id = !empty($request->division_id) ? $request->division_id : null;
         $schedule->start_date = $request->start_date;
         $schedule->end_date = $request->end_date;
 
@@ -147,13 +158,7 @@ class ScheduleController extends Controller
 
         $request->session()->flash('message', __('Successfully updated schedule'));
 
-        $url = $request->url;
-
-        if (!empty($url)) {
-            return redirect($url)->with('success', __('Data saved successfully!'));
-        }
-
-        return redirect()->route('user', ['id' => \Auth::user()->id]);
+        return redirect()->route('schedule.view', ['schedule' => $schedule]);
 
     }
 
