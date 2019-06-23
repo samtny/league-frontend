@@ -39,7 +39,7 @@ Breadcrumbs::for('admin.users', function ($trail) {
 });
 
 Breadcrumbs::for('association.view', function ($trail, $association) {
-    $trail->parent('admin');
+    $trail->parent('home');
     $trail->push($association->name, route('association.view', $association));
 });
 

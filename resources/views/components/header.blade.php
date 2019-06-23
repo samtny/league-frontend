@@ -6,10 +6,10 @@
                     <a href="{{ url('/') }}">Home</a>
                 </li>
                 <li>
-                    <a href="{{ route('association.standings') }}">Standings</a>
+                    <a href="{{ route('association.standings', ['association' => $association]) }}">Standings</a>
                 </li>
                 <li>
-                    <a href="{{ route('association.schedule') }}">Schedule</a>
+                    <a href="{{ route('association.schedule', ['association' => $association]) }}">Schedule</a>
                 </li>
 
                 <!-- Authentication Links -->

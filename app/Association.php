@@ -11,6 +11,16 @@ class Association extends Model
 
     protected $fillable = array('name', 'user_id', 'subdomain', 'home_image_path');
 
+    /**
+     * Get the route key for the model.
+     *
+     * @return string
+     */
+    public function getRouteKeyName()
+    {
+        return 'subdomain';
+    }
+
     public function user() {
         return $this->hasOne('User');
     }

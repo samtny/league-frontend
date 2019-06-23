@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Association;
 use Closure;
 
 class Subdomain
@@ -15,7 +16,13 @@ class Subdomain
      */
     public function handle($request, Closure $next)
     {
-        \URL::defaults(['subdomain' => request('subdomain')]);
+        $subdomain = request('association');
+
+        if (!empty($subdomain)) {
+            $association = Association::where(['subdomain' => $subdomain])->first();
+//var_dump($association->name);exit(1);
+            \URL::defaults(['association' => $association]);
+        }
 
         return $next($request);
     }

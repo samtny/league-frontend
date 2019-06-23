@@ -13,7 +13,7 @@ use Spatie\Honeypot\ProtectAgainstSpam;
 |
 */
 
-Route::domain('{subdomain}.pinballleague.org')->middleware('subdomain')->group(function() {
+Route::domain('{association}.pinballleague.org')->middleware('subdomain')->group(function() {
     Route::get('/', 'AssociationsController@home')->name('association.home');
 
     Route::get('/submit', 'AssociationsController@submitScoreBegin')->name('association.submit.score.step1');
@@ -25,6 +25,10 @@ Route::domain('{subdomain}.pinballleague.org')->middleware('subdomain')->group(f
     Route::get('/standings', 'AssociationsController@standings')->name('association.standings');
     Route::get('/schedule', 'AssociationsController@schedule')->name('association.schedule');
     Route::get('/css/association.css', 'AssociationsController@css')->name('association.css');
+
+    Route::prefix('admin')->middleware('admin')->group(function () {
+        Route::get('/', 'AssociationsController@view')->name('association.view');
+    });
 
 });
 
@@ -78,7 +82,7 @@ Route::prefix('admin')->middleware('admin')->group(function () {
         Route::get('{association}/undelete', 'AssociationsController@undeleteConfirm')->name('association.undeleteConfirm');
         Route::post('{association}/undelete', 'AssociationsController@undelete')->name('association.undelete');
 
-        Route::get('{association}', 'AssociationsController@view')->name('association.view');
+
     });
 
     Route::prefix('user')->group(function () {

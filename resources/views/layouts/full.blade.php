@@ -1,6 +1,6 @@
 @component('components/html-header')
 @endcomponent
-    @component('components/header')
+    @component('components/header', ['association' => $association])
     @endcomponent
     @component('layouts/base', ['name' => 'full'])
         <div class="t--template t--{{ $name }}">

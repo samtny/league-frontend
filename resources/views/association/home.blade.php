@@ -21,13 +21,13 @@
         <nav class="association-nav">
             <ul>
                 <li>
-                    <a class="button" href="{{ route('association.submit.score.step1') }}">Submit Scores</a>
+                    <a class="button" href="{{ route('association.submit.score.step1', ['association' => $association]) }}">Submit Scores</a>
                 </li>
                 <li>
-                    <a class="button" href="{{ route('association.standings') }}">Standings</a>
+                    <a class="button" href="{{ route('association.standings', ['association' => $association]) }}">Standings</a>
                 </li>
                 <li>
-                    <a class="button" href="{{ route('association.schedule') }}">Schedule</a>
+                    <a class="button" href="{{ route('association.schedule', ['association' => $association]) }}">Schedule</a>
                 </li>
             </ul>
         </nav>
