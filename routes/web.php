@@ -124,6 +124,9 @@ Route::prefix('admin')->middleware('admin')->group(function () {
         Route::get('{schedule}/edit', 'ResultsController@edit')->name('results.edit');
         Route::post('{schedule}/update', 'ResultsController@update')->name('results.update');
         Route::get('{association}/results/submissions', 'ResultSubmissionsController@index')->name('result_submissions.list');
+        Route::prefix('result_submission')->group(function () {
+            Route::post('{id}', 'ResultSubmissionsController@update')->name('result_submission.update');
+        });
     });
 
     Route::prefix('onboard')->group(function () {
@@ -142,27 +145,4 @@ Route::prefix('admin')->middleware('admin')->group(function () {
 
 });
 
-Route::get('/', function () {
-    return view('home');
-})->name('home');
-
-Route::get('/standings', function () {
-    return view('standings');
-})->name('standings');
-
-Route::prefix('schedule')->group(function () {
-
-
-    Route::get('/', function () {
-        return view('schedule');
-    })->name('schedule');
-});
-
 Auth::routes();
-
-Route::get('/home', 'HomeController@index')->name('home');
-
-Route::prefix('result_submission')->group(function () {
-    Route::post('{id}', 'ResultSubmissionsController@update')->name('result_submission.update');
-});
-

@@ -4,7 +4,7 @@ namespace App\Http\Middleware;
 
 use Closure;
 
-class CheckAdmin
+class DomainAssociation
 {
     /**
      * Handle an incoming request.
@@ -15,11 +15,6 @@ class CheckAdmin
      */
     public function handle($request, Closure $next)
     {
-        if (\Bouncer::can('view-admin-pages')) {
-            return $next($request);
-        }
-        else {
-            return redirect('/');
-        }
+        return $next($request);
     }
 }
