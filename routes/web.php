@@ -146,3 +146,5 @@ Route::prefix('admin')->middleware('admin')->group(function () {
 });
 
 Auth::routes();
+
+Route::get('/', 'AppController@default');

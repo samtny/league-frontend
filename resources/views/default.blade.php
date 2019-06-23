@@ -1,4 +1,4 @@
-@extends('layouts.full', ['name' => 'home'])
+@extends('layouts.default', ['name' => 'default'])
 
 @section('content')
     @component('components/page-title')
