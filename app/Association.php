@@ -45,7 +45,7 @@ class Association extends Model
 
     public function activeRounds() {
         return $this->rounds()
-            ->where('rounds.start_date', '>=', date('Y-m-d', strtotime('today')))
+            ->where('rounds.start_date', '>=', date('Y-m-d', strtotime('today -7 days')))
             ->where('rounds.start_date', '<=', date('Y-m-d', strtotime('now +7 days')) );
     }
 
