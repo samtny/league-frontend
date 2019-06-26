@@ -26,11 +26,11 @@
                         @csrf
                         <input type="hidden" name="result_submission_id" value="{{ $submission->id }}">
                         <div class="form-group mr-2">
-                            <label class="mr-sm-2" for="submission_{{ $submission->id }}_home_team_score">{{ !empty($submission->match->homeTeam) ? $submission->match->homeTeam->name : '[no team]' }}</label>
+                        <label class="mr-sm-2" for="submission_{{ $submission->id }}_home_team_score">{{ !empty($submission->match->homeTeam) ? $submission->match->homeTeam->name : '[no team]' }}{{ $submission->match->home_team_id == $submission->win_team_id ? '*' : '' }}</label>
                             <input type="text" class="form-control" id="submission_{{ $submission->id }}_home_team_score" name="home_team_score" value="{{ $submission->home_team_score }}" size="4">
                         </div>
                         <div class="form-group mr-2">
-                            <label class="mr-sm-2" for="submission_{{ $submission->id }}_away_team_score">{{ !empty($submission->match->awayTeam) ? $submission->match->awayTeam->name : '[no team]' }}</label>
+                            <label class="mr-sm-2" for="submission_{{ $submission->id }}_away_team_score">{{ !empty($submission->match->awayTeam) ? $submission->match->awayTeam->name : '[no team]' }}{{ $submission->match->away_team_id == $submission->win_team_id ? '*' : '' }}</label>
                             <input type="text" class="form-control" id="submission_{{ $submission->id }}_away_team_score" name="away_team_score" value="{{ $submission->away_team_score }}" size="4">
                         </div>
                         <button id="submission_{{ $submission->id }}_submit" type="submit" class="btn btn-primary mr-2 mt-3 mt-sm-0">Accept</button>

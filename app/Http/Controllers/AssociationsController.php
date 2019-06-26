@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use App\Association;
 use App\Division;
 use App\Match;
-use App\Result;
 use App\ResultSubmission;
 use App\Round;
 use App\Series;
@@ -193,6 +192,41 @@ class AssociationsController extends Controller
                 $submission->match_id = $match_id;
                 $submission->home_team_score = $home_team_score;
                 $submission->away_team_score = $away_team_score;
+                $submission->save();
+
+                if ($home_team_score != $away_team_score) {
+                    $submission->win_team_id = $home_team_score > $away_team_score ? $home_team_id : $away_team_id;
+                    $submission->save();
+
+                    return view('forms.results.thanks', [
+                        'association' => $this->association,
+                        ]);
+                }
+                else {
+                    return view('forms.results.choose-winner', [
+                        'association' => $this->association,
+                        'match' => Match::find($submission->match_id),
+                        'submission' => $submission,
+                        ]);
+                }
+            }
+            else {
+                abort(404);
+            }
+        }
+        else {
+            abort(404);
+        }
+    }
+
+    public function submitScoreStep5(Request $request) {
+        if (!empty($this->association)) {
+            $submission_id = $request->submission_id;
+
+            if (!empty($submission_id)) {
+                $submission = ResultSubmission::find($submission_id);
+
+                $submission->win_team_id = $request->win_team_id;
 
                 $submission->save();
 

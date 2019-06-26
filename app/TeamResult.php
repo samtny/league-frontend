@@ -4,7 +4,7 @@ namespace App;
 
 use Illuminate\Database\Eloquent\Model;
 
-class MatchResult extends Model
+class TeamResult extends Model
 {
     protected $fillable = array('schedule_id', 'match_id', 'team_id', 'points', 'win', 'loss', 'tie');
 

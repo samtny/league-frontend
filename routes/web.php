@@ -21,6 +21,8 @@ Route::domain('{subdomain}.pinballleague.org')->middleware('subdomain')->group(f
     Route::post('/submit/step3', 'AssociationsController@submitScoreStep3')->name('association.submit.score.step3');
     Route::post('/submit/step4', 'AssociationsController@submitScoreStep4')->name('association.submit.score.step4')
         ->middleware(ProtectAgainstSpam::class);
+    Route::post('/submit/step5', 'AssociationsController@submitScoreStep5')->name('association.submit.score.step5')
+        ->middleware(ProtectAgainstSpam::class);
 
     Route::get('/standings', 'AssociationsController@standings')->name('association.standings');
     Route::get('/schedule', 'AssociationsController@schedule')->name('association.schedule');

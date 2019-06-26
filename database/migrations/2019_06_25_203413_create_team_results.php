@@ -4,7 +4,7 @@ use Illuminate\Support\Facades\Schema;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Database\Migrations\Migration;
 
-class CreateMatchResults extends Migration
+class CreateTeamResults extends Migration
 {
     /**
      * Run the migrations.
@@ -13,7 +13,7 @@ class CreateMatchResults extends Migration
      */
     public function up()
     {
-        Schema::create('match_results', function (Blueprint $table) {
+        Schema::create('team_results', function (Blueprint $table) {
             $table->bigIncrements('id');
             $table->timestamps();
             $table->bigInteger('schedule_id')->nullable();
@@ -33,6 +33,6 @@ class CreateMatchResults extends Migration
      */
     public function down()
     {
-        Schema::dropIfExists('match_results');
+        Schema::dropIfExists('team_results');
     }
 }

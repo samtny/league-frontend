@@ -20,10 +20,10 @@
 
                 <?php
 
-                $matchResults = DB::table('match_results')
-                    ->join('teams', 'match_results.team_id', '=', 'teams.id')
+                $teamResults = DB::table('team_results')
+                    ->join('teams', 'team_results.team_id', '=', 'teams.id')
                     ->select('teams.name', DB::raw('SUM(win) AS wins'), DB::raw('SUM(loss) AS losses'), DB::raw('SUM(points) as points'))
-                    ->where('match_results.schedule_id', $schedule->id)
+                    ->where('team_results.schedule_id', $schedule->id)
                     ->groupBy('teams.name')
                     ->orderByRaw('SUM(win) DESC')
                     ->orderByRaw('SUM(points) DESC')
@@ -32,7 +32,7 @@
 
                 ?>
 
-                <?php if (!empty($matchResults)): ?>
+                <?php if (!empty($teamResults)): ?>
 
                     <table>
                         <thead>
@@ -43,11 +43,11 @@
                             </tr>
                         </thead>
                         <tbody>
-                            <?php foreach($matchResults as $matchResult): ?>
+                            <?php foreach($teamResults as $teamResult): ?>
                             <tr>
-                                <td><?php echo $matchResult->name; ?></td>
-                                <td><?php echo $matchResult->wins . ' - ' . $matchResult->losses; ?></td>
-                                <td><?php echo $matchResult->points; ?></td>
+                                <td><?php echo $teamResult->name; ?></td>
+                                <td><?php echo $teamResult->wins . ' - ' . $teamResult->losses; ?></td>
+                                <td><?php echo $teamResult->points; ?></td>
                             </tr>
                             <?php endforeach; ?>
                         </tbody>

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Association;
 use App\Result;
+use App\TeamResult;
 use App\ResultSubmission;
 use Illuminate\Http\Request;
 
@@ -90,6 +91,29 @@ class ResultSubmissionsController extends Controller
             $result->away_team_score = $submission->away_team_score;
 
             $result->save();
+
+            // FIXME: need to look up / overwrite existing team results as applicable:
+            // home team result:
+            $team_result = new TeamResult();
+            $team_result->schedule_id = $submission->match->schedule_id;
+            $team_result->match_id = $submission->match->id;
+            $team_result->team_id = $result->home_team_id;
+            $team_result->points = $result->home_team_score;
+            $team_result->win = $result->home_team_id == $submission->win_team_id ? 1 : 0;
+            $team_result->loss = $result->home_team_id != $submission->win_team_id ? 1 : 0;
+            $team_result->tie = 0;
+            $team_result->save();
+
+            // away team result;
+            $team_result = new TeamResult();
+            $team_result->schedule_id = $submission->match->schedule_id;
+            $team_result->match_id = $submission->match->id;
+            $team_result->team_id = $result->away_team_id;
+            $team_result->points = $result->away_team_score;
+            $team_result->win = $result->away_team_id == $submission->win_team_id ? 1 : 0;
+            $team_result->loss = $result->away_team_id != $submission->win_team_id ? 1 : 0;
+            $team_result->tie = 0;
+            $team_result->save();
 
             $submission->approved = TRUE;
             $submission->save();
