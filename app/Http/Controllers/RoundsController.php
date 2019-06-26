@@ -47,6 +47,7 @@ class RoundsController extends Controller
         $round = new Round();
 
         $round->name = $request->name;
+        $round->series_id = $schedule->series->id;
         $round->schedule_id = $schedule->id;
         $round->start_date = $request->start_date;
         $round->end_date = $request->end_date;
