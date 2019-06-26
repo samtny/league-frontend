@@ -14,13 +14,13 @@ class ResultsToTeamResults extends Migration
      */
     public function up()
     {
-        $team_results = DB::select('SELECT m.schedule_id, r.match_id, r.home_team_id AS team_id, r.home_team_score AS points, IF(r.home_team_score > r.away_team_score, 1, 0) AS win, IF(r.home_team_score < r.away_team_score, 1, 0) AS loss, 0 as tie
+        $team_results = DB::select('SELECT m.schedule_id, r.match_id, r.home_team_id AS team_id, r.home_team_score AS points, CASE WHEN r.home_team_score > r.away_team_score THEN 1 ELSE 0 END AS win, CASE WHEN r.home_team_score < r.away_team_score THEN 1 ELSE 0 END AS loss, 0 as tie
         FROM results r
         INNER JOIN matches m ON r.match_id = m.id
 
         UNION ALL
 
-        SELECT m.schedule_id, r.match_id, r.away_team_id AS team_id, r.away_team_score AS points, IF(r.away_team_score > r.home_team_score, 1, 0) AS win, IF(r.away_team_score < r.home_team_score, 1, 0) AS loss, 0 as tie
+        SELECT m.schedule_id, r.match_id, r.away_team_id AS team_id, r.away_team_score AS points, CASE WHEN r.away_team_score > r.home_team_score THEN 1 ELSE 0 END AS win, CASE WHEN r.away_team_score < r.home_team_score THEN 1 ELSE 0 END AS loss, 0 as tie
         FROM results r
         INNER JOIN matches m ON r.match_id = m.id
         ');
