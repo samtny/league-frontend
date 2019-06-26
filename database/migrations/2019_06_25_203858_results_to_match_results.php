@@ -20,7 +20,7 @@ class ResultsToMatchResults extends Migration
 
         UNION ALL
 
-        SELECT m.schedule_id, r.match_id, r.away_team_id AS team_id, r.away_team_score AS points, IF(r.away_team_score > r.away_team_score, 1, 0) AS win, IF(r.away_team_score < r.away_team_score, 1, 0) AS loss, 0 as tie
+        SELECT m.schedule_id, r.match_id, r.away_team_id AS team_id, r.away_team_score AS points, IF(r.away_team_score > r.home_team_score, 1, 0) AS win, IF(r.away_team_score < r.home_team_score, 1, 0) AS loss, 0 as tie
         FROM results r
         INNER JOIN matches m ON r.match_id = m.id
         ');

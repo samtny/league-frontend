@@ -19,53 +19,35 @@
                 <?php endif; ?>
 
                 <?php
-                $results_table = [];
 
-                foreach($schedule->matches as $match) {
-                    $result = $match->result;
+                $matchResults = DB::table('match_results')
+                    ->join('teams', 'match_results.team_id', '=', 'teams.id')
+                    ->select('teams.name', DB::raw('SUM(win) AS wins'), DB::raw('SUM(loss) AS losses'), DB::raw('SUM(points) as points'))
+                    ->where('match_results.schedule_id', $schedule->id)
+                    ->groupBy('teams.name')
+                    ->orderByRaw('SUM(win) DESC')
+                    ->orderByRaw('SUM(points) DESC')
+                    ->orderBy('name')
+                    ->get();
 
-                    if (!empty($result)) {
-                        $updated_datetime = new \DateTime($result->updated_at);
-
-                        $since_updated = $updated_datetime->diff(new \DateTime('-15 minutes'));
-
-                        $minutes = $since_updated->days * 24 * 60;
-                        $minutes += $since_updated->h * 60;
-                        $minutes += $since_updated->i;
-
-                        //if ($minutes > 15) {
-                            if (!empty($result->home_team_score) && is_numeric($result->home_team_score)) {
-                                if (empty($results_table[$result->home_team_id])) {
-                                    $results_table[$result->home_team_id] = 0;
-                                }
-                                $results_table[$result->home_team_id] = $results_table[$result->home_team_id] + intval($result->home_team_score);
-
-                                if (empty($results_table[$result->away_team_id])) {
-                                    $results_table[$result->away_team_id] = 0;
-                                }
-                                $results_table[$result->away_team_id] = $results_table[$result->away_team_id] + intval($result->away_team_score);
-                            }
-                        //}
-                    }
-                }
-
-                arsort($results_table);
                 ?>
 
-                <?php if (!empty($results_table)): ?>
+                <?php if (!empty($matchResults)): ?>
 
                     <table>
                         <thead>
                             <tr>
                                 <th>Team</th>
+                                <th>Record</th>
                                 <th>Points</th>
                             </tr>
                         </thead>
                         <tbody>
-                            <?php foreach($results_table as $team_id => $points): ?>
+                            <?php foreach($matchResults as $matchResult): ?>
                             <tr>
-                                <td><?php echo $association->teams->find($team_id)->name; ?></td>
-                                <td><?php echo $points; ?></td>
+                                <td><?php echo $matchResult->name; ?></td>
+                                <td><?php echo $matchResult->wins . ' - ' . $matchResult->losses; ?></td>
+                                <td><?php echo $matchResult->points; ?></td>
                             </tr>
                             <?php endforeach; ?>
                         </tbody>
