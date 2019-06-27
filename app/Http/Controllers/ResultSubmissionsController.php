@@ -92,12 +92,19 @@ class ResultSubmissionsController extends Controller
 
             $result->save();
 
-            // FIXME: need to look up / overwrite existing team results as applicable:
             // home team result:
-            $team_result = new TeamResult();
-            $team_result->schedule_id = $submission->match->schedule_id;
-            $team_result->match_id = $submission->match->id;
-            $team_result->team_id = $result->home_team_id;
+            $team_result = TeamResult::where('schedule_id', $submission->match->schedule_id)
+                ->where('match_id', $submission->match_id)
+                ->where('team_id', $result->home_team_id)
+                ->first();
+
+            if (empty($team_result)) {
+                $team_result = new TeamResult();
+                $team_result->schedule_id = $submission->match->schedule_id;
+                $team_result->match_id = $submission->match->id;
+                $team_result->team_id = $result->home_team_id;
+            }
+
             $team_result->points = $result->home_team_score;
             $team_result->win = $result->home_team_id == $submission->win_team_id ? 1 : 0;
             $team_result->loss = $result->home_team_id != $submission->win_team_id ? 1 : 0;
@@ -105,10 +112,18 @@ class ResultSubmissionsController extends Controller
             $team_result->save();
 
             // away team result;
-            $team_result = new TeamResult();
-            $team_result->schedule_id = $submission->match->schedule_id;
-            $team_result->match_id = $submission->match->id;
-            $team_result->team_id = $result->away_team_id;
+            $team_result = TeamResult::where('schedule_id', $submission->match->schedule_id)
+                ->where('match_id', $submission->match_id)
+                ->where('team_id', $result->away_team_id)
+                ->first();
+
+            if (empty($team_result)) {
+                $team_result = new TeamResult();
+                $team_result->schedule_id = $submission->match->schedule_id;
+                $team_result->match_id = $submission->match->id;
+                $team_result->team_id = $result->away_team_id;
+            }
+
             $team_result->points = $result->away_team_score;
             $team_result->win = $result->away_team_id == $submission->win_team_id ? 1 : 0;
             $team_result->loss = $result->away_team_id != $submission->win_team_id ? 1 : 0;
