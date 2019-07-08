@@ -33,10 +33,8 @@ class AssociationsController extends Controller
     public function index(Request $request) {
         $user = $request->user();
 
-        $associations = Association::all();
-
-        $userAssociations = $associations->filter(function ($value, $key) {
-            return Bouncer::can('manage', $value);
+        $userAssociations = Association::all()->filter(function ($association) {
+            return Bouncer::can('manage', $association);
         });
 
         return new AssociationCollectionResource($userAssociations);
