@@ -71,6 +71,10 @@ class AssociationsController extends Controller
         return view('association.users', ['association' => $association]);
     }
 
+    public function viewUser(Association $association, User $user) {
+        return view('association.user.view', ['association' => $association, 'user' => $user]);
+    }
+
     public function editUser(Association $association, User $user) {
         return view('association.user.edit', ['association' => $association, 'user' => $user]);
     }

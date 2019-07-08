@@ -15,7 +15,7 @@
             <?php if (!$association->users->isEmpty()): ?>
                 <div class="list-group">
                 <?php foreach ($association->users->sortBy('name') as $user): ?>
-                    <a class="list-group-item list-group-item-action" href="{{ route('association.user.edit', ['association' => $association, 'user' => $user]) }}">
+                    <a class="list-group-item list-group-item-action" href="{{ route('association.user.view', ['association' => $association, 'user' => $user]) }}">
                         <?php
                             echo ('<div class="user">' . $user->name . ($user->isAn('assocadmin') ? ' - <em>Admin</em>' : '') . '</div>');
                         ?>

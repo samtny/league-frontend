@@ -113,9 +113,14 @@ Breadcrumbs::for('association.user.add', function ($trail, $association) {
     $trail->push('Add User', route('association.user.add', $association));
 });
 
-Breadcrumbs::for('association.user.edit', function ($trail, $association, $user) {
+Breadcrumbs::for('association.user.view', function ($trail, $association, $user) {
     $trail->parent('association.users', $association);
-    $trail->push('Edit User', route('association.user.edit', ['association' => $association, 'user' => $user]));
+    $trail->push($user->name, route('association.user.view', ['association' => $association, 'user' => $user]));
+});
+
+Breadcrumbs::for('association.user.edit', function ($trail, $association, $user) {
+    $trail->parent('association.user.view', $association, $user);
+    $trail->push('Edit', route('association.user.edit', ['association' => $association, 'user' => $user]));
 });
 
 Breadcrumbs::for('series.view', function ($trail, $series) {

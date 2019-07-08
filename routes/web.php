@@ -73,6 +73,7 @@ Route::prefix('admin')->middleware('admin')->group(function () {
             });
         });
 
+        Route::get('{association}/user/{user}', 'AssociationsController@viewUser')->name('association.user.view');
         Route::get('{association}/user/{user}/edit', 'AssociationsController@editUser')->name('association.user.edit');
         Route::post('{association}/user/{user}/update', 'AssociationsController@updateUser')->name('association.user.update');
         Route::get('{association}/user/add', 'AssociationsController@addUser')->name('association.user.add');

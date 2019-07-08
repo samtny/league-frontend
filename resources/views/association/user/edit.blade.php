@@ -1,6 +1,6 @@
 @extends('layouts.admin')
 
-@section('title', 'Edit User')
+@section('title', 'Edit - ' . $user->name)
 
 @section('breadcrumb')
     {{ Breadcrumbs::render('association.user.edit', $association, $user) }}
@@ -8,7 +8,7 @@
 
 @section('content')
     <div class="row">
-        <h1 class="col"><?php echo $user->name; ?></h1>
+        <h1 class="col"><?php echo 'Edit - ' .$user->name; ?></h1>
     </div>
     <div class="form row">
         <form class="col" method="POST" action="{{ route('association.user.update', ['association' => $association, 'user' => $user]) }}">
