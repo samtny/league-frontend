@@ -2,6 +2,9 @@
 
 namespace App\Http\Resources;
 
+use App\Http\Resources\Association as AssociationResource;
+use App\Http\Resources\AssociationCollection as AssociationCollectionResource;
+
 use Illuminate\Http\Resources\Json\ResourceCollection;
 
 class AssociationCollection extends ResourceCollection
