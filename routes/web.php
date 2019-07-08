@@ -75,8 +75,12 @@ Route::prefix('admin')->middleware('admin')->group(function () {
 
         Route::get('{association}/user/{user}', 'AssociationsController@viewUser')->name('association.user.view');
         Route::get('{association}/user/{user}/edit', 'AssociationsController@editUser')->name('association.user.edit');
+
         Route::post('{association}/user/{user}/update', 'AssociationsController@updateUser')->name('association.user.update');
         Route::get('{association}/user/add', 'AssociationsController@addUser')->name('association.user.add');
+
+        Route::get('{association}/user/{user}/token', 'AssociationsController@userToken')->name('association.user.token');
+        Route::post('{association}/user/{user}/token', 'AssociationsController@userTokenRefresh')->name('association.user.token.refresh');
 
         Route::get('{association}/undelete', 'AssociationsController@undeleteConfirm')->name('association.undeleteConfirm');
         Route::post('{association}/undelete', 'AssociationsController@undelete')->name('association.undelete');

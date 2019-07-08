@@ -13,18 +13,15 @@ use Illuminate\Http\Request;
 |
 */
 
+/*
 Route::middleware('auth:api')->get('/user', function (Request $request) {
     return $request->user();
 });
-
-Route::get('/test', function (Request $request) {
-
-});
-
+*/
 use App\Association;
 use App\Http\Resources\Association as AssociationResource;
 use App\Http\Resources\AssociationCollection as AssociationCollectionResource;
 
-Route::get('/associations', function () {
+Route::middleware('auth:api')->get('/associations', function(Request $request) {
     return new AssociationCollectionResource(Association::all());
 });

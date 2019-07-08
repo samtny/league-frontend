@@ -13,6 +13,7 @@ use App\User;
 use App\Venue;
 use Bouncer;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 
 class AssociationsController extends Controller
 {
@@ -77,6 +78,20 @@ class AssociationsController extends Controller
 
     public function editUser(Association $association, User $user) {
         return view('association.user.edit', ['association' => $association, 'user' => $user]);
+    }
+
+    public function userToken(Association $association, User $user) {
+        return view('association.user.token', ['association' => $association, 'user' => $user]);
+    }
+
+    public function userTokenRefresh(Association $association, User $user) {
+        $token = Str::random(60);
+
+        $user->forceFill([
+            'api_token' => hash('sha256', $token),
+        ])->save();
+
+        return view('association.user.token-refresh', ['association' => $association, 'user' => $user, 'token' => $token]);
     }
 
     public function updateUser(Request $request, Association $association, User $user) {

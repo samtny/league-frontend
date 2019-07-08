@@ -123,6 +123,11 @@ Breadcrumbs::for('association.user.edit', function ($trail, $association, $user)
     $trail->push('Edit', route('association.user.edit', ['association' => $association, 'user' => $user]));
 });
 
+Breadcrumbs::for('association.user.token', function ($trail, $association, $user) {
+    $trail->parent('association.user.view', $association, $user);
+    $trail->push('Token', route('association.user.token', ['association' => $association, 'user' => $user]));
+});
+
 Breadcrumbs::for('series.view', function ($trail, $series) {
     $trail->parent('association.series', $series->association);
     $trail->push($series->name, route('series.view', $series));
