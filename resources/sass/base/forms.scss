@@ -4,8 +4,8 @@ input[type=email],
 input[type=submit],
 form textarea {
     position: relative;
-    font-size: rem(20px);
-    font-weight: 600;
+    //font-size: rem(20px);
+    //font-weight: 600;
     line-height: rem(16px);
     background-color: transparent;
     display: inline-flex;
@@ -15,6 +15,8 @@ form textarea {
     text-align: center;
     color: #6D1327;
 
+    margin-bottom: rem(10px);
+
     padding-right: rem(20px);
     padding-left: rem(20px);
     transition: background-color 0.1s ease-in-out;
@@ -23,7 +25,11 @@ form textarea {
     white-space: normal;
 }
 
+form label {
+    margin-bottom: rem(10px);
+}
+
 input,
 select {
-    height: rem(50px);
+    height: rem(40px);
 }

@@ -14,7 +14,7 @@
     @endcomponent
     <div class="richtext">
         <p>
-            Manage schedules, teams, venues, divisions and more for leagues of any size.
+            Manage schedules, teams, venues, divisions, score submissions and more for leagues of any size.
         </p>
         <p>
             Interested? Hit us up on our <a href="/contact">Contact</a> page.
