@@ -1,7 +1,9 @@
 app/
 bootstrap/app.php
 config/
-database/
+database/factories/
+database/migrations/
+database/seeds/
 public/
 resources/
 routes/
