@@ -10,6 +10,7 @@
     @endcomponent
     <form id="contact" class="contact" method="POST" action="{{ route('contact.submit') }}">
         @csrf
+        @honeypot
 
         <label for="reason">Reason</label>
         <select id="reason" name="reason">

@@ -30,7 +30,8 @@ Route::domain('{subdomain}.pinballleague.org')->middleware('subdomain')->group(f
 
     Route::get('/about', 'InfoController@about')->name('about');
     Route::get('/contact', 'InfoController@contact')->name('contact');
-    Route::post('/contact', 'InfoController@contactSubmit')->name('contact.submit');
+    Route::post('/contact', 'InfoController@contactSubmit')->name('contact.submit')
+        ->middleware(ProtectAgainstSpam::class);
 
     Route::get('/contact/thanks', 'InfoController@contactThanks')->name('contact.thanks');
 });
