@@ -29,7 +29,11 @@ class InfoController extends Controller
 
         $contact->save();
 
-        return redirect()->route('message', ['title' => __('Thank You!'), 'message' => 'Thank you for contacting us, we will be in touch shortly.']);
+        return redirect()->route('contact.thanks');
+    }
+
+    public function contactThanks() {
+        return view('contact-thanks');
     }
 
 }
