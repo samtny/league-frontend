@@ -1,0 +1,10 @@
+.t--contact {
+    form.contact {
+        display: flex;
+        flex-direction: column;
+
+        width: 100%;
+        max-width: rem(700px);
+        margin: auto;
+    }
+}
