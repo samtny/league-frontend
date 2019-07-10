@@ -12,11 +12,13 @@
         @csrf
         @honeypot
 
+        <input type="hidden" name="association_id" value="{{ $association->id }}">
+
         <label for="reason">Reason</label>
         <select id="reason" name="reason">
-            <option value="register"<?php echo old('reason') == 'register' ? 'selected="selected"' : '' ?>>New Account Registration</option>
-            <option value="support"<?php echo old('reason') == 'support' ? 'selected="selected"' : '' ?>>Support</option>
             <option value="feedback"<?php echo old('reason') == 'feedback' ? 'selected="selected"' : '' ?>>Feedback</option>
+            <option value="support"<?php echo old('reason') == 'support' ? 'selected="selected"' : '' ?>>Support</option>
+            <option value="register"<?php echo old('reason') == 'register' ? 'selected="selected"' : '' ?>>New Account Registration</option>
         </select>
 
         <label for="email">Email</label>

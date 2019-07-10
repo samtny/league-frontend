@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Association;
+use App\ContactSubmission;
 use App\Division;
 use App\Match;
 use App\ResultSubmission;
@@ -368,7 +369,7 @@ class AssociationsController extends Controller
     }
 
     public function contact() {
-        return view('forms.contact');
+        return view('forms.contact', ['association' => $this->association]);
     }
 
     public function contactSubmit(Request $request) {
@@ -381,6 +382,7 @@ class AssociationsController extends Controller
         $contact->email = $request->email;
         $contact->reason = $request->reason;
         $contact->comment = $request->comment;
+        $contact->association_id = $request->association_id;
 
         $contact->save();
 
