@@ -75,7 +75,7 @@
             <div class="form-group">
                 <label for="about">About</label>
                 <textarea class="form-control about" id="about" name="about" rows="3">
-                    {{ old('about') }}
+                    {{ old('about', $association->about) }}
                 </textarea>
                 <small id="aboutHelp" class="form-text text-muted">This text will appear on the /about page.</small>
             </div>
@@ -95,9 +95,16 @@
 
 @section('page-js')
 <script src="https://cdnjs.cloudflare.com/ajax/libs/tinymce/5.0.11/tinymce.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/tinymce/5.0.11/plugins/link/plugin.min.js"></script>
 <script type="text/javascript">
     tinymce.init({
-        selector:'textarea.about'
+        selector:'textarea.about',
+        plugins: 'link',
+        menubar: 'edit',
+        toolbar: 'undo redo | bold italic | link image',
+        block_formats: 'Paragraph=p',
+        elementpath: false,
+        branding: false
     });
 </script>
 @stop
