@@ -188,6 +188,11 @@ Breadcrumbs::for('result_submissions.approve', function ($trail, $association) {
     $trail->push(__('Score Submissions', ['association', $association]));
 });
 
+Breadcrumbs::for('association.contact_submissions', function ($trail, $association) {
+    $trail->parent('association.view', $association);
+    $trail->push(__('Messages', ['association', $association]));
+});
+
 Breadcrumbs::for('series.index', function ($trail, $series) {
     $trail->parent('association.view', $series->association);
 

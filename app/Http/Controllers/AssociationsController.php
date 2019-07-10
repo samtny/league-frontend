@@ -393,4 +393,14 @@ class AssociationsController extends Controller
         return view('contact-thanks');
     }
 
+    /**
+     * Display a listing of the resource.
+     *
+     * @return \Illuminate\Http\Response
+     */
+    public function contactSubmissions(Association $association)
+    {
+        return view('association.contact_submissions', ['association' => $association]);
+    }
+
 }

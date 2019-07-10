@@ -25,6 +25,20 @@
         <div class="col-md-6 mb-3">
             <div class="row">
                 <div class="col mb-3">
+                    <h2>Active Rounds</h2>
+                    <div class="list-group">
+                    @forelse ($association->activeRounds->sortBy('start_date') as $round)
+                    <a class="list-group-item list-group-item-action" href="{{ route('round.edit', ['schedule' => $round->schedule, 'round' => $round]) }}">
+                        <?php echo !empty($round->series) ? $round->series->name : '[no series]'; ?> - <?php echo $round->name; ?> - <?php echo $round->start_date->format('Y-m-d'); ?>
+                    </a>
+                    @empty
+                    There are no active rounds.
+                    @endforelse
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col mb-3">
                     <h2>Score Submissions</h2>
                     <div class="list-group">
                     <?php $submissions = $association->resultSubmissions->where('approved', 0); ?>
@@ -41,15 +55,17 @@
             </div>
             <div class="row">
                 <div class="col mb-3">
-                    <h2>Active Rounds</h2>
+                    <h2>Messages</h2>
                     <div class="list-group">
-                    @forelse ($association->activeRounds->sortBy('start_date') as $round)
-                    <a class="list-group-item list-group-item-action" href="{{ route('round.edit', ['schedule' => $round->schedule, 'round' => $round]) }}">
-                        <?php echo !empty($round->series) ? $round->series->name : '[no series]'; ?> - <?php echo $round->name; ?> - <?php echo $round->start_date->format('Y-m-d'); ?>
+                    <?php $messages = $association->contactSubmissions->where('archived', 0); ?>
+                    <?php if(!($messages->isEmpty())): ?>
+                    <a class="list-group-item list-group-item-action d-flex justify-content-between align-items-center" href="{{ route('contact_submissions.list', ['association' => $association]) }}">
+                        Contact Submissions
+                        <span class="badge badge-primary badge-pill"><?php echo count($messages); ?></span>
                     </a>
-                    @empty
-                    There are no active rounds.
-                    @endforelse
+                    <?php else: ?>
+                    There are no messages waiting.
+                    <?php endif; ?>
                     </div>
                 </div>
             </div>

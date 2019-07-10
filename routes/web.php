@@ -92,6 +92,8 @@ Route::prefix('admin')->middleware('admin')->group(function () {
         Route::post('{association}/undelete', 'AssociationsController@undelete')->name('association.undelete');
 
         Route::get('{association}', 'AssociationsController@view')->name('association.view');
+
+        Route::get('{association}/contact/submissions', 'AssociationsController@contactSubmissions')->name('contact_submissions.list');
     });
 
     Route::prefix('user')->group(function () {
