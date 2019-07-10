@@ -28,12 +28,12 @@ Route::domain('{subdomain}.pinballleague.org')->middleware('subdomain')->group(f
     Route::get('/schedule', 'AssociationsController@schedule')->name('association.schedule');
     Route::get('/css/association.css', 'AssociationsController@css')->name('association.css');
 
-    Route::get('/about', 'InfoController@about')->name('about');
-    Route::get('/contact', 'InfoController@contact')->name('contact');
-    Route::post('/contact', 'InfoController@contactSubmit')->name('contact.submit')
+    Route::get('/about', 'AssociationsController@about')->name('about');
+    Route::get('/contact', 'AssociationsController@contact')->name('contact');
+    Route::post('/contact', 'AssociationsController@contactSubmit')->name('contact.submit')
         ->middleware(ProtectAgainstSpam::class);
 
-    Route::get('/contact/thanks', 'InfoController@contactThanks')->name('contact.thanks');
+    Route::get('/contact/thanks', 'AssociationsController@contactThanks')->name('contact.thanks');
 });
 
 Route::prefix('admin')->middleware('admin')->group(function () {

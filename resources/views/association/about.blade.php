@@ -9,10 +9,12 @@
 @section('content')
     @component('components/page-title')
         @slot('title')
-            About
+            {{ 'About' }}
         @endslot
     @endcomponent
     <div class="richtext">
+        {!! $association->about !!}
+        <!--
         <p>
             Manage schedules, teams, venues, divisions, score submissions and more for leagues of any size.
         </p>
@@ -22,5 +24,6 @@
         <p>
             Source code on <a href="https://github.com/samtny/league-frontend" target="_blank">Github</a>.
         </p>
+        -->
     </div>
 @endsection

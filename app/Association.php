@@ -9,7 +9,7 @@ class Association extends Model
 {
     use SoftDeletes;
 
-    protected $fillable = array('name', 'user_id', 'subdomain', 'home_image_path');
+    protected $fillable = array('name', 'user_id', 'subdomain', 'home_image_path', 'about');
 
     public function user() {
         return $this->hasOne('User');
@@ -51,6 +51,10 @@ class Association extends Model
 
     public function users() {
         return $this->hasManyThrough('App\User', 'App\AssociationUser', 'association_id', 'id', 'id', 'user_id');
+    }
+
+    public function contactSubmissions() {
+        return $this->hasMany('App\ContactSubmission');
     }
 
 }

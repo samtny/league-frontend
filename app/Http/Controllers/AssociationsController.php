@@ -318,6 +318,8 @@ class AssociationsController extends Controller
             $association->home_image_path = $path;
         }
 
+        $association->about = $request->about;
+
         $association->save();
 
         //Session::flash('message', 'Successfully updated nerd!');
@@ -361,6 +363,32 @@ class AssociationsController extends Controller
         return redirect()->route('user', ['user' => \Auth::user()])->with('success', 'Association restored successfully.');
     }
 
+    public function about() {
+        return view('association.about' , ['association' => $this->association]);
+    }
 
+    public function contact() {
+        return view('forms.contact');
+    }
+
+    public function contactSubmit(Request $request) {
+        $validatedData = $request->validate([
+            'email' => 'required|email|max:255',
+        ]);
+
+        $contact = new ContactSubmission();
+
+        $contact->email = $request->email;
+        $contact->reason = $request->reason;
+        $contact->comment = $request->comment;
+
+        $contact->save();
+
+        return redirect()->route('contact.thanks');
+    }
+
+    public function contactThanks() {
+        return view('contact-thanks');
+    }
 
 }

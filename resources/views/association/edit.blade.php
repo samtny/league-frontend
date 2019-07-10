@@ -72,6 +72,14 @@
             </div>
             <?php endif; ?>
 
+            <div class="form-group">
+                <label for="about">About</label>
+                <textarea class="form-control about" id="about" name="about" rows="3">
+                    {{ old('about') }}
+                </textarea>
+                <small id="aboutHelp" class="form-text text-muted">This text will appear on the /about page.</small>
+            </div>
+
             <div class="form-actions">
                 <div class="form-group">
                     <input class="btn btn-primary" id="submit" type="submit" value="Update"/>
@@ -84,3 +92,12 @@
         <a class="btn btn-warning" href="{{ route('association.delete', [ 'association' => $association ]) }}">Delete Association</a>
     </div>
 @endsection
+
+@section('page-js')
+<script src="https://cdnjs.cloudflare.com/ajax/libs/tinymce/5.0.11/tinymce.min.js"></script>
+<script type="text/javascript">
+    tinymce.init({
+        selector:'textarea.about'
+    });
+</script>
+@stop
