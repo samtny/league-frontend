@@ -9,12 +9,12 @@
     align-items: center;
     text-decoration: none;
     text-align: center;
-    color: #6D1327;
+    color: $color-text;
     height: rem(50px);
     padding-right: rem(20px);
     padding-left: rem(20px);
     transition: background-color 0.1s ease-in-out;
-    border: rem(1px) solid #6D1327;
+    border: rem(1px) solid $color-text;
     border-radius: rem(9px);
     white-space: normal;
 }
