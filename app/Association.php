@@ -57,4 +57,10 @@ class Association extends Model
         return $this->hasMany('App\ContactSubmission');
     }
 
+    public function activeContactSubmissions() {
+        return $this->contactSubmissions()
+            ->where('archived', '!=', 1)
+            ->orWhereNull('archived');
+    }
+
 }
