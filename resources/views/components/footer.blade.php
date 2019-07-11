@@ -1,4 +1,5 @@
 <footer>
+    <span class="divider"></span>
     @section('footer-menu')
         <nav class="footer-menu">
             <ul>
