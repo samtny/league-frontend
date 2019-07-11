@@ -2,11 +2,13 @@ body > footer {
     @include maxwidth;
 
     display: flex;
+    flex-direction: column;
     height: rem(150px);
 
+    padding: rem(30px) 0 0 0;
+
     .footer-copyright {
-        flex-basis: 100%;
-        margin-top: auto;
+        width: 100%;
         padding: rem(20px) 0 rem(20px) 0;
         text-align: center;
     }

@@ -1,38 +1,5 @@
 body > header {
     @include maxwidth;
 
-    nav.main-menu {
-        width: 100%;
 
-        ul {
-            display: flex;
-            flex-wrap: wrap;
-            margin: 0;
-            padding: 0;
-            list-style: none;
-            justify-content: center;
-
-            li {
-                flex-basis: 33%;
-                text-align: center;
-
-                @media screen and (min-width: $bp-tablet) {
-                    flex-basis: 20%;
-                }
-
-                a {
-                    display: block;
-                    margin: rem(16px) 0 rem(16px) 0;
-
-                    color: #636b6f;
-
-                    font-size: rem(13px);
-                    font-weight: 600;
-                    letter-spacing: .1rem;
-                    text-decoration: none;
-                    text-transform: uppercase;
-                }
-            }
-        }
-    }
 }

@@ -1,9 +1,11 @@
 .link-buttons {
+    margin-bottom: rem(40px);
+
     ul {
         margin: 0;
         padding: 0;
         list-style: none;
-        
+
         li {
             display: flex;
             margin: 0 0 rem(16px) 0;
