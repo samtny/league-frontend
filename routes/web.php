@@ -94,6 +94,8 @@ Route::prefix('admin')->middleware('admin')->group(function () {
         Route::get('{association}', 'AssociationsController@view')->name('association.view');
 
         Route::get('{association}/contact/submissions', 'AssociationsController@contactSubmissions')->name('contact_submissions.list');
+
+        Route::get('{association}/contact/submission/{contactSubmission}', 'ContactSubmissionsController@view')->name('contact_submission.view');
     });
 
     Route::prefix('user')->group(function () {

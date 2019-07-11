@@ -190,7 +190,12 @@ Breadcrumbs::for('result_submissions.approve', function ($trail, $association) {
 
 Breadcrumbs::for('association.contact_submissions', function ($trail, $association) {
     $trail->parent('association.view', $association);
-    $trail->push(__('Messages', ['association', $association]));
+    $trail->push(__('Messages'), route('contact_submissions.list', ['association', $association]));
+});
+
+Breadcrumbs::for('contact_submission.view', function ($trail, $association, $contactSubmission) {
+    $trail->parent('association.contact_submissions', $association);
+    $trail->push(__('Submission'), route('contact_submission.view', ['association' => $association, 'contactSubmission' => $contactSubmission]));
 });
 
 Breadcrumbs::for('series.index', function ($trail, $series) {
