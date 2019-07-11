@@ -15,15 +15,15 @@ before_install:
   - npm run dev
 
 before_script:
-  - cp .env.travis .env
   - composer self-update
   - composer install --no-interaction
-  - touch database/database.sqlite
-  - php artisan key:generate
-  - php artisan migrate
-  - php artisan db:seed
-  - php artisan storage:link
-  - php artisan config:cache
+  - touch database/database.testing.sqlite
+  - php artisan key:generate --env=testing
+  - php artisan migrate --env=testing
+  - php artisan db:seed --env=testing
+  - php artisan storage:link --env=testing
+  - php artisan config:clear --env=testing
+  - php artisan db:seed --class=TestDataSeeder --env=testing
 
 script:
   - vendor/bin/phpunit -v -c phpunit.xml $PHPUNIT_FLAGS
