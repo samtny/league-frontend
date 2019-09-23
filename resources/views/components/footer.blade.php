@@ -64,7 +64,9 @@
     @show
     @section('footer-copyright')
         <div class="footer-copyright">
+            @if (@isset($subdomain) && $subdomain != 'pinballnyc')
             <span class="copyright">© <?php echo date('Y'); ?></span>&nbsp;<span class="attribution">pinballleague.org</span>
+            @endif
         </div>
     @show
 </header>
