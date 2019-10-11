@@ -3,6 +3,7 @@
 namespace App\Http\Middleware;
 
 use Closure;
+use App\Association;
 
 class Subdomain
 {
@@ -16,6 +17,17 @@ class Subdomain
     public function handle($request, Closure $next)
     {
         \URL::defaults(['subdomain' => request('subdomain')]);
+
+        $association = $request->route('association');
+
+        if (!($association instanceof Association)) {
+            // FIXME: redo routes so we always get association from there instead:
+            $subdomain = array_first(explode('.', $request->getHost()));
+
+            $association = Association::where('subdomain', $subdomain)->first();
+        }
+
+        \View::share('association', $association);
 
         return $next($request);
     }
