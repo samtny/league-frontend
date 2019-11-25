@@ -143,6 +143,7 @@ class ScheduleController extends Controller
         $schedule->division_id = !empty($request->division_id) ? $request->division_id : null;
         $schedule->start_date = $request->start_date;
         $schedule->end_date = $request->end_date;
+        $schedule->archived = $request->archived;
 
         $schedule->save();
 

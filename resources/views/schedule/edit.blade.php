@@ -47,6 +47,16 @@
                 <input id="end_date" class="form-control" type="date" name="end_date" value="<?php echo $schedule->end_date != null ? date('Y-m-d', strtotime($schedule->end_date)) : null ?>">
             </div>
 
+            <div class="form-group">
+                <div class="form-check">
+                    <input class="form-check-input" name="archived" type="checkbox" value="1" id="archived" <?php echo old('archived', $schedule->archived) ? ' checked' : ''; ?>>
+                    <label class="form-check-label" for="archived">
+                        Archived
+                    </label>
+                    <small class="form-text text-muted">When checked, this schedule will not show in the Standings / Results pages.</small>
+                </div>
+            </div>
+
             <div class="form-actions">
                 <div class="form-group">
                     <input id="submit" class="btn btn-primary" type="submit" value="Update"/>

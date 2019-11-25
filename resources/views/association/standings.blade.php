@@ -8,8 +8,9 @@
             Standings - <?php echo $association->name; ?>
         @endslot
     @endcomponent
+    <?php if (!$schedules->isEmpty()): ?>
     <div class="standings-list">
-            <?php foreach ($association->schedules->sortBy(['start_date', 'DESC']) as $schedule): ?>
+            <?php foreach ($schedules->sortBy(['start_date', 'DESC']) as $schedule): ?>
             <div class="standings">
 
                 <?php if (!empty($schedule->division)): ?>
@@ -60,4 +61,7 @@
             </div>
         <?php endforeach; ?>
     </div>
+    <?php else: ?>
+    There are no active standings yet. Check back here later!
+    <?php endif; ?>
 @endsection

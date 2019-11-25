@@ -35,6 +35,12 @@ class Association extends Model
         return $this->hasMany('App\Schedule');
     }
 
+    public function activeSchedules() {
+        return $this->schedules()
+            ->where('archived', '!=', 1)
+            ->orWhereNull('archived');
+    }
+
     public function resultSubmissions() {
         return $this->hasMany('App\ResultSubmission');
     }
