@@ -49,6 +49,16 @@
 
             <div class="form-group">
                 <div class="form-check">
+                    <input class="form-check-input" name="generate" type="checkbox" value="1" id="generate" <?php echo old('generate', 0) ? ' checked' : ''; ?>>
+                    <label class="form-check-label" for="generate">
+                        Re-Generate Schedule
+                    </label>
+                    <small class="form-text text-muted">WARNING: This will ERASE the current schedule and re-generate it if checked.</small>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <div class="form-check">
                     <input class="form-check-input" name="archived" type="checkbox" value="1" id="archived" <?php echo old('archived', $schedule->archived) ? ' checked' : ''; ?>>
                     <label class="form-check-label" for="archived">
                         Archived

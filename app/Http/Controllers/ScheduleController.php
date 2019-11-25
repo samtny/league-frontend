@@ -76,59 +76,61 @@ class ScheduleController extends Controller
         }
 
         $schedule->save();
-/*
-        $start_datetime = new \DateTime($start_date);
-        $end_datetime = new \DateTime($end_date);
 
-        $days_interval = $start_datetime->diff($end_datetime);
+        if ($request->generate) {
+            $start_datetime = new \DateTime($start_date);
+            $end_datetime = new \DateTime($end_date);
 
-        $days = $days_interval->format('%a');
+            $days_interval = $start_datetime->diff($end_datetime);
 
-        $association = Association::where(['id' => $association_id])->first();
-        $venues = $association->venues;
+            $days = $days_interval->format('%a');
 
-        $round_number = 1;
+            $association = Association::where(['id' => $association_id])->first();
+            $venues = $association->venues;
 
-        for ($i = 0; $i <= $days; $i += 1) {
-            if (strtolower($start_datetime->format('D')) == strtolower($weekday)) {
-                $round = new Round;
+            $round_number = 1;
 
-                $round->schedule_id = $schedule->id;
-                $round->division_id = $division_id;
-                $round->series_id = $series->id;
+            for ($i = 0; $i <= $days; $i += 1) {
+                if (strtolower($start_datetime->format('D')) == strtolower($weekday)) {
+                    $round = new Round;
 
-                $round->start_date = $start_datetime;
-                $round->end_date = $start_datetime;
-                $round->name = 'Round ' . $round_number;
+                    $round->schedule_id = $schedule->id;
+                    $round->division_id = $division_id;
+                    $round->series_id = $series->id;
 
-                $round->save();
+                    $round->start_date = $start_datetime;
+                    $round->end_date = $start_datetime;
+                    $round->name = 'Round ' . $round_number;
 
-                $round_number += 1;
+                    $round->save();
 
-                foreach ($venues as $venue) {
-                    $match = new Match;
+                    $round_number += 1;
 
-                    $match->name = $venue->name . ' – ' . $round->start_date->format('m-d-Y');
-                    $match->association_id = $association->id;
-                    $match->series_id = $series->id;
-                    $match->division_id = $division->id;
+                    foreach ($venues as $venue) {
+                        $match = new Match;
 
-                    // Unique key fields:
-                    $match->schedule_id = $schedule->id;
-                    $match->round_id = $round->id;
-                    $match->venue_id = $venue->id;
-                    $match->sequence = 1;
+                        $match->name = $venue->name . ' – ' . $round->start_date->format('m-d-Y');
+                        $match->association_id = $association->id;
+                        $match->series_id = $series->id;
+                        $match->division_id = $division->id;
 
-                    $match->start_date = $round->start_date;
-                    $match->end_date = $round->end_date;
+                        // Unique key fields:
+                        $match->schedule_id = $schedule->id;
+                        $match->round_id = $round->id;
+                        $match->venue_id = $venue->id;
+                        $match->sequence = 1;
 
-                    $match->save();
+                        $match->start_date = $round->start_date;
+                        $match->end_date = $round->end_date;
+
+                        $match->save();
+                    }
                 }
-            }
 
-            $start_datetime->add(new \DateInterval('P1D'));
+                $start_datetime->add(new \DateInterval('P1D'));
+            }
         }
-*/
+
         return redirect()->route('series.schedules', ['series' => $series]);
     }
 
@@ -146,17 +148,19 @@ class ScheduleController extends Controller
         $schedule->archived = $request->archived;
 
         $schedule->save();
-/*
-        foreach ($schedule->matches as $match) {
-            $home_team_id = $request->{'match_' . $match->id . '__home_team_id'};
-            $away_team_id = $request->{'match_' . $match->id . '__away_team_id'};
 
-            $match->home_team_id = $home_team_id;
-            $match->away_team_id = $away_team_id;
+        if ($request->generate) {
+            foreach ($schedule->matches as $match) {
+                $home_team_id = $request->{'match_' . $match->id . '__home_team_id'};
+                $away_team_id = $request->{'match_' . $match->id . '__away_team_id'};
 
-            $match->save();
+                $match->home_team_id = $home_team_id;
+                $match->away_team_id = $away_team_id;
+
+                $match->save();
+            }
         }
-*/
+
         $request->session()->flash('message', __('Successfully updated schedule'));
 
         return redirect()->route('schedule.view', ['schedule' => $schedule]);
