@@ -76,7 +76,7 @@ class ScheduleController extends Controller
         }
 
         $schedule->save();
-
+/*
         $start_datetime = new \DateTime($start_date);
         $end_datetime = new \DateTime($end_date);
 
@@ -128,7 +128,7 @@ class ScheduleController extends Controller
 
             $start_datetime->add(new \DateInterval('P1D'));
         }
-
+*/
         return redirect()->route('series.schedules', ['series' => $series]);
     }
 
@@ -146,7 +146,7 @@ class ScheduleController extends Controller
         $schedule->archived = $request->archived;
 
         $schedule->save();
-
+/*
         foreach ($schedule->matches as $match) {
             $home_team_id = $request->{'match_' . $match->id . '__home_team_id'};
             $away_team_id = $request->{'match_' . $match->id . '__away_team_id'};
@@ -156,7 +156,7 @@ class ScheduleController extends Controller
 
             $match->save();
         }
-
+*/
         $request->session()->flash('message', __('Successfully updated schedule'));
 
         return redirect()->route('schedule.view', ['schedule' => $schedule]);
