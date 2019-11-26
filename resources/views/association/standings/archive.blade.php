@@ -13,8 +13,8 @@
             <?php foreach ($schedules->sortBy(['start_date', 'DESC']) as $schedule): ?>
             <div class="standings">
 
-                <?php if (!empty($schedule->division)): ?>
-                <h2 class="schedule-title"><?php echo $schedule->division->name; ?></h2>
+                <?php if (!empty($schedule->series) && !empty($schedule->division)): ?>
+                <h2 class="schedule-title"><?php echo $schedule->series->name . ' - ' . $schedule->division->name; ?></h2>
                 <?php else: ?>
                 <h2 class="schedule-title no-division"><?php echo date('l, M j', strtotime($schedule->start_date)); ?></h2>
                 <?php endif; ?>
