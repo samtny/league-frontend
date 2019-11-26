@@ -62,7 +62,9 @@
         <?php endforeach; ?>
     </div>
     <?php else: ?>
-    There are no active standings yet. Check back here later!
+    <div class="message message-empty no-standings">
+        There are no active standings yet. Check back here later!
+    </div>
     <?php endif; ?>
     <nav class="link-menu">
         <ul>

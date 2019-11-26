@@ -31,7 +31,7 @@
         </nav>
     </div>
     @empty
-    <div class="message no-scores">
+    <div class="message message-empty no-scores">
         No rounds are available for score submission.
     </div>
     @endforelse

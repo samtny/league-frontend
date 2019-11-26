@@ -76,6 +76,8 @@
         <?php endforeach; ?>
     </div>
     <?php else: ?>
-    There are no active schedules yet. Check back here later!
+    <div class="message message-empty no-schedules">
+        There are no active schedules yet. Check back here later!
+    </div>
     <?php endif; ?>
 @endsection
