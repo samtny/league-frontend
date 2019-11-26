@@ -5,7 +5,7 @@
 @section('content')
     @component('components/page-title')
         @slot('title')
-            Standings - <?php echo $association->name; ?>
+            Archive - <?php echo $association->name; ?>
         @endslot
     @endcomponent
     <?php if (!$schedules->isEmpty()): ?>
@@ -62,13 +62,6 @@
         <?php endforeach; ?>
     </div>
     <?php else: ?>
-    There are no active standings yet. Check back here later!
+    There are no archived standings.
     <?php endif; ?>
-    <nav class="link-menu">
-        <ul>
-            <li>
-                <a href="{{ route('association.standings.archive') }}">View Archived</a>
-            </li>
-        </ul>
-    </nav>
 @endsection
