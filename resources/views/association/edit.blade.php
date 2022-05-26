@@ -59,6 +59,18 @@
             </div>
             @endif
 
+            @if($association->rules_file_path)
+            <div class="form-group">
+                <label for="rules_file_exists">Rules File</label>
+                <input type="text" id="rules_file_exists" class="form-control" name="rules_file_exists" value="{{ $association->rules_file_path }}" disabled="disabled" />
+            </div>
+            @else
+            <div class="form-group">
+                <label for="rules_file">Rules File</label>
+                <input type="file" class="form-control-file" id="rules_file" name="rules_file" />
+            </div>
+            @endif
+
             <?php if (!empty($association->subdomain)): ?>
             <div class="form-group">
                 <label for="favicon">Favicon</label>

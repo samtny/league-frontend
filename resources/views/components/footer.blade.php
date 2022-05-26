@@ -7,7 +7,7 @@
                     <a href="{{ route('about') }}">About</a>
                 </li>
                 <li>
-                    <a href="{{ route('contact') }}">Contact</a>
+                    <a href="{{ route('association.rules') }}">Rules</a>
                 </li>
 
 

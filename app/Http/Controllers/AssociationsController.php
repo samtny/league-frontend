@@ -319,6 +319,14 @@ class AssociationsController extends Controller
             $association->home_image_path = $path;
         }
 
+        if (isset($request->rules_file)) {
+            $path = $request->rules_file->storeAs(
+                'rules_file/' . $association->subdomain, $request->rules_file->getClientOriginalName(), 'public'
+            );
+
+            $association->rules_file_path = $path;
+        }
+
         $association->about = $request->about;
 
         $association->save();
