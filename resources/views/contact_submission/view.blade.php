@@ -17,7 +17,7 @@
 
                 <div class="form-group email">
                     <label for="email">Email</label>
-                    <a name="email" class="form-control" href="mailto::{{ $contactSubmission->email }}">{{ $contactSubmission->email }}</a>
+                    <a name="email" class="form-control" href="mailto:{{ $contactSubmission->email }}">{{ $contactSubmission->email }}</a>
                 </div>
 
                 <div class="form-group reason">

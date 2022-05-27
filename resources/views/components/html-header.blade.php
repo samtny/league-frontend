@@ -12,6 +12,17 @@
         @section('favicon')
         <!-- Favicon -->
         <!-- TODO: make this dynamic -->
+        @if (@isset($subdomain) && $subdomain == "pinballnyc")
+        <link rel="apple-touch-icon" sizes="180x180" href="/storage/favicon/pinballnyc/apple-touch-icon.png">
+        <link rel="icon" type="image/png" sizes="32x32" href="/storage/favicon/pinballnyc/favicon-32x32.png">
+        <link rel="icon" type="image/png" sizes="16x16" href="/storage/favicon/pinballnyc/favicon-16x16.png">
+        <link rel="manifest" href="/storage/favicon/pinballnyc/site.webmanifest">
+        <link rel="mask-icon" href="/storage/favicon/pinballnyc/safari-pinned-tab.svg" color="#5bbad5">
+        <link rel="shortcut icon" href="/storage/favicon/pinballnyc/favicon.ico">
+        <meta name="msapplication-TileColor" content="#000000">
+        <meta name="msapplication-config" content="/storage/favicon/pinballnyc/browserconfig.xml">
+        <meta name="theme-color" content="#000000">
+        @else
         <link rel="apple-touch-icon" sizes="180x180" href="/storage/favicon/southslope/apple-touch-icon.png">
         <link rel="icon" type="image/png" sizes="32x32" href="/storage/favicon/southslope/favicon-32x32.png">
         <link rel="icon" type="image/png" sizes="16x16" href="/storage/favicon/southslope/favicon-16x16.png">
@@ -21,6 +32,7 @@
         <meta name="msapplication-TileColor" content="#ffc40d">
         <meta name="msapplication-config" content="/storage/favicon/southslope/browserconfig.xml">
         <meta name="theme-color" content="#ebebeb">
+        @endif
         @show
 
         @if (config('app.env') == 'production')

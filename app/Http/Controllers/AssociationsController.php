@@ -124,8 +124,8 @@ class AssociationsController extends Controller
         if (!empty($this->association)) {
             // get schedules with start_date < today, end_date > today
             $schedules = $this->association->schedules
-            ->where('start_date', '<', date('Y-m-d', strtotime('today')))
-            ->where('end_date', '>', date('Y-m-d', strtotime('today')));
+            ->where('start_date', '<=', date('Y-m-d', strtotime('today')))
+            ->where('end_date', '>=', date('Y-m-d', strtotime('today')));
 
             // get rounds with start_date < today, but greater than today - 1 week
             $rounds = Round::whereIn('schedule_id', $schedules->pluck('id'))
@@ -374,6 +374,10 @@ class AssociationsController extends Controller
 
     public function about() {
         return view('association.about' , ['association' => $this->association]);
+    }
+
+    public function rules() {
+        return view('association.rules' , ['association' => $this->association]);
     }
 
     public function contact() {

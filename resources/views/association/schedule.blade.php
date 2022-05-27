@@ -8,8 +8,9 @@
             Schedule - <?php echo $association->name; ?>
         @endslot
     @endcomponent
+    <?php if (!$schedules->isEmpty()): ?>
     <div class="schedules">
-        <?php foreach ($association->schedules->sortBy('start_date') as $schedule): ?>
+        <?php foreach ($schedules->sortBy('start_date') as $schedule): ?>
             <div class="schedule">
 
                 <?php if (!empty($schedule->division)): ?>
@@ -74,4 +75,9 @@
             </div>
         <?php endforeach; ?>
     </div>
+    <?php else: ?>
+    <div class="message message-empty no-schedules">
+        There are no active schedules yet. Check back here later!
+    </div>
+    <?php endif; ?>
 @endsection

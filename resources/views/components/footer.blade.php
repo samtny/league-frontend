@@ -42,7 +42,7 @@
                      */ ?>
                      @can('view-admin-pages')
                      <li>
-                         <a id="navbarDropdown" class="nav-link dropdown-toggle" href="{{ route('admin') }}" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" v-pre>
+                         <a id="navbarDropdown" class="nav-link dropdown-toggle" href="{{ route('association.view', ['association' => $association]) }}" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" v-pre>
                              {{ __('Admin') }}
                          </a>
                      </li>
@@ -64,7 +64,9 @@
     @show
     @section('footer-copyright')
         <div class="footer-copyright">
+            @if (@isset($subdomain) && $subdomain != 'pinballnyc')
             <span class="copyright">© <?php echo date('Y'); ?></span>&nbsp;<span class="attribution">pinballleague.org</span>
+            @endif
         </div>
     @show
 </header>

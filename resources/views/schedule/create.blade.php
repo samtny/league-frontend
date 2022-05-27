@@ -75,6 +75,16 @@
                 </fieldset>
             </div>
 
+            <div class="form-group">
+                <div class="form-check">
+                    <input class="form-check-input" name="generate" type="checkbox" value="1" id="generate" <?php echo old('generate', 1) ? ' checked' : ''; ?>>
+                    <label class="form-check-label" for="generate">
+                        Generate Schedule
+                    </label>
+                    <small class="form-text text-muted">This will generate a full schedule of rounds when checked.</small>
+                </div>
+            </div>
+
             <div class="form-actions">
                 <div class="form-group">
                     <input class="btn btn-primary" id="submit" type="submit" value="Create"/>

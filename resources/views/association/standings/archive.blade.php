@@ -5,7 +5,7 @@
 @section('content')
     @component('components/page-title')
         @slot('title')
-            Standings - <?php echo $association->name; ?>
+            Archive - <?php echo $association->name; ?>
         @endslot
     @endcomponent
     <?php if (!$schedules->isEmpty()): ?>
@@ -13,8 +13,8 @@
             <?php foreach ($schedules->sortBy(['start_date', 'DESC']) as $schedule): ?>
             <div class="standings">
 
-                <?php if (!empty($schedule->division)): ?>
-                <h2 class="schedule-title"><?php echo $schedule->division->name; ?></h2>
+                <?php if (!empty($schedule->series) && !empty($schedule->division)): ?>
+                <h2 class="schedule-title"><?php echo $schedule->series->name . ' - ' . $schedule->division->name; ?></h2>
                 <?php else: ?>
                 <h2 class="schedule-title no-division"><?php echo date('l, M j', strtotime($schedule->start_date)); ?></h2>
                 <?php endif; ?>
@@ -62,15 +62,6 @@
         <?php endforeach; ?>
     </div>
     <?php else: ?>
-    <div class="message message-empty no-standings">
-        There are no active standings yet. Check back here later!
-    </div>
+    There are no archived standings.
     <?php endif; ?>
-    <nav class="link-menu">
-        <ul>
-            <li>
-                <a href="{{ route('association.standings.archive') }}">View Archived</a>
-            </li>
-        </ul>
-    </nav>
 @endsection

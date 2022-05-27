@@ -8,6 +8,7 @@
             <?php echo __('Score Submit'); ?>
         @endslot
     @endcomponent
+    <?php if (!$divisions->isEmpty()): ?>
     <form class="step" method="POST" action="{{ route('association.submit.score.step2', ['association' => $association]) }}">
         @csrf
 
@@ -25,4 +26,9 @@
             </ul>
         </nav>
     </div>
+    <?php else: ?>
+    <div class="message message-empty no-rounds">
+        There are no active rounds yet. Check back here later!
+    </div>
+    <?php endif; ?>
 @endsection

@@ -21,7 +21,7 @@
                 <?php endforeach; ?>
                 </div>
             <?php else: ?>
-                <div class="message">
+                <div class="message message-empty">
                     No Series for this association.
                 </div>
             <?php endif; ?>
