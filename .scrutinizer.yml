@@ -4,6 +4,8 @@ build:
       version: 7.4
   nodes:
     analysis:
+      services:
+        mysql: 5.7
       project_setup:
         override:
           - 'true'
