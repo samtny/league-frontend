@@ -1,5 +1,7 @@
 <?php
 
+namespace Database\Seeders;
+
 use App\Association;
 use App\Division;
 use App\Team;

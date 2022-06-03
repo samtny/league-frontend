@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AssociationsController;
 use Spatie\Honeypot\ProtectAgainstSpam;
 
 /*
@@ -14,7 +15,8 @@ use Spatie\Honeypot\ProtectAgainstSpam;
 */
 
 Route::domain('{subdomain}.pinballleague.org')->middleware('subdomain')->group(function() {
-    Route::get('/', 'AssociationsController@home')->name('association.home');
+    // TODO: laravel 8 supports standard PHP callable syntax instead of strings.
+    Route::get('/', [AssociationsController::class, 'home'])->name('association.home');
 
     Route::get('/submit', 'AssociationsController@submitScoreBegin')->name('association.submit.score.step1');
     Route::post('/submit/step2', 'AssociationsController@submitScoreStep2')->name('association.submit.score.step2');
