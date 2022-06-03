@@ -10,7 +10,7 @@
     @endcomponent
     <?php if (!$schedules->isEmpty()): ?>
     <div class="standings-list">
-            <?php foreach ($schedules->sortBy(['start_date', 'DESC']) as $schedule): ?>
+            <?php foreach ($schedules->sortByDesc('start_date') as $schedule): ?>
             <div class="standings">
 
                 <?php if (!empty($schedule->series) && !empty($schedule->division)): ?>
