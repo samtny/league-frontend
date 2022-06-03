@@ -3,7 +3,7 @@ bootstrap/app.php
 config/
 database/factories/
 database/migrations/
-database/seeds/
+database/seeders/
 public/
 resources/
 routes/
