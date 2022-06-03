@@ -11,7 +11,7 @@
         <h1 class="col">Edit Round</h1>
     </div>
     <div class="form">
-        <form method="POST" action="{{ route('round.update', ['schedule' => $schedule, 'round' => $round]) }}">
+        <form method="POST" action="{{ route('round.update', ['schedule' => $schedule, 'id' => $round->id]) }}">
             @csrf
 
             <input type="hidden" name="id" value="<?php echo $schedule->id; ?>">

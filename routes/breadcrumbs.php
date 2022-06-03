@@ -165,7 +165,7 @@ Breadcrumbs::for('schedule.rounds', function ($trail, $schedule) {
 
 Breadcrumbs::for('round.view', function ($trail, $schedule, $round) {
     $trail->parent('schedule.rounds', $schedule);
-    $trail->push(!empty($round->start_date) ? $round->start_date : '<empty>');
+    $trail->push(!empty($round->start_date) ? \Carbon\Carbon::parse($round->start_date)->format('m-d-Y') : '<empty>');
 });
 
 Breadcrumbs::for('round.create', function ($trail, $schedule) {
@@ -180,7 +180,7 @@ Breadcrumbs::for('round.edit', function ($trail, $schedule, $round) {
 
 Breadcrumbs::for('results.edit', function ($trail, $schedule) {
     $trail->parent('series.edit', $schedule->series);
-    $trail->push(__('Results - :start_date', ['start_date' => date('Y-m-d', strtotime($schedule->start_date))]), route('results.edit', $schedule));
+    $trail->push(__('Results - :start_date', ['start_date' => \Carbon\Carbon::parse($schedule->start_date)->format('m-d-Y')]), route('results.edit', $schedule));
 });
 
 Breadcrumbs::for('result_submissions.approve', function ($trail, $association) {

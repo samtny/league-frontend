@@ -29,7 +29,7 @@
                     <div class="list-group">
                     @forelse ($association->activeRounds->sortBy('start_date') as $round)
                     <a class="list-group-item list-group-item-action" href="{{ route('round.edit', ['schedule' => $round->schedule, 'round' => $round]) }}">
-                        <?php echo !empty($round->series) ? $round->series->name : '[no series]'; ?> - <?php echo $round->name; ?> - <?php echo $round->start_date->format('Y-m-d'); ?>
+                        <?php echo !empty($round->series) ? $round->series->name : '[no series]'; ?> - <?php echo $round->name; ?> - <?php echo $round->start_date->format('m-d-Y'); ?>
                     </a>
                     @empty
                     There are no active rounds.
