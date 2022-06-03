@@ -14,13 +14,14 @@ use App\User;
 use App\Venue;
 use Bouncer;
 use Illuminate\Http\Request;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Str;
 
 class AssociationsController extends Controller
 {
 
     public function __construct(Request $request) {
-        $subdomain = array_first(explode('.', \Request::getHost()));
+        $subdomain = Arr::first(explode('.', \Request::getHost()));
 
         $this->association = Association::where('subdomain', $subdomain)->first();
     }

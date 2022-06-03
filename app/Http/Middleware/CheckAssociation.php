@@ -5,6 +5,7 @@ namespace App\Http\Middleware;
 use Bouncer;
 use Closure;
 use App\Association;
+use Illuminate\Support\Arr;
 
 class CheckAssociation
 {
@@ -21,7 +22,7 @@ class CheckAssociation
 
         if (!($association instanceof Association)) {
             // FIXME: redo routes so we always get association from there instead:
-            $subdomain = array_first(explode('.', $request->getHost()));
+            $subdomain = Arr::first(explode('.', $request->getHost()));
 
             $association = Association::where('subdomain', $subdomain)->first();
         }

@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 
 use App\Association;
+use Illuminate\Support\Arr;
 
 class AssociationAwareController extends Controller
 {
@@ -15,7 +16,7 @@ class AssociationAwareController extends Controller
     protected $association;
 
     public function __construct(Request $request) {
-        $subdomain = array_first(explode('.', \Request::getHost()));
+        $subdomain = Arr::first(explode('.', \Request::getHost()));
 
         $this->association = Association::where('subdomain', $subdomain)->first();
     }

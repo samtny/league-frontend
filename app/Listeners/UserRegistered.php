@@ -9,6 +9,7 @@ use Illuminate\Http\Request;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Support\Arr;
 
 class UserRegistered
 {
@@ -37,7 +38,7 @@ class UserRegistered
         $user = $event->user;
 
         // FIXME: put the 'register' route in a subdomain and get it that way instead:
-        $subdomain = array_first(explode('.', $this->request->getHost()));
+        $subdomain = Arr::first(explode('.', $this->request->getHost()));
 
         $association = Association::where('subdomain', $subdomain)->first();
 
