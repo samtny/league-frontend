@@ -1,5 +1,4 @@
 body > header {
     @include maxwidth;
-
-
+    padding: rem(15px) 0 0 0;
 }
