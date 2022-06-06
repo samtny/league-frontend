@@ -6,7 +6,6 @@ use App\Http\Controllers\Controller;
 
 use App\Association;
 use App\Division;
-use App\Match;
 use App\ResultSubmission;
 use App\Round;
 use App\Series;

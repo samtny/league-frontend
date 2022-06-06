@@ -4,7 +4,7 @@ namespace App;
 
 use Illuminate\Database\Eloquent\Model;
 
-class Match extends Model
+class PLMatch extends Model
 {
 
     protected $fillable = array('name', 'start_date', 'end_date', 'association_id',  'series_id', 'division_id', 'schedule_id', 'round_id', 'venue_id', 'home_team_id', 'away_team_id');
@@ -42,10 +42,10 @@ class Match extends Model
     }
 
     public function result() {
-        return $this->hasOne('App\Result');
+        return $this->hasOne('App\Result', 'match_id');
     }
 
     public function resultSubmissions() {
-        return $this->hasMany('App\ResultSubmission');
+        return $this->hasMany('App\ResultSubmission', 'match_id');
     }
 }

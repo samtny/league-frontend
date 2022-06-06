@@ -39,7 +39,7 @@
                                 <th scope="row"><?php echo $venue->name ?></th>
                                 <?php foreach ($schedule->rounds as $index => $round): ?>
                                 <td>
-                                    <?php $match = \App\Match::where([
+                                    <?php $match = \App\PLMatch::where([
                                         'schedule_id' => $schedule->id,
                                         'round_id' => $round->id,
                                         'venue_id' => $venue->id,

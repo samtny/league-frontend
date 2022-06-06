@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Association;
 use App\Division;
-use App\Match;
+use App\PLMatch;
 use App\Round;
 use App\Schedule;
 use App\Series;
@@ -107,7 +107,7 @@ class ScheduleController extends Controller
                     $round_number += 1;
 
                     foreach ($venues as $venue) {
-                        $match = new Match;
+                        $match = new PLMatch;
 
                         $match->name = $venue->name . ' – ' . $round->start_date->format('m-d-Y');
                         $match->association_id = $association->id;

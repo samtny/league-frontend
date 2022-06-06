@@ -5,7 +5,7 @@ namespace App\Http\Controllers;
 use App\Association;
 use App\ContactSubmission;
 use App\Division;
-use App\Match;
+use App\PLMatch;
 use App\ResultSubmission;
 use App\Round;
 use App\Series;
@@ -185,7 +185,7 @@ class AssociationsController extends Controller
 
     public function submitScoreStep3(Request $request) {
         if (!empty($this->association)) {
-            $match = Match::find($request->match_id);
+            $match = PLMatch::find($request->match_id);
 
             return view('forms.results.input-scores', [
                 'association' => $this->association,
@@ -209,7 +209,7 @@ class AssociationsController extends Controller
 
                 $submission = new ResultSubmission();
                 $submission->association_id = $this->association->id;
-                $submission->schedule_id = Match::find($match_id)->schedule_id;
+                $submission->schedule_id = PLMatch::find($match_id)->schedule_id;
                 $submission->match_id = $match_id;
                 $submission->home_team_score = $home_team_score;
                 $submission->away_team_score = $away_team_score;
@@ -226,7 +226,7 @@ class AssociationsController extends Controller
                 else {
                     return view('forms.results.choose-winner', [
                         'association' => $this->association,
-                        'match' => Match::find($submission->match_id),
+                        'match' => PLMatch::find($submission->match_id),
                         'submission' => $submission,
                         ]);
                 }

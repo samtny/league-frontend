@@ -26,7 +26,7 @@ class Schedule extends Model
     }
 
     public function matches() {
-        return $this->hasMany('App\Match');
+        return $this->hasMany('App\PLMatch');
     }
 
     public function resultSubmissions() {

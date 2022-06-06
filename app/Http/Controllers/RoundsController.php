@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Match;
+use App\PLMatch;
 use App\Round;
 use App\Schedule;
 use Illuminate\Http\Request;
@@ -58,7 +58,7 @@ class RoundsController extends Controller
         $venues = $association->venues;
 
         foreach ($venues as $venue) {
-            $match = new Match;
+            $match = new PLMatch;
 
             $match->name = $venue->name . ' – ' . $round->start_date->format('m-d-Y');
             $match->association_id = $association->id;

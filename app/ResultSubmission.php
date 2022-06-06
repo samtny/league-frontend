@@ -18,7 +18,7 @@ class ResultSubmission extends Model
     }
 
     public function match() {
-        return $this->belongsTo('App\Match');
+        return $this->belongsTo('App\PLMatch');
     }
 
 }
