@@ -31,8 +31,8 @@ CONFIG_FILE="./config/config.${CONFIG}.yml"
 
 eval $(parse_yaml ${CONFIG_FILE} "config_")
 
-if [ -f "/usr/local/bin/php7" ]; then
-  php="/usr/local/bin/php7"
+if [ -f "/usr/bin/php8.0" ]; then
+  php="/usr/bin/php8.0"
 else
   php="php"
 fi
