@@ -65,6 +65,9 @@
                 <label for="rules_file_exists">Rules File</label>
                 <input type="text" id="rules_file_exists" class="form-control" name="rules_file_exists" value="{{ $association->rules_file_path }}" disabled="disabled" />
             </div>
+            <div class="form-group">
+                <a class="btn btn-primary" href="{{ route('association.rulesDelete', [ 'association' => $association ]) }}">Delete Rules File</a>
+            </div>
             @else
             <div class="form-group">
                 <label for="rules_file">Rules File</label>

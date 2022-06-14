@@ -381,6 +381,17 @@ class AssociationsController extends Controller
         return view('association.rules' , ['association' => $this->association]);
     }
 
+    public function rulesDelete(Association $association) {
+        $association->rules_file_path = NULL;
+
+        $association->save();
+
+        return view('association.edit', [
+            'association' => $association,
+            'current_user' => \Auth::user(),
+        ]);
+    }
+
     public function contact() {
         return view('forms.contact', ['association' => $this->association]);
     }
