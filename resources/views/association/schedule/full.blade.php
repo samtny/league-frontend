@@ -21,50 +21,54 @@
 
             <h3><?php echo date('l, F j, Y', strtotime($round->start_date)); ?></h3>
 
-            <table>
-                <thead>
-                    <tr>
-                        <th>Match</th>
-                        <th>Location</th>
-                        <th>Score</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <?php foreach ($round->matches as $match): ?>
-                        <?php $homeTeam = $match->homeTeam; ?>
-                        <?php $awayTeam = $match->awayteam; ?>
-
-                        <?php if (!empty($homeTeam) && !empty($awayTeam)): ?>
+            <?php if ($round->matches->first()): ?>
+                <table>
+                    <thead>
                         <tr>
-                            <td>
-                                <?php echo $match->awayTeam->name; ?> @ <strong><?php echo $match->homeTeam->name; ?></strong>
-                            </td>
-                            <td>
-                                <?php echo $match->venue->name; ?>
-                            </td>
-                            <td>
-                                <?php
-                                    $result = $match->result;
-
-                                    if (!empty($result)) {
-                                        if (
-                                            !empty($result->away_team_score)
-                                            && is_numeric($result->away_team_score)
-                                            && !empty($result->home_team_score)
-                                            && is_numeric($result->home_team_score)
-                                            ) {
-
-                                                echo $result->away_team_score . ' - <strong>' . $result->home_team_score . '</strong>';
-
-                                        }
-                                    }
-                                    ?>
-                            </td>
+                            <th>Match</th>
+                            <th>Location</th>
+                            <th>Score</th>
                         </tr>
-                        <?php endif; ?>
-                    <?php endforeach; ?>
-                </tbody>
-            </table>
+                    </thead>
+                    <tbody>
+                        <?php foreach ($round->matches as $match): ?>
+                            <?php $homeTeam = $match->homeTeam; ?>
+                            <?php $awayTeam = $match->awayteam; ?>
+
+                            <?php if (!empty($homeTeam) && !empty($awayTeam)): ?>
+                            <tr>
+                                <td>
+                                    <?php echo $match->awayTeam->name; ?> @ <strong><?php echo $match->homeTeam->name; ?></strong>
+                                </td>
+                                <td>
+                                    <?php echo $match->venue->name; ?>
+                                </td>
+                                <td>
+                                    <?php
+                                        $result = $match->result;
+
+                                        if (!empty($result)) {
+                                            if (
+                                                !empty($result->away_team_score)
+                                                && is_numeric($result->away_team_score)
+                                                && !empty($result->home_team_score)
+                                                && is_numeric($result->home_team_score)
+                                                ) {
+
+                                                    echo $result->away_team_score . ' - <strong>' . $result->home_team_score . '</strong>';
+
+                                            }
+                                        }
+                                        ?>
+                                </td>
+                            </tr>
+                            <?php endif; ?>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+            <?php else: ?>
+                TBD
+            <?php endif; ?>
 
         <?php endforeach ?>
     </div>
