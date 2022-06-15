@@ -73,6 +73,13 @@
 
                 <?php endforeach ?>
             </div>
+            <nav class="link-menu">
+                <ul>
+                    <li>
+                        <a href="{{ route('association.schedule.full', ['schedule' => $schedule]) }}">View Full Schedule</a>
+                    </li>
+                </ul>
+            </nav>
         <?php endforeach; ?>
     </div>
     <?php else: ?>
