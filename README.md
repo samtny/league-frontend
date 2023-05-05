@@ -22,6 +22,7 @@ This app runs on the Laravel framework: https://laravel.com.
 1. npm run dev
 1. copy .env.sqlite.example to .env and modify
 1. use e.g. "openssl enc -aes-128-cbc -k secret -P -md sha1" to generate a suitable APP_KEY
+1. touch database/database.sqlite
 1. php artisan migrate
 1. php artisan db:seed
 1. php artisan storage:link

@@ -14,8 +14,8 @@ return new class extends Migration
      */
     public function up()
     {
-        \DB::statement('CREATE TABLE p_l_matches LIKE matches');
-        \DB::statement('INSERT p_l_matches SELECT * FROM matches');
+        \DB::statement('CREATE TABLE p_l_matches AS SELECT * FROM matches');
+        //\DB::statement('INSERT p_l_matches SELECT * FROM matches');
     }
 
     /**
