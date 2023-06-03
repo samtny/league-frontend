@@ -9,6 +9,8 @@ class PLMatch extends Model
 
     protected $fillable = array('name', 'start_date', 'end_date', 'association_id',  'series_id', 'division_id', 'schedule_id', 'round_id', 'venue_id', 'home_team_id', 'away_team_id');
 
+    protected $table = 'matches';
+
     public function association() {
         return $this->belongsTo('App\Association');
     }
