@@ -21,7 +21,7 @@
 
             <h3><?php echo date('l, F j, Y', strtotime($round->start_date)); ?></h3>
 
-            <?php if ($round->matches->first()): ?>
+            <?php if ($round->scheduledMatches->first()): ?>
                 <table>
                     <thead>
                         <tr>
@@ -31,7 +31,7 @@
                         </tr>
                     </thead>
                     <tbody>
-                        <?php foreach ($round->matches as $match): ?>
+                        <?php foreach ($round->scheduledMatches as $match): ?>
                             <?php $homeTeam = $match->homeTeam; ?>
                             <?php $awayTeam = $match->awayteam; ?>
 

@@ -30,6 +30,10 @@ class Round extends Model
     }
 
     public function matches() {
+        return $this->hasMany('App\PLMatch');
+    }
+
+    public function scheduledMatches() {
         return $this->hasMany('App\PLMatch')
             ->whereNotNull('home_team_id');
     }
