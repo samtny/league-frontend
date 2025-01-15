@@ -14,9 +14,9 @@ class Round extends Model
      *
      * @var array
      */
-    protected $dates = [
-        'start_date',
-        'end_date',
+    protected $casts = [
+        'start_date' => 'datetime',
+        'end_date' => 'datetime',
     ];
 
     // Round belongs to a series:
