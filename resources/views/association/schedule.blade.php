@@ -24,7 +24,7 @@
                     ->where('start_date', '<=', date('Y-m-d', strtotime("+2 weeks")))
                     ->sortBy('start_date') as $round): ?>
 
-                    <h3><?php echo date('l, F j, Y', strtotime($round->start_date)); ?></h3>
+                    <h3><?php echo $round->name; ?> - <?php echo date('l, F j, Y', strtotime($round->start_date)); ?></h3>
 
                     <?php if ($round->scheduledMatches->first()): ?>
                         <table>
