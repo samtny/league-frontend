@@ -48,6 +48,32 @@
             </div>
 
             <div class="form-group">
+                <legend>Match Weekday</legend>
+                <fieldset>
+                    <label for="weekday_sunday">Sunday</label>
+                    <input type="radio" id="weekday_sunday" name="weekday" value="sun" <?php echo old('weekday_sunday', 0) ? ' checked' : ''; ?>>
+
+                    <label for="weekday_monday">Monday</label>
+                    <input type="radio" id="weekday_monday" name="weekday" value="mon" <?php echo old('weekday_monday', 1) ? ' checked' : ''; ?>>
+
+                    <label for="weekday_tuesday">Tuesday</label>
+                    <input type="radio" id="weekday_tuesday" name="weekday" value="tue" <?php echo old('weekday_tuesday', 0) ? ' checked' : ''; ?>>
+
+                    <label for="weekday_wednesday">Wednesday</label>
+                    <input type="radio" id="weekday_wednesday" name="weekday" value="wed" <?php echo old('weekday_wednesday', 0) ? ' checked' : ''; ?>>
+
+                    <label for="weekday_thursday">Thursday</label>
+                    <input type="radio" id="weekday_thursday" name="weekday" value="thu" <?php echo old('weekday_thursday', 0) ? ' checked' : ''; ?>>
+
+                    <label for="weekday_friday">Friday</label>
+                    <input type="radio" id="weekday_friday" name="weekday" value="fri" <?php echo old('weekday_friday', 0) ? ' checked' : ''; ?>>
+
+                    <label for="weekday_saturday">Saturday</label>
+                    <input type="radio" id="weekday_saturday" name="weekday" value="sat" <?php echo old('weekday_saturday', 0) ? ' checked' : ''; ?>>
+                </fieldset>
+            </div>
+
+            <div class="form-group">
                 <div class="form-check">
                     <input class="form-check-input" name="generate" type="checkbox" value="1" id="generate" <?php echo old('generate', 0) ? ' checked' : ''; ?>>
                     <label class="form-check-label" for="generate">
