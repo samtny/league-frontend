@@ -2,12 +2,16 @@
 
 set -e
 
-USAGE="deploy.sh -d -i [config]"
+USAGE="deploy.sh -b -d -i [config]"
 
+BUILD=false
 DEPENDENCIES=false
 
-while getopts "di" opt; do
+while getopts "bdi" opt; do
     case "$opt" in
+        b)
+            BUILD=true
+            ;;
         d)
             DEPENDENCIES=true
             ;;
@@ -51,10 +55,12 @@ DOCROOT=$config_league_frontend_docroot
 
 RSYNC_EXCLUDE=""
 
-if [ "$CONFIG" = "production" ]; then
-  npm run production
-else
-  npm run dev
+if [ "$BUILD" = true ]; then
+  if [ "$CONFIG" = "production" ]; then
+    npm run production
+  else
+    npm run dev
+  fi
 fi
 
 if [ "$CONFIG" != "local" ]; then
