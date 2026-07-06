@@ -20,6 +20,8 @@ class BouncerSeeder extends Seeder
         \Bouncer::allow('superadmin')->everything();
 
         \Bouncer::allow('admin')->to('administer-associations');
+        \Bouncer::allow('admin')->to('administer-users');
+        \Bouncer::allow('admin')->to('view-admin-pages');
         \Bouncer::allow('admin')->to('view-users');
         \Bouncer::allow('admin')->to('create', Association::class);
 
