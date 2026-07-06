@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 class Team extends Model
 {
 
-    protected $fillable = array('name', 'venue_id');
+    protected $fillable = array('name', 'venue_id', 'association_id');
 
     public function association() {
         return $this->belongsTo('App\Association');
@@ -23,6 +23,10 @@ class Team extends Model
 
     public function homeVenue() {
         return $this->hasOne('App\Venue');
+    }
+
+    public function roster() {
+        return $this->hasMany('App\Member');
     }
 
 }

@@ -58,6 +58,16 @@ Route::prefix('admin')->middleware('admin')->group(function () {
         Route::get('{association}/team/{team}/delete', 'TeamsController@deleteConfirm')->name('team.deleteConfirm');
         Route::post('{association}/team/{team}/delete', 'TeamsController@delete')->name('team.delete');
 
+        Route::get('{association}/team/{team}/roster', 'MembersController@roster')->name('team.roster');
+
+        Route::get('{association}/team/{team}/member/create', 'MembersController@create')->name('member.create');
+        Route::post('{association}/team/{team}/member/create', 'MembersController@store');
+
+        Route::get('{association}/members/{member}/edit', 'MembersController@edit')->name('member.edit');
+        Route::post('{association}/members/{member}/update', 'MembersController@update')->name('member.update');
+        Route::get('{association}/members/{member}/delete', 'MembersController@deleteConfirm')->name('member.deleteConfirm');
+        Route::post('{association}/members/{member}/delete', 'MembersController@delete')->name('member.delete');
+
         Route::get('{association}/division/create', 'DivisionsController@create')->name('division.create');
         Route::post('{association}/division/create', 'DivisionsController@store');
         Route::get('{association}/division/{division}/edit', 'DivisionsController@edit')->name('division.edit');

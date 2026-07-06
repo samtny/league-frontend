@@ -4,6 +4,7 @@ namespace Database\Seeders;
 
 use App\Association;
 use App\Division;
+use App\Member;
 use App\Team;
 use App\Venue;
 use Illuminate\Database\Seeder;
@@ -43,6 +44,10 @@ class BouncerSeeder extends Seeder
         \Bouncer::allow('assocadmin')->to('edit', Venue::class);
         \Bouncer::allow('assocadmin')->to('update', Venue::class);
         \Bouncer::allow('assocadmin')->to('delete', Venue::class);
+
+        \Bouncer::allow('assocadmin')->to('create', Member::class);
+        \Bouncer::allow('assocadmin')->to('update', Member::class);
+        \Bouncer::allow('assocadmin')->to('delete', Member::class);
 
         \Bouncer::allow('authenticated')->to('view-users');
     }

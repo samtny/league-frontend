@@ -83,6 +83,21 @@ Breadcrumbs::for('team.edit', function ($trail, $team) {
     $trail->push('Edit Team', route('team.edit', ['association' => $team->association, 'team' => $team]));
 });
 
+Breadcrumbs::for('team.roster', function ($trail, $team) {
+    $trail->parent('association.teams', $team->association);
+    $trail->push('Roster', route('team.roster', ['association' => $team->association, 'team' => $team]));
+});
+
+Breadcrumbs::for('member.create', function ($trail, $team) {
+    $trail->parent('team.roster', $team);
+    $trail->push('Add Member', route('member.create', ['association' => $team->association, 'team' => $team]));
+});
+
+Breadcrumbs::for('member.edit', function ($trail, $member) {
+    $trail->parent('team.roster', $member->team);
+    $trail->push('Edit Member', route('member.edit', ['association' => $member->association, 'member' => $member]));
+});
+
 Breadcrumbs::for('association.venues', function ($trail, $association) {
     $trail->parent('association.view', $association);
     $trail->push('Venues', route('association.venues', $association));

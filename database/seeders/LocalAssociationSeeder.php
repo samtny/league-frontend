@@ -4,7 +4,10 @@ namespace Database\Seeders;
 
 use App\Association;
 use App\AssociationUser;
+use App\Member;
+use App\Team;
 use App\User;
+use App\Venue;
 use Illuminate\Database\Seeder;
 
 class LocalAssociationSeeder extends Seeder
@@ -39,6 +42,78 @@ class LocalAssociationSeeder extends Seeder
                 'association_id' => $association->id,
             ],
             []
+        );
+
+        $buttermilk = Team::updateOrCreate(
+            [
+                'association_id' => $association->id,
+                'name' => 'Buttermilk',
+            ],
+            [
+                'association_id' => $association->id,
+                'name' => 'Buttermilk',
+            ]
+        );
+
+        Member::updateOrCreate(
+            [
+                'association_id' => $association->id,
+                'team_id' => $buttermilk->id,
+                'name' => 'Sam',
+            ],
+            [
+                'association_id' => $association->id,
+                'team_id' => $buttermilk->id,
+                'name' => 'Sam',
+                'role' => 'Player',
+            ]
+        );
+
+        Member::updateOrCreate(
+            [
+                'association_id' => $association->id,
+                'team_id' => $buttermilk->id,
+                'name' => 'Kate',
+            ],
+            [
+                'association_id' => $association->id,
+                'team_id' => $buttermilk->id,
+                'name' => 'Kate',
+                'role' => 'Player',
+            ]
+        );
+
+        Team::updateOrCreate(
+            [
+                'association_id' => $association->id,
+                'name' => "Rullo's",
+            ],
+            [
+                'association_id' => $association->id,
+                'name' => "Rullo's",
+            ]
+        );
+
+        Venue::updateOrCreate(
+            [
+                'association_id' => $association->id,
+                'name' => 'Buttermilk',
+            ],
+            [
+                'association_id' => $association->id,
+                'name' => 'Buttermilk',
+            ]
+        );
+
+        Venue::updateOrCreate(
+            [
+                'association_id' => $association->id,
+                'name' => "Rullo's",
+            ],
+            [
+                'association_id' => $association->id,
+                'name' => "Rullo's",
+            ]
         );
 
         \Bouncer::assign('assocadmin')->to($owner);

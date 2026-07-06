@@ -34,6 +34,14 @@
                 </select>
             </div>
 
+            <div class="row mb-3">
+                <div class="col">
+                    <div class="list-group">
+                        <a class="list-group-item list-group-item-action" href="{{ route('team.roster', ['association' => $team->association, 'team' => $team]) }}">Roster</a>
+                    </div>
+                </div>
+            </div>
+
             <div class="form-actions">
                 <div class="form-group">
                     <input class="btn btn-primary" id="submit" type="submit" value="Update"/>
