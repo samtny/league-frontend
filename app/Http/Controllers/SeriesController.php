@@ -104,4 +104,16 @@ class SeriesController extends Controller
         return view('series.schedules', ['series' => $series]);
     }
 
+    public function deleteConfirm(Series $series) {
+        return view('series.delete', ['series' => $series]);
+    }
+
+    public function delete(Series $series) {
+        $association = $series->association;
+
+        $series->delete();
+
+        return redirect()->route('association.series', ['association' => $association])->with('success', 'Series deleted successfully.');
+    }
+
 }

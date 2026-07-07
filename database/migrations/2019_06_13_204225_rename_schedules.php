@@ -1,5 +1,6 @@
 <?php
 
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Database\Migrations\Migration;
@@ -13,17 +14,19 @@ class RenameSchedules extends Migration
      */
     public function up()
     {
-        $schedules = \App\Schedule::all();
+        // Uses the query builder rather than the App\Schedule model: migrations
+        // must reflect the schema as it existed at the time they were written,
+        // not whatever the model looks like today (e.g. later SoftDeletes/scopes).
+        $schedules = DB::table('schedules')->get();
 
         foreach ($schedules as $schedule) {
-            if (!empty($schedule->division)) {
-                $schedule->name = $schedule->division->name;
-            }
-            else {
-                $schedule->name = date('Y-m-d', strtotime($schedule->start_date));
-            }
+            $division = !empty($schedule->division_id)
+                ? DB::table('divisions')->find($schedule->division_id)
+                : null;
 
-            $schedule->save();
+            $name = $division ? $division->name : date('Y-m-d', strtotime($schedule->start_date));
+
+            DB::table('schedules')->where('id', $schedule->id)->update(['name' => $name]);
         }
     }
 

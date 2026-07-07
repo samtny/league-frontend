@@ -3,9 +3,12 @@
 namespace App;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Venue extends Model
 {
+    use SoftDeletes;
+
     protected $fillable = array('name', 'address', 'association_id');
 
     public function association() {
