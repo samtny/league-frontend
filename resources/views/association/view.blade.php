@@ -12,7 +12,7 @@
     </div>
     <div class="row">
         <div class="col-md-6 mb-3">
-            <h2>Administer</h2>
+            <h2 class="text-muted">Administer</h2>
             <div class="list-group">
                 <a class="list-group-item list-group-item-action" href="{{ route('association.edit', ['association' => $association]) }}">Edit Details</a>
                 <a class="list-group-item list-group-item-action" href="{{ route('association.divisions', ['association' => $association]) }}">Divisions</a>
@@ -25,7 +25,7 @@
         <div class="col-md-6 mb-3">
             <div class="row">
                 <div class="col mb-3">
-                    <h2>Active Rounds</h2>
+                    <h2 class="text-muted">Active Rounds</h2>
                     <div class="list-group">
                     @forelse ($association->activeRounds->sortBy('start_date') as $round)
                     <a class="list-group-item list-group-item-action" href="{{ route('round.edit', ['schedule' => $round->schedule, 'round' => $round]) }}">
@@ -39,7 +39,7 @@
             </div>
             <div class="row">
                 <div class="col mb-3">
-                    <h2>Score Submissions</h2>
+                    <h2 class="text-muted">Score Submissions</h2>
                     <div class="list-group">
                     <?php $submissions = $association->resultSubmissions->where('approved', 0); ?>
                     <?php if(!($submissions->isEmpty())): ?>
@@ -55,7 +55,7 @@
             </div>
             <div class="row">
                 <div class="col mb-3">
-                    <h2>Messages</h2>
+                    <h2 class="text-muted">Messages</h2>
                     <div class="list-group">
                     <?php $messages = $association->contactSubmissions->where('archived', 0); ?>
                     <?php if(!($messages->isEmpty())): ?>

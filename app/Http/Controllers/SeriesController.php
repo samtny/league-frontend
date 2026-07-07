@@ -93,6 +93,8 @@ class SeriesController extends Controller
             $series->end_date = NULL;
         }
 
+        $series->archived = $request->has('archived');
+
         $series->save();
 
         $request->session()->flash('message', __('Successfully updated series :series!', ['series' => $series->name]));

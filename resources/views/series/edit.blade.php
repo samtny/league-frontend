@@ -40,6 +40,16 @@
                 <input class="form-control" id="end_date" type="date" name="end_date" value="{{ old('end_date', $end_date_string) }}">
             </div>
 
+            <div class="form-group">
+                <div class="form-check">
+                    <input class="form-check-input" name="archived" type="checkbox" value="1" id="archived" <?php echo old('archived', $series->archived) ? ' checked' : ''; ?>>
+                    <label class="form-check-label" for="archived">
+                        Archived
+                    </label>
+                    <small class="form-text text-muted">When checked, this series will not show in the Series list.</small>
+                </div>
+            </div>
+
             <div class="form-actions">
                 <div class="form-group">
                     <button class="btn btn-primary" id="submit" type="submit">Update</button>

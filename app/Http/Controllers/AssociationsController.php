@@ -70,6 +70,10 @@ class AssociationsController extends Controller
         return view('association.series', ['association' => $association]);
     }
 
+    public function seriesArchived(Association $association) {
+        return view('association.series_archived', ['association' => $association]);
+    }
+
     public function users(Association $association) {
         return view('association.users', ['association' => $association]);
     }

@@ -9,7 +9,7 @@ class Series extends Model
 {
     use SoftDeletes;
 
-    protected $fillable = array('user_id', 'association_id', 'name', 'start_date', 'end_date');
+    protected $fillable = array('user_id', 'association_id', 'name', 'start_date', 'end_date', 'archived');
 
     protected static function booted() {
         static::deleting(function (Series $series) {

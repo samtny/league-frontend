@@ -31,6 +31,14 @@ class Association extends Model
         return $this->hasMany('App\Series');
     }
 
+    public function activeSeries() {
+        return $this->series()->where('archived', 0);
+    }
+
+    public function archivedSeries() {
+        return $this->series()->where('archived', 1);
+    }
+
     public function schedules() {
         return $this->hasMany('App\Schedule');
     }

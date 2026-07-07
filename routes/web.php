@@ -81,6 +81,7 @@ Route::prefix('admin')->middleware('admin')->group(function () {
         Route::get('{association}/teams', 'AssociationsController@teams')->name('association.teams');
         Route::get('{association}/venues', 'AssociationsController@venues')->name('association.venues');
         Route::get('{association}/series', 'AssociationsController@series')->name('association.series');
+        Route::get('{association}/series/archived', 'AssociationsController@seriesArchived')->name('association.series.archived');
         Route::get('{association}/users', 'AssociationsController@users')->name('association.users');
 
         Route::get('create', 'AssociationsController@create')->name('association.create');
