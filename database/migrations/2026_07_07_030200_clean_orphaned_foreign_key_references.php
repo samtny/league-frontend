@@ -13,9 +13,21 @@ class CleanOrphanedForeignKeyReferences extends Migration
      * a row deleted for one violation is also accounted for by the cleanup
      * of anything that referenced it.
      *
+     * MySQL does not support transactional DDL, so Laravel does not
+     * automatically wrap migrations in a transaction on that connection
+     * (only Postgres gets that). Since this migration is pure DML, we wrap
+     * it ourselves so a failure partway through leaves nothing applied.
+     *
      * @return void
      */
     public function up()
+    {
+        DB::transaction(function () {
+            $this->cleanAll();
+        });
+    }
+
+    private function cleanAll(): void
     {
         // associations.user_id -> users.id (set null)
         $this->setNullIfMissing('associations', 'user_id', 'users');

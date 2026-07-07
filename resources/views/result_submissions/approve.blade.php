@@ -14,13 +14,15 @@
             </div>
         </div>
     </div>
+    <?php $hasSubmissions = false; ?>
     <?php foreach ($association->series as $seriesItem): ?>
-        <?php foreach ($seriesItem->schedules as $schedule): ?>
-            <?php if (!empty($schedule->resultSubmissions->where('approved', FALSE))): ?>
+        <?php foreach ($seriesItem->schedules->where('archived', '!=', 1) as $schedule): ?>
+            <?php if ($schedule->resultSubmissions->where('approved', FALSE)->isNotEmpty()): ?>
+            <?php $hasSubmissions = true; ?>
             <div class="result-submissions row mb-3">
                 <div class="col-md-12">
                     <h2><?php echo $seriesItem->name; ?></h2>
-                    <h3><?php echo $schedule->name . '[Schedule Name Here]'; ?></h3>
+                    <h3><?php echo $schedule->name; ?></h3>
                     <?php foreach ($schedule->resultSubmissions->where('approved', FALSE) as $submission): ?>
                     <form class="form-inline" method="POST" action="{{ route('result_submission.update', ['id' => $submission->id]) }}">
                         @csrf
@@ -44,4 +46,9 @@
             <?php endif; ?>
         <?php endforeach; ?>
     <?php endforeach; ?>
+    <?php if (!$hasSubmissions): ?>
+    <div class="message">
+        {{ __('No score submissions found.') }}
+    </div>
+    <?php endif; ?>
 @endsection

@@ -52,5 +52,6 @@ nav.link-menu ul li a {
 
 // Overrides templates/scores.scss
 form.scores input[type="text"] {
+    color: $dark-font-primary;
     border-color: $dark-outline;
 }
