@@ -273,8 +273,19 @@ class AssociationsController extends Controller
     }
 
     public function css() {
-        $response = \Response::make('body { background-color: red; }');
+        $content = '';
+
+        if (!empty($this->association) && !empty($this->association->subdomain)) {
+            $path = public_path('css/association/' . $this->association->subdomain . '.css');
+
+            if (file_exists($path)) {
+                $content = file_get_contents($path);
+            }
+        }
+
+        $response = \Response::make($content);
         $response->header('Content-Type', 'text/css');
+        $response->header('Cache-Control', 'public, max-age=300, must-revalidate');
         return $response;
     }
 

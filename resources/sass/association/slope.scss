@@ -1,3 +1,56 @@
+// Dark theme color palette
+$dark-background: rgb(0, 0, 0);
+$dark-outline: rgb(24, 35, 60);
+$dark-font-secondary: rgb(145, 161, 180);
+$dark-font-primary: rgb(231, 224, 212);
+
+// Overrides base/typography.scss
 html, body {
-    background-color: lightcoral;
+    background-color: $dark-background;
+    color: $dark-font-primary;
+}
+
+// Overrides base/buttons.scss
+.button {
+    color: $dark-font-primary;
+    border-color: $dark-outline;
+}
+
+// Overrides base/forms.scss
+select,
+input[type=email],
+input[type=submit],
+form textarea {
+    color: $dark-font-primary;
+    border-color: $dark-outline;
+}
+
+// Overrides base/links.scss
+.link {
+    color: $dark-font-secondary;
+}
+
+// Overrides components/main-menu.scss
+nav.main-menu ul li a {
+    color: $dark-font-secondary;
+}
+
+// Overrides components/footer-menu.scss
+nav.footer-menu ul li a {
+    color: $dark-font-secondary;
+}
+
+// Overrides components/link-menu.scss
+nav.link-menu ul li a {
+    color: $dark-font-secondary;
+}
+
+// Overrides components/divider.scss
+.divider {
+    border-top-color: $dark-outline;
+}
+
+// Overrides templates/scores.scss
+form.scores input[type="text"] {
+    border-color: $dark-outline;
 }

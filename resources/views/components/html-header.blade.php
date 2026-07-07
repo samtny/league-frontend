@@ -51,6 +51,7 @@
 
         <!-- Styles -->
         <link href="{{ mix('/css/frontend.css') }}" rel="stylesheet">
+        <link href="{{ route('association.css') }}" rel="stylesheet">
     </head>
     <body>
         @if (config('app.env') == 'production')
