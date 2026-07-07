@@ -13,7 +13,7 @@
         "laravel/framework": "^11.0",
         "laravel/tinker": "^2.0",
         "laravel/ui": "^4.0",
-        "silber/bouncer": "v1.0.2",
+        "silber/bouncer": "v1.0.4",
         "spatie/laravel-honeypot": "^4.0"
     },
     "require-dev": {
