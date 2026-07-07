@@ -339,6 +339,23 @@ class AssociationsController extends Controller
             $association->rules_file_path = $path;
         }
 
+        if ($request->hasFile('favicon')) {
+            $faviconDir = \Storage::disk('public')->path('favicon/' . $association->subdomain);
+
+            if (! is_dir($faviconDir)) {
+                mkdir($faviconDir, 0755, true);
+            }
+
+            $zip = new \ZipArchive();
+
+            if ($zip->open($request->favicon->getPathname()) === true) {
+                $zip->extractTo($faviconDir);
+                $zip->close();
+            }
+        }
+
+        $association->favicon_metadata = $request->favicon_metadata;
+
         $association->about = $request->about;
 
         $association->save();
@@ -394,6 +411,17 @@ class AssociationsController extends Controller
 
     public function rulesDelete(Association $association) {
         $association->rules_file_path = NULL;
+
+        $association->save();
+
+        return view('association.edit', [
+            'association' => $association,
+            'current_user' => \Auth::user(),
+        ]);
+    }
+
+    public function homeImageDelete(Association $association) {
+        $association->home_image_path = NULL;
 
         $association->save();
 

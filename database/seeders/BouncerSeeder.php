@@ -25,10 +25,14 @@ class BouncerSeeder extends Seeder
         \Bouncer::allow('admin')->to('view-admin-pages');
         \Bouncer::allow('admin')->to('view-users');
         \Bouncer::allow('admin')->to('create', Association::class);
+        \Bouncer::allow('admin')->to('administer-subdomains');
+        \Bouncer::allow('admin')->to('view-association-owner');
+        \Bouncer::allow('admin')->to('see-advanced-options');
 
         //Bouncer::disallow('assocadmin')->to('create', Association::class);
         \Bouncer::allow('assocadmin')->toOwn(Association::class);
         \Bouncer::allow('assocadmin')->to('view-admin-pages');
+        \Bouncer::allow('assocadmin')->to('see-advanced-options');
 
         \Bouncer::allow('assocadmin')->to('create', Division::class);
         \Bouncer::allow('assocadmin')->to('edit', Division::class);

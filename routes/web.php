@@ -114,6 +114,8 @@ Route::prefix('admin')->middleware('admin')->group(function () {
         Route::post('{association}/contact/submission/{contactSubmission}/archive', 'ContactSubmissionsController@archive')->name('contact_submission.archive');
 
         Route::get('{association}/rules/delete', 'AssociationsController@rulesDelete')->name('association.rulesDelete');
+
+        Route::get('{association}/homeImage/delete', 'AssociationsController@homeImageDelete')->name('association.homeImageDelete');
     });
 
     Route::prefix('user')->group(function () {

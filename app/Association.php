@@ -9,7 +9,7 @@ class Association extends Model
 {
     use SoftDeletes;
 
-    protected $fillable = array('name', 'user_id', 'subdomain', 'home_image_path', 'about', 'rules_file_path');
+    protected $fillable = array('name', 'user_id', 'subdomain', 'home_image_path', 'about', 'rules_file_path', 'favicon_metadata');
 
     public function user() {
         return $this->hasOne('User');
