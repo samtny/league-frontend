@@ -1,17 +1,17 @@
 @extends('layouts.admin')
 
-@section('title', 'Delete ' . $member->name . '?')
+@section('title', 'Delete ' . $team->name . '?')
 
 @section('breadcrumb')
-    {{ Breadcrumbs::render('member.deleteConfirm', $member) }}
+    {{ Breadcrumbs::render('team.deleteConfirm', $team) }}
 @endsection
 
 @section('content')
     <div class="row">
-        <h1 class="col">Delete <?php echo $member->name; ?>?</h1>
+        <h1 class="col">Delete <?php echo $team->name; ?>?</h1>
     </div>
     <div class="form">
-        <form method="POST" action="{{ route('member.delete', ['association' => $member->association, 'member' => $member])}}">
+        <form method="POST" action="{{ route('team.delete', ['association' => $team->association, 'team' => $team])}}">
             @csrf
 
             <input type="hidden" name="url" value="{{ URL::previous() }}">
@@ -21,7 +21,7 @@
                     <input class="btn btn-primary" id="submit" type="submit" value="Yes"/>
                 </div>
                 <div class="form-group">
-                    <a class="btn btn-secondary" href="{{ route('team.roster', [ 'association' => $member->association, 'team' => $member->team ]) }}">Cancel</a>
+                    <a class="btn btn-secondary" href="{{ route('association.teams', [ 'association' => $team->association ]) }}">Cancel</a>
                 </div>
             </div>
 

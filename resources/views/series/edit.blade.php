@@ -45,7 +45,7 @@
                     <button class="btn btn-primary" id="submit" type="submit">Update</button>
                 </div>
                 <div class="form-group">
-                    <a class="btn btn-warning" href="{{ route('series.delete', [ 'series' => $series ]) }}">Delete Series</a>
+                    <a class="btn btn-warning" href="{{ route('series.deleteConfirm', [ 'series' => $series ]) }}">Delete Series</a>
                 </div>
             </div>
         </form>
