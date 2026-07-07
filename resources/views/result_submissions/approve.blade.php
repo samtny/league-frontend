@@ -21,8 +21,8 @@
             <?php $hasSubmissions = true; ?>
             <div class="result-submissions row mb-3">
                 <div class="col-md-12">
-                    <h2><?php echo $seriesItem->name; ?></h2>
-                    <h3><?php echo $schedule->name; ?></h3>
+                    <h2 class="text-muted"><?php echo $seriesItem->name; ?></h2>
+                    <h3 class="text-muted"><?php echo $schedule->name; ?></h3>
                     <?php foreach ($schedule->resultSubmissions->where('approved', FALSE) as $submission): ?>
                     <form class="form-inline" method="POST" action="{{ route('result_submission.update', ['id' => $submission->id]) }}">
                         @csrf
