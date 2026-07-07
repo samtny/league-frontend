@@ -15,19 +15,19 @@
             <form method="POST" action="{{ route('contact_submission.archive', ['association' => $association, 'contactSubmission' => $contactSubmission]) }}">
                 @csrf
 
-                <div class="form-group email">
+                <div class="mb-3 email">
                     <label for="email">Email</label>
                     <a name="email" class="form-control" href="mailto:{{ $contactSubmission->email }}">{{ $contactSubmission->email }}</a>
                 </div>
 
-                <div class="form-group reason">
+                <div class="mb-3 reason">
                     <label for="reason">Contact Reason</label>
                     <div name="reason" class="form-control">
                         {{ $contactSubmission->reason }}
                     </div>
                 </div>
 
-                <div class="form-group comment">
+                <div class="mb-3 comment">
                     <label for="comment">Comment</label>
                     <div name="comment" class="form-control">
                         {{ $contactSubmission->comment }}
@@ -35,10 +35,10 @@
                 </div>
 
                 <div class="form-actions">
-                    <div class="form-group">
+                    <div class="mb-3">
                         <a class="btn btn-primary" href="{{ route('contact_submissions.list', ['association' => $association]) }}">Done</a>
                     </div>
-                    <div class="form-group">
+                    <div class="mb-3">
                         <input type="submit" class="btn btn-warning" value="Archive">
                     </div>
                 </div>

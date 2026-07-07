@@ -18,7 +18,7 @@
 
             <input type="hidden" name="url" value="{{ URL::previous() }}">
 
-            <div class="form-group">
+            <div class="mb-3">
                 <label for="name">Name</label>
                 <input class="form-control @error('name') is-invalid @enderror" id="name" type="text" name="name" value="{{ old('name') }}" placeholder="New Round">
                 @error('name')
@@ -26,7 +26,7 @@
                 @enderror
             </div>
 
-            <div class="form-group">
+            <div class="mb-3">
                 <label for="start_date">Start Date</label>
                 <input id="start_date" class="form-control @error('start_date') is-invalid @enderror" type="date" name="start_date">
                 @error('start_date')
@@ -34,13 +34,13 @@
                 @enderror
             </div>
 
-            <div class="form-group">
+            <div class="mb-3">
                 <label for="end_date">End Date</label>
                 <input id="end_date" class="form-control" type="date" name="end_date">
             </div>
 
             <div class="form-actions">
-                <div class="form-group">
+                <div class="mb-3">
                     <input id="submit" class="btn btn-primary" type="submit" value="Create"/>
                 </div>
             </div>

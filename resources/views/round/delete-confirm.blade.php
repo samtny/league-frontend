@@ -19,7 +19,7 @@
             <input type="hidden" name="url" value="{{ URL::previous() }}">
 
             <div class="form-actions">
-                <div class="form-group">
+                <div class="mb-3">
                     <input id="submit" class="btn btn-warning" type="submit" value="Delete Round"/>
                 </div>
             </div>

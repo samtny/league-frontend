@@ -1,1 +1,30 @@
+// Restore a handful of Bootstrap 4 defaults that changed in Bootstrap 5.
+$container-max-widths: (
+  sm: 540px,
+  md: 720px,
+  lg: 960px,
+  xl: 1140px
+);
+$grid-gutter-width: 30px;
+$breadcrumb-padding-y: .75rem;
+$breadcrumb-padding-x: 1rem;
+$breadcrumb-bg: #e9ecef; // $gray-200, unchanged from Bootstrap 4
+$breadcrumb-border-radius: .25rem;
+$list-group-item-padding-y: .75rem;
+$list-group-item-padding-x: 1.25rem;
+
 @import "node_modules/bootstrap/scss/bootstrap";
+
+// Bootstrap 5's reboot dropped the margin-bottom that v4 gave bare <label>
+// elements (it now only applies via the opt-in .form-label class), so add
+// it back directly since this project's views use plain <label> markup.
+label {
+  margin-bottom: 4px;
+}
+
+// Bootstrap 5's .form-text also dropped its display: block (no variable
+// controls it), so <small class="form-text"> help text now renders inline
+// by default. Restore v4's block layout.
+.form-text {
+  display: block;
+}

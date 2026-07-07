@@ -8,18 +8,15 @@
         "production": "mix --production"
     },
     "devDependencies": {
+        "@popperjs/core": "^2.11.8",
         "axios": "^1.18.1",
-        "bootstrap": "^4.6.2",
+        "bootstrap": "^5.3.8",
         "cross-env": "^10.1.0",
-        "jquery": "^3.7.1",
         "laravel-mix": "^6.0.49",
         "lodash": "^4.18.1",
-        "normalize-scss": "^7.0.1",
-        "popper.js": "^1.16.1",
         "resolve-url-loader": "^5.0.0",
         "sass": "^1.101.0",
-        "sass-loader": "^10.5.2",
-        "vue-template-compiler": "^2.7.16"
+        "sass-loader": "^10.5.2"
     },
     "dependencies": {}
 }

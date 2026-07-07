@@ -20,7 +20,7 @@
 
             <input type="hidden" name="url" value="{{ URL::previous() }}">
 
-            <div class="form-group">
+            <div class="mb-3">
                 <label for="name">Name</label>
                 <input id="name" type="text" class="form-control @error('name') is-invalid @enderror" name="name" value="{{ old('name') }}">
                 @error('name')
@@ -29,7 +29,7 @@
                 <small class="form-text text-muted">Enter a name for this Schedule, like <em>"A Division"</em></small>
             </div>
 
-            <div class="form-group">
+            <div class="mb-3">
                 <label for="division_id">Division</label>
                 <select class="form-control" id="division_id" name="division_id">
                     <option value="">- No division -</option>
@@ -39,17 +39,17 @@
                 </select>
             </div>
 
-            <div class="form-group">
+            <div class="mb-3">
                 <label for="start_date">Start Date</label>
                 <input class="form-control" id="start_date" type="date" name="start_date">
             </div>
 
-            <div class="form-group">
+            <div class="mb-3">
                 <label for="end_date">End Date</label>
                 <input class="form-control" id="end_date" type="date" name="end_date">
             </div>
 
-            <div class="form-group">
+            <div class="mb-3">
                 <legend>Match Weekday</legend>
                 <fieldset>
                     <label for="weekday_sunday">Sunday</label>
@@ -75,7 +75,7 @@
                 </fieldset>
             </div>
 
-            <div class="form-group">
+            <div class="mb-3">
                 <div class="form-check">
                     <input class="form-check-input" name="generate" type="checkbox" value="1" id="generate" <?php echo old('generate', 1) ? ' checked' : ''; ?>>
                     <label class="form-check-label" for="generate">
@@ -86,7 +86,7 @@
             </div>
 
             <div class="form-actions">
-                <div class="form-group">
+                <div class="mb-3">
                     <input class="btn btn-primary" id="submit" type="submit" value="Create"/>
                 </div>
             </div>

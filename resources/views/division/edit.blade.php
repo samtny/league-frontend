@@ -16,7 +16,7 @@
 
             <input type="hidden" name="url" value="{{  URL::previous()  }}">
 
-            <div class="form-group">
+            <div class="mb-3">
                 <label for="name">Name</label>
                 <input id="name" type="text" class="form-control @error('name') is-invalid @enderror" name="name" value="{{ old('name', $division->name) }}">
                 @error('name')
@@ -25,7 +25,7 @@
                 <small class="form-text text-muted">Enter a name for this Division, like <em>"A Division"</em></small>
             </div>
 
-            <div class="form-group">
+            <div class="mb-3">
                 <label for="sequence">Sequence</label>
                 <input id="sequence" type="text" class="form-control @error('sequence') is-invalid @enderror" name="sequence" value="{{ old('sequence', $division->sequence) }}">
                 @error('sequence')
@@ -35,10 +35,10 @@
             </div>
 
             <div class="form-actions">
-                <div class="form-group">
+                <div class="mb-3">
                     <input class="btn btn-primary" id="submit" type="submit" value="Update"/>
                 </div>
-                <div class="form-group">
+                <div class="mb-3">
                     <a class="btn btn-warning" href="{{ route('division.deleteConfirm', ['association' => $association, 'division' => $division]) }}">Delete Division</a>
                 </div>
             </div>

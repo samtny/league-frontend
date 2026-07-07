@@ -16,7 +16,7 @@
 
             <input type="hidden" name="url" value="{{  URL::previous()  }}">
 
-            <div class="form-group">
+            <div class="mb-3">
                 <label for="name">Name</label>
                 <input id="name" type="text" class="form-control @error('name') is-invalid @enderror" name="name" value="{{ old('name') }}">
                 @error('name')
@@ -26,7 +26,7 @@
             </div>
 
             <div class="form-actions">
-                <div class="form-group">
+                <div class="mb-3">
                     <input class="btn btn-primary" id="submit" type="submit" value="Submit"/>
                 </div>
             </div>

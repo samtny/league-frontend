@@ -16,14 +16,14 @@
 
             <input type="hidden" name="url" value="{{ URL::previous() }}">
 
-            <div class="form-group">
+            <div class="mb-3">
                 <label for="user_id">Owner</label>
                 <select class="form-control" id="user_id" name="user_id">
                     <option value="<?php echo($current_user->id); ?>"><?php echo($current_user->name); ?></option>
                 </select>
             </div>
 
-            <div class="form-group">
+            <div class="mb-3">
                 <label for="name">Name</label>
                 <input class="form-control" id="name" type="text" name="name" class="@error('name') is-invalid @enderror">
                 @error('name')
@@ -31,7 +31,7 @@
                 @enderror
             </div>
 
-            <div class="form-group">
+            <div class="mb-3">
                 <div class="form-item">
                     <input class="form-control" id="submit" type="submit" value="Submit"/>
                 </div>

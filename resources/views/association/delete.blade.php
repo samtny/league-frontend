@@ -17,10 +17,10 @@
             <input type="hidden" name="url" value="{{ URL::previous() }}">
 
             <div class="form-actions">
-                <div class="form-group">
+                <div class="mb-3">
                     <input class="btn btn-primary" id="submit" type="submit" value="Yes"/>
                 </div>
-                <div class="form-group">
+                <div class="mb-3">
                     <a class="btn btn-secondary" href="{{ route('admin') }}">Cancel</a>
                 </div>
             </div>

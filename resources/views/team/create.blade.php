@@ -18,7 +18,7 @@
 
             <input type="hidden" name="association_id" value="<?php echo($association->id); ?>">
 
-            <div class="form-group">
+            <div class="mb-3">
                 <label for="name">Name</label>
                 <input id="name" type="text" class="form-control @error('name') is-invalid @enderror" name="name" value="{{ old('name') }}">
                 @error('name')
@@ -27,7 +27,7 @@
                 <small class="form-text text-muted">Enter a name for this Team</small>
             </div>
 
-            <div class="form-group">
+            <div class="mb-3">
                 <label for="venue_id">Home Venue</label>
                 <select class="form-control" id="venue_id" name="venue_id">
                     <option value="">- No Venue -</option>
@@ -38,7 +38,7 @@
             </div>
 
             <div class="form-actions">
-                <div class="form-group">
+                <div class="mb-3">
                     <input class="btn btn-primary" id="submit" type="submit" value="Submit"/>
                 </div>
             </div>

@@ -16,7 +16,7 @@
 
             <input type="hidden" name="url" value="{{  URL::previous()  }}">
 
-            <div class="form-group">
+            <div class="mb-3">
                 <label for="name">Name</label>
                 <input id="name" type="text" class="form-control @error('name') is-invalid @enderror" name="name" value="{{ old('name', $member->name) }}" maxlength="128">
                 @error('name')
@@ -24,7 +24,7 @@
                 @enderror
             </div>
 
-            <div class="form-group">
+            <div class="mb-3">
                 <label for="team_id">Team</label>
                 <select class="form-control" id="team_id" name="team_id">
                     <?php foreach ($teams->sortBy('name') as $team): ?>
@@ -33,7 +33,7 @@
                 </select>
             </div>
 
-            <div class="form-group">
+            <div class="mb-3">
                 <label for="role">Role</label>
                 <select class="form-control" id="role" name="role">
                     <?php foreach (['Player', 'Captain', 'Reserve'] as $role): ?>
@@ -42,7 +42,7 @@
                 </select>
             </div>
 
-            <div class="form-group">
+            <div class="mb-3">
                 <label for="order">Order</label>
                 <input id="order" type="number" class="form-control @error('order') is-invalid @enderror" name="order" value="{{ old('order', $member->order) }}">
                 @error('order')
@@ -51,10 +51,10 @@
             </div>
 
             <div class="form-actions">
-                <div class="form-group">
+                <div class="mb-3">
                     <input class="btn btn-primary" id="submit" type="submit" value="Update"/>
                 </div>
-                <div class="form-group">
+                <div class="mb-3">
                     <a class="btn btn-warning" href="{{ route('member.deleteConfirm', ['association' => $member->association, 'member' => $member]) }}">Delete Member</a>
                 </div>
             </div>

@@ -41,8 +41,5 @@ if (token) {
 //     encrypted: true
 // });
 
-window.$ = window.jQuery = require('jquery');
-
-window.Popper = require('popper.js').default;
-
-require('bootstrap');
+import * as bootstrap from 'bootstrap';
+window.bootstrap = bootstrap;

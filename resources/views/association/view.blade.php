@@ -45,7 +45,7 @@
                     <?php if(!($submissions->isEmpty())): ?>
                     <a class="list-group-item list-group-item-action d-flex justify-content-between align-items-center" href="{{ route('result_submissions.list', ['association' => $association]) }}">
                         Score Submissions
-                        <span class="badge badge-primary badge-pill"><?php echo count($submissions); ?></span>
+                        <span class="badge bg-primary rounded-pill"><?php echo count($submissions); ?></span>
                     </a>
                     <?php else: ?>
                     There are no score submissions to review.
@@ -61,7 +61,7 @@
                     <?php if(!($messages->isEmpty())): ?>
                     <a class="list-group-item list-group-item-action d-flex justify-content-between align-items-center" href="{{ route('contact_submissions.list', ['association' => $association]) }}">
                         Contact Submissions
-                        <span class="badge badge-primary badge-pill"><?php echo count($messages); ?></span>
+                        <span class="badge bg-primary rounded-pill"><?php echo count($messages); ?></span>
                     </a>
                     <?php else: ?>
                     There are no messages waiting.

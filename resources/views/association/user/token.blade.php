@@ -22,7 +22,7 @@
                 </p>
 
                 <div class="form-actions">
-                    <div class="form-group">
+                    <div class="mb-3">
                         <input class="btn btn-primary" id="submit" type="submit" value="Refresh"/>
                     </div>
                 </div>

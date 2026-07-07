@@ -47,7 +47,7 @@
                                         ])->first();?>
 
                                     <?php if (!empty($match->home_team_id)): ?>
-                                        <div class="form-group form-inline">
+                                        <div class="d-flex align-items-center gap-2">
                                             <input type="hidden" name="match_<?php echo $match->id; ?>__home_team_id" value="<?php echo $match->home_team_id; ?>" readonly>
                                             <label for="match_<?php echo $match->id; ?>__home_team_score"><?php echo $schedule->association->teams->find($match->home_team_id)->name; ?></label>
                                             <input type="text" name="match_<?php echo $match->id; ?>__home_team_score" value="<?php echo(!empty($match->result) ? $match->result->home_team_score : null); ?>">
@@ -55,7 +55,7 @@
                                     <?php endif; ?>
 
                                     <?php if (!empty($match->away_team_id)): ?>
-                                        <div class="form-group form-inline">
+                                        <div class="d-flex align-items-center gap-2">
                                             <input type="hidden" name="match_<?php echo $match->id; ?>__away_team_id" value="<?php echo $match->away_team_id; ?>" readonly>
                                             <label for="match_<?php echo $match->id; ?>__away_team_score"><?php echo $schedule->association->teams->find($match->away_team_id)->name; ?></label>
                                             <input type="text" name="match_<?php echo $match->id; ?>__away_team_score" value="<?php echo(!empty($match->result) ? $match->result->away_team_score : null); ?>">
@@ -78,7 +78,7 @@
             <?php endif; ?>
 
             <div class="form-actions">
-                <div class="form-group">
+                <div class="mb-3">
                     <input id="submit" class="form-control" type="submit" value="Update"/>
                 </div>
             </div>

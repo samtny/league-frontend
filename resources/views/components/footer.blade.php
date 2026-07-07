@@ -35,14 +35,14 @@
                  @else
                      <?php /*
                      <li>
-                         <a id="navbarDropdown" class="nav-link dropdown-toggle" href="{{ route('user', [ 'id' => Auth::user()->id ]) }}" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" v-pre>
+                         <a id="navbarDropdown" class="nav-link dropdown-toggle" href="{{ route('user', [ 'id' => Auth::user()->id ]) }}" role="button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false" v-pre>
                              {{ Auth::user()->name }} <span class="caret"></span>
                          </a>
                      </li>
                      */ ?>
                      @can('view-admin-pages')
                      <li>
-                         <a id="navbarDropdown" class="nav-link dropdown-toggle" href="{{ route('association.view', ['association' => $association]) }}" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" v-pre>
+                         <a id="navbarDropdown" class="nav-link dropdown-toggle" href="{{ route('association.view', ['association' => $association]) }}" role="button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false" v-pre>
                              {{ __('Admin') }}
                          </a>
                      </li>

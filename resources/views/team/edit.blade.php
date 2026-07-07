@@ -16,7 +16,7 @@
 
             <input type="hidden" name="url" value="{{  URL::previous()  }}">
 
-            <div class="form-group">
+            <div class="mb-3">
                 <label for="name">Name</label>
                 <input id="name" type="text" class="form-control @error('name') is-invalid @enderror" name="name" value="{{ old('name', $team->name) }}">
                 @error('name')
@@ -24,7 +24,7 @@
                 @enderror
             </div>
 
-            <div class="form-group">
+            <div class="mb-3">
                 <label for="venue_id">Home Venue</label>
                 <select class="form-control" id="venue_id" name="venue_id">
                     <option value="">- No Venue -</option>
@@ -42,16 +42,16 @@
                 </div>
             </div>
 
-            <div class="form-group form-check">
+            <div class="mb-3 form-check">
                 <input type="checkbox" class="form-check-input" id="active" name="active" value="1"<?php echo $team->active ? ' checked' : ''; ?>>
                 <label class="form-check-label" for="active">Active</label>
             </div>
 
             <div class="form-actions">
-                <div class="form-group">
+                <div class="mb-3">
                     <input class="btn btn-primary" id="submit" type="submit" value="Update"/>
                 </div>
-                <div class="form-group">
+                <div class="mb-3">
                     <a class="btn btn-warning" href="{{ route('team.deleteConfirm', ['association' => $team->association, 'team' => $team]) }}">Delete Team</a>
                 </div>
             </div>

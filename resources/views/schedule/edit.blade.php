@@ -18,7 +18,7 @@
 
             <input type="hidden" name="url" value="{{ URL::previous() }}">
 
-            <div class="form-group">
+            <div class="mb-3">
                 <label for="name">Name</label>
                 <input id="name" type="text" class="form-control @error('name') is-invalid @enderror" name="name" value="{{ old('name', $schedule->name) }}">
                 @error('name')
@@ -27,7 +27,7 @@
                 <small class="form-text text-muted">Enter a name for this Schedule, like <em>"A Division"</em></small>
             </div>
 
-            <div class="form-group">
+            <div class="mb-3">
                 <label for="division_id">Division</label>
                 <select class="form-control" id="division_id" name="division_id">
                     <option value="">- No division -</option>
@@ -37,17 +37,17 @@
                 </select>
             </div>
 
-            <div class="form-group">
+            <div class="mb-3">
                 <label for="start_date">Start Date</label>
                 <input id="start_date" class="form-control" type="date" name="start_date" value="<?php echo $schedule->start_date != null ? date('Y-m-d', strtotime($schedule->start_date)) : null ?>">
             </div>
 
-            <div class="form-group">
+            <div class="mb-3">
                 <label for="end_date">End Date</label>
                 <input id="end_date" class="form-control" type="date" name="end_date" value="<?php echo $schedule->end_date != null ? date('Y-m-d', strtotime($schedule->end_date)) : null ?>">
             </div>
 
-            <div class="form-group">
+            <div class="mb-3">
                 <legend>Match Weekday</legend>
                 <fieldset>
                     <label for="weekday_sunday">Sunday</label>
@@ -73,7 +73,7 @@
                 </fieldset>
             </div>
 
-            <div class="form-group">
+            <div class="mb-3">
                 <div class="form-check">
                     <input class="form-check-input" name="generate" type="checkbox" value="1" id="generate" <?php echo old('generate', 0) ? ' checked' : ''; ?>>
                     <label class="form-check-label" for="generate">
@@ -83,7 +83,7 @@
                 </div>
             </div>
 
-            <div class="form-group">
+            <div class="mb-3">
                 <div class="form-check">
                     <input class="form-check-input" name="archived" type="checkbox" value="1" id="archived" <?php echo old('archived', $schedule->archived) ? ' checked' : ''; ?>>
                     <label class="form-check-label" for="archived">
@@ -94,7 +94,7 @@
             </div>
 
             <div class="form-actions">
-                <div class="form-group">
+                <div class="mb-3">
                     <input id="submit" class="btn btn-primary" type="submit" value="Update"/>
                 </div>
             </div>

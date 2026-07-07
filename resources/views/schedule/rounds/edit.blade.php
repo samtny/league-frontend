@@ -73,7 +73,7 @@
             <?php endif; ?>
 
             <div class="form-actions">
-                <div class="form-group">
+                <div class="mb-3">
                     <input id="submit" class="form-control" type="submit" value="Update"/>
                 </div>
             </div>

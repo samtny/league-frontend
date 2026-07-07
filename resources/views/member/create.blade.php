@@ -16,7 +16,7 @@
 
             <input type="hidden" name="url" value="{{  URL::previous()  }}">
 
-            <div class="form-group">
+            <div class="mb-3">
                 <label for="name">Name</label>
                 <input id="name" type="text" class="form-control @error('name') is-invalid @enderror" name="name" value="{{ old('name') }}" maxlength="128">
                 @error('name')
@@ -25,7 +25,7 @@
                 <small class="form-text text-muted">Enter a name for this Member</small>
             </div>
 
-            <div class="form-group">
+            <div class="mb-3">
                 <label for="role">Role</label>
                 <select class="form-control" id="role" name="role">
                     <?php foreach (['Player', 'Captain', 'Reserve'] as $role): ?>
@@ -35,7 +35,7 @@
             </div>
 
             <div class="form-actions">
-                <div class="form-group">
+                <div class="mb-3">
                     <input class="btn btn-primary" id="submit" type="submit" value="Submit"/>
                 </div>
             </div>

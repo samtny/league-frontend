@@ -22,7 +22,7 @@
 
             <input type="hidden" name="url" value="{{  URL::previous()  }}">
 
-            <div class="form-group">
+            <div class="mb-3">
                 <label for="name">Name</label>
                 <input class="form-control @error('name') is-invalid @enderror" id="name" type="text" name="name" value="{{ old('name', $series->name) }}">
                 @error('name')
@@ -30,17 +30,17 @@
                 @enderror
             </div>
 
-            <div class="form-group">
+            <div class="mb-3">
                 <label for="start_date">Start Date</label>
                 <input class="form-control" id="start_date" type="date" name="start_date" value="{{ old('start_date', $start_date_string) }}">
             </div>
 
-            <div class="form-group">
+            <div class="mb-3">
                 <label for="end_date">End Date</label>
                 <input class="form-control" id="end_date" type="date" name="end_date" value="{{ old('end_date', $end_date_string) }}">
             </div>
 
-            <div class="form-group">
+            <div class="mb-3">
                 <div class="form-check">
                     <input class="form-check-input" name="archived" type="checkbox" value="1" id="archived" <?php echo old('archived', $series->archived) ? ' checked' : ''; ?>>
                     <label class="form-check-label" for="archived">
@@ -51,10 +51,10 @@
             </div>
 
             <div class="form-actions">
-                <div class="form-group">
+                <div class="mb-3">
                     <button class="btn btn-primary" id="submit" type="submit">Update</button>
                 </div>
-                <div class="form-group">
+                <div class="mb-3">
                     <a class="btn btn-warning" href="{{ route('series.deleteConfirm', [ 'series' => $series ]) }}">Delete Series</a>
                 </div>
             </div>
