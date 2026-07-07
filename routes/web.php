@@ -135,7 +135,8 @@ Route::prefix('admin')->middleware('admin')->group(function () {
         Route::post('create', 'SeriesController@store');
         Route::post('update', 'SeriesController@update')->name('series.update');
         Route::get('{series}', 'SeriesController@view')->name('series.view');
-        Route::get('delete', 'SeriesController@delete')->name('series.delete');
+        Route::get('{series}/delete', 'SeriesController@deleteConfirm')->name('series.deleteConfirm');
+        Route::post('{series}/delete', 'SeriesController@delete')->name('series.delete');
     });
 
     // FIXME: route schedule under {association}:

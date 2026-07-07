@@ -48,6 +48,11 @@ Breadcrumbs::for('association.create', function ($trail) {
     $trail->push('Create Association', route('association.create'));
 });
 
+Breadcrumbs::for('association.deleteConfirm', function ($trail, $association) {
+    $trail->parent('admin');
+    $trail->push('Delete Association', route('association.deleteConfirm', $association));
+});
+
 Breadcrumbs::for('association.edit', function ($trail, $association) {
     $trail->parent('association.view', $association);
     $trail->push('Edit', route('association.edit', $association));
@@ -68,6 +73,11 @@ Breadcrumbs::for('division.edit', function ($trail, $association, $division) {
     $trail->push('Edit Division', route('division.edit', ['association' => $association, 'division' => $division]));
 });
 
+Breadcrumbs::for('division.deleteConfirm', function ($trail, $association, $division) {
+    $trail->parent('association.divisions', $association);
+    $trail->push('Delete Division', route('division.deleteConfirm', ['association' => $association, 'division' => $division]));
+});
+
 Breadcrumbs::for('association.teams', function ($trail, $association) {
     $trail->parent('association.view', $association);
     $trail->push('Teams', route('association.teams', $association));
@@ -81,6 +91,11 @@ Breadcrumbs::for('team.create', function ($trail, $association) {
 Breadcrumbs::for('team.edit', function ($trail, $team) {
     $trail->parent('association.teams', $team->association);
     $trail->push('Edit Team', route('team.edit', ['association' => $team->association, 'team' => $team]));
+});
+
+Breadcrumbs::for('team.deleteConfirm', function ($trail, $team) {
+    $trail->parent('association.teams', $team->association);
+    $trail->push('Delete Team', route('team.deleteConfirm', ['association' => $team->association, 'team' => $team]));
 });
 
 Breadcrumbs::for('team.roster', function ($trail, $team) {
@@ -98,6 +113,11 @@ Breadcrumbs::for('member.edit', function ($trail, $member) {
     $trail->push('Edit Member', route('member.edit', ['association' => $member->association, 'member' => $member]));
 });
 
+Breadcrumbs::for('member.deleteConfirm', function ($trail, $member) {
+    $trail->parent('team.roster', $member->team);
+    $trail->push('Delete Member', route('member.deleteConfirm', ['association' => $member->association, 'member' => $member]));
+});
+
 Breadcrumbs::for('association.venues', function ($trail, $association) {
     $trail->parent('association.view', $association);
     $trail->push('Venues', route('association.venues', $association));
@@ -111,6 +131,11 @@ Breadcrumbs::for('venue.create', function ($trail, $association) {
 Breadcrumbs::for('venue.edit', function ($trail, $venue) {
     $trail->parent('association.venues', $venue->association);
     $trail->push('Edit Venue', route('venue.edit', ['association' => $venue->association, 'venue' => $venue]));
+});
+
+Breadcrumbs::for('venue.deleteConfirm', function ($trail, $venue) {
+    $trail->parent('association.venues', $venue->association);
+    $trail->push('Delete Venue', route('venue.deleteConfirm', ['venue' => $venue]));
 });
 
 Breadcrumbs::for('association.series', function ($trail, $association) {
@@ -143,6 +168,11 @@ Breadcrumbs::for('association.user.token', function ($trail, $association, $user
     $trail->push('Token', route('association.user.token', ['association' => $association, 'user' => $user]));
 });
 
+Breadcrumbs::for('series.create', function ($trail) {
+    $trail->parent('admin');
+    $trail->push('Create Series', route('series.create'));
+});
+
 Breadcrumbs::for('series.view', function ($trail, $series) {
     $trail->parent('association.series', $series->association);
     $trail->push($series->name, route('series.view', $series));
@@ -151,6 +181,11 @@ Breadcrumbs::for('series.view', function ($trail, $series) {
 Breadcrumbs::for('series.edit', function ($trail, $series) {
     $trail->parent('series.view', $series);
     $trail->push($series->name, route('series.edit', $series));
+});
+
+Breadcrumbs::for('series.deleteConfirm', function ($trail, $series) {
+    $trail->parent('series.view', $series);
+    $trail->push('Delete Series', route('series.deleteConfirm', $series));
 });
 
 Breadcrumbs::for('series.schedules', function ($trail, $series) {
