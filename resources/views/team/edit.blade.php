@@ -42,6 +42,11 @@
                 </div>
             </div>
 
+            <div class="form-group form-check">
+                <input type="checkbox" class="form-check-input" id="active" name="active" value="1"<?php echo $team->active ? ' checked' : ''; ?>>
+                <label class="form-check-label" for="active">Active</label>
+            </div>
+
             <div class="form-actions">
                 <div class="form-group">
                     <input class="btn btn-primary" id="submit" type="submit" value="Update"/>

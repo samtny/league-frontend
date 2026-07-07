@@ -52,6 +52,7 @@ class MembersController extends Controller
         return view('member.edit', [
             'association' => $association,
             'member' => $member,
+            'teams' => $association->teams,
         ]);
     }
 
@@ -59,11 +60,15 @@ class MembersController extends Controller
         if (Bouncer::can('update', Member::class)) {
             $validatedData = $request->validate([
                 'name' => 'required|max:128',
+                'team_id' => 'required|exists:teams,id',
                 'role' => 'required|in:Player,Captain,Reserve',
+                'order' => 'required|integer',
             ]);
 
             $member->name = $request->name;
+            $member->team_id = $request->team_id;
             $member->role = $request->role;
+            $member->order = $request->order;
 
             $member->save();
 

@@ -11,6 +11,9 @@
                 <li>
                     <a href="{{ route('association.schedule') }}">Schedule</a>
                 </li>
+                <li>
+                    <a href="{{ route('association.roster') }}">Roster</a>
+                </li>
 
             </ul>
         </nav>

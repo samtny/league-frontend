@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 class Team extends Model
 {
 
-    protected $fillable = array('name', 'venue_id', 'association_id');
+    protected $fillable = array('name', 'venue_id', 'association_id', 'active');
 
     public function association() {
         return $this->belongsTo('App\Association');

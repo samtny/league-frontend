@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 class Member extends Model
 {
 
-    protected $fillable = array('name', 'role', 'team_id', 'association_id');
+    protected $fillable = array('name', 'role', 'order', 'team_id', 'association_id');
 
     public function association() {
         return $this->belongsTo('App\Association');

@@ -25,12 +25,29 @@
             </div>
 
             <div class="form-group">
+                <label for="team_id">Team</label>
+                <select class="form-control" id="team_id" name="team_id">
+                    <?php foreach ($teams->sortBy('name') as $team): ?>
+                    <option value="<?php echo $team->id; ?>"<?php echo $member->team_id == $team->id ? ' selected' : ''; ?>><?php echo $team->name; ?></option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+
+            <div class="form-group">
                 <label for="role">Role</label>
                 <select class="form-control" id="role" name="role">
                     <?php foreach (['Player', 'Captain', 'Reserve'] as $role): ?>
                     <option value="<?php echo $role; ?>"<?php echo $member->role == $role ? ' selected' : ''; ?>><?php echo $role; ?></option>
                     <?php endforeach; ?>
                 </select>
+            </div>
+
+            <div class="form-group">
+                <label for="order">Order</label>
+                <input id="order" type="number" class="form-control @error('order') is-invalid @enderror" name="order" value="{{ old('order', $member->order) }}">
+                @error('order')
+                    <div class="alert alert-danger">{{ $message }}</div>
+                @enderror
             </div>
 
             <div class="form-actions">

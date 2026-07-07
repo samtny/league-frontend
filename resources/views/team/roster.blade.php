@@ -12,11 +12,17 @@
     </div>
     <div class="roster row mb-3">
         <div class="col">
-            <?php if (!$team->roster->isEmpty()): ?>
+            <?php
+                $roleOrder = ['Captain' => 0, 'Player' => 1, 'Reserve' => 2];
+                $sortedRoster = $team->roster->sortBy(function ($item) use ($roleOrder) {
+                    return sprintf('%d-%05d', $roleOrder[$item->role], $item->order);
+                });
+            ?>
+            <?php if (!$sortedRoster->isEmpty()): ?>
                 <div class="list-group">
-                <?php foreach ($team->roster->sortBy('name') as $item): ?>
+                <?php foreach ($sortedRoster as $item): ?>
                     <a class="list-group-item list-group-item-action" href="{{ route('member.edit', ['association' => $association, 'member' => $item]) }}">
-                        <?php echo ('<div class="member">' . $item->name . '</div>'); ?>
+                        <?php echo ('<div class="member">' . $item->name . ' - ' . $item->role . '</div>'); ?>
                     </a>
                 <?php endforeach; ?>
                 </div>
