@@ -23,15 +23,12 @@
         <meta name="msapplication-config" content="/storage/favicon/pinballnyc/browserconfig.xml">
         <meta name="theme-color" content="#000000">
         @else
-        <link rel="apple-touch-icon" sizes="180x180" href="/storage/favicon/southslope/apple-touch-icon.png">
-        <link rel="icon" type="image/png" sizes="32x32" href="/storage/favicon/southslope/favicon-32x32.png">
-        <link rel="icon" type="image/png" sizes="16x16" href="/storage/favicon/southslope/favicon-16x16.png">
-        <link rel="manifest" href="/storage/favicon/southslope/site.webmanifest">
-        <link rel="mask-icon" href="/storage/favicon/southslope/safari-pinned-tab.svg" color="#5bbad5">
-        <link rel="shortcut icon" href="/storage/favicon/southslope/favicon.ico">
-        <meta name="msapplication-TileColor" content="#ffc40d">
-        <meta name="msapplication-config" content="/storage/favicon/southslope/browserconfig.xml">
-        <meta name="theme-color" content="#ebebeb">
+        <link rel="icon" type="image/png" href="/storage/favicon/southslope/favicon-96x96.png?v=20260707" sizes="96x96" />
+        <link rel="icon" type="image/svg+xml" href="/storage/favicon/southslope/favicon.svg?v=20260707" />
+        <link rel="shortcut icon" href="/storage/favicon/southslope/favicon.ico?v=20260707" />
+        <link rel="apple-touch-icon" sizes="180x180" href="/storage/favicon/southslope/apple-touch-icon.png?v=20260707" />
+        <meta name="apple-mobile-web-app-title" content="South Slope" />
+        <link rel="manifest" href="/storage/favicon/southslope/site.webmanifest?v=20260707" />
         @endif
         @show
 
