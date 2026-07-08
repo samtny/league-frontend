@@ -1,5 +1,5 @@
         </div><!-- #app -->
-    <script type="text/javascript" src="{{ mix('/js/app.js') }}"></script>
+    @vite('resources/js/app.js')
     </body>
     @section('page-js')
     @show

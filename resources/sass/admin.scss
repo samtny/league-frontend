@@ -13,7 +13,7 @@ $breadcrumb-border-radius: .25rem;
 $list-group-item-padding-y: .75rem;
 $list-group-item-padding-x: 1.25rem;
 
-@import "node_modules/bootstrap/scss/bootstrap";
+@import "bootstrap/scss/bootstrap";
 
 // Bootstrap 5's reboot dropped the margin-bottom that v4 gave bare <label>
 // elements (it now only applies via the opt-in .form-label class), so add

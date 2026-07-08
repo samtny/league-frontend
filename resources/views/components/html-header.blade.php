@@ -31,7 +31,7 @@
         <link href="https://fonts.googleapis.com/css?family=Nunito:200,600" rel="stylesheet">
 
         <!-- Styles -->
-        <link href="{{ mix('/css/frontend.css') }}" rel="stylesheet">
+        @vite('resources/sass/frontend.scss')
         <link href="{{ route('association.css') }}" rel="stylesheet">
     </head>
     <body>

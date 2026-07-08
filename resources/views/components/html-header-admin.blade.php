@@ -14,7 +14,7 @@
         <link href="https://fonts.googleapis.com/css?family=Nunito:200,600" rel="stylesheet">
 
         <!-- Styles -->
-        <link href="{{ mix('/css/admin.css') }}" rel="stylesheet">
+        @vite('resources/sass/admin.scss')
 
     </head>
     <body>

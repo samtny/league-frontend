@@ -16,4 +16,4 @@ composer.lock
 credentials.EXAMPLE.yml
 package-lock.json
 package.json
-webpack.mix.js
+vite.config.js

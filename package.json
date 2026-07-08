@@ -1,22 +1,21 @@
 {
     "private": true,
     "scripts": {
-        "development": "mix",
-        "watch": "mix watch",
-        "watch-poll": "mix watch -- --watch-options-poll=1000",
-        "hot": "mix watch --hot",
-        "production": "mix --production"
+        "dev": "vite",
+        "build": "vite build",
+        "postbuild": "npm run build:association",
+        "build:association": "sass resources/sass/association:public/css/association --no-source-map",
+        "watch:association": "sass --watch resources/sass/association:public/css/association --no-source-map"
     },
     "devDependencies": {
+        "laravel-vite-plugin": "^1.0.0",
+        "sass": "^1.101.0",
+        "vite": "^6.0.0"
+    },
+    "dependencies": {
         "@popperjs/core": "^2.11.8",
         "axios": "^1.18.1",
         "bootstrap": "^5.3.8",
-        "cross-env": "^10.1.0",
-        "laravel-mix": "^6.0.49",
-        "lodash": "^4.18.1",
-        "resolve-url-loader": "^5.0.0",
-        "sass": "^1.101.0",
-        "sass-loader": "^10.5.2"
-    },
-    "dependencies": {}
+        "lodash": "^4.18.1"
+    }
 }

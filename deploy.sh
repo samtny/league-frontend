@@ -57,9 +57,9 @@ RSYNC_EXCLUDE=""
 
 if [ "$BUILD" = true ]; then
   if [ "$CONFIG" = "production" ]; then
-    npm run production
+    npm run build
   else
-    npm run dev
+    npm run build -- --mode development
   fi
 fi
 
