@@ -1,6 +1,9 @@
 <?php
 
+use App\Association;
 use App\Http\Controllers\AssociationsController;
+use App\Series;
+use App\User;
 use Spatie\Honeypot\ProtectAgainstSpam;
 
 /*
@@ -14,7 +17,7 @@ use Spatie\Honeypot\ProtectAgainstSpam;
 |
 */
 
-Route::domain('{subdomain}.pinballleague.org')->middleware('subdomain')->group(function() {
+Route::domain('{subdomain}.pinballleague.org')->middleware('subdomain')->group(function () {
     // TODO: laravel 8 supports standard PHP callable syntax instead of strings.
     Route::get('/', [AssociationsController::class, 'home'])->name('association.home');
 
@@ -118,7 +121,7 @@ Route::prefix('admin')->middleware('admin')->group(function () {
         Route::post('{association}/delete', 'AssociationsController@delete')->name('association.delete');
         Route::get('{association}/undelete', function () {
             Route::bind('trashed_user', function ($id) {
-                return App\User::onlyTrashed()->find($id);
+                return User::onlyTrashed()->find($id);
             });
         });
 
@@ -152,10 +155,10 @@ Route::prefix('admin')->middleware('admin')->group(function () {
     });
 
     Route::prefix('onboard')->group(function () {
-        Route::get('association/{association}', function (App\Association $association) {
+        Route::get('association/{association}', function (Association $association) {
             return view('onboard.association', ['association' => $association]);
         })->name('onboard.association');
-        Route::get('series/{series}', function (App\Series $series) {
+        Route::get('series/{series}', function (Series $series) {
             return view('onboard.series', ['series' => $series]);
         })->name('onboard.series');
     });

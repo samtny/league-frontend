@@ -9,20 +9,21 @@ use Illuminate\Http\Request;
 
 class VenuesController extends Controller
 {
-
-    public function create(Association $association) {
+    public function create(Association $association)
+    {
         return view('venue.create', [
             'association' => $association,
         ]);
     }
 
-    public function store(Association $association, Request $request) {
+    public function store(Association $association, Request $request)
+    {
         if (Bouncer::can('create', Venue::class)) {
             $validatedData = $request->validate([
                 'name' => 'required|max:255',
             ]);
 
-            $venue = new venue;
+            $venue = new Venue;
 
             $venue->name = $request->name;
             $venue->association_id = $association->id;
@@ -30,22 +31,22 @@ class VenuesController extends Controller
             $venue->save();
 
             return redirect()->route('association.venues', ['association' => $association]);
-        }
-        else {
+        } else {
             return view('denied');
         }
     }
 
-    public function edit(Association $association, Venue $venue) {
+    public function edit(Association $association, Venue $venue)
+    {
         if (Bouncer::can('edit', Venue::class)) {
             return view('venue.edit', ['association' => $association, 'venue' => $venue]);
-        }
-        else {
+        } else {
             return view('denied');
         }
     }
 
-    public function update(Association $association, Venue $venue, Request $request) {
+    public function update(Association $association, Venue $venue, Request $request)
+    {
         if (Bouncer::can('update', Venue::class)) {
             $validatedData = $request->validate([
                 'name' => 'required|max:255',
@@ -56,30 +57,28 @@ class VenuesController extends Controller
             $venue->save();
 
             return redirect()->route('association.venues', ['association' => $association]);
-        }
-        else {
+        } else {
             return view('denied');
         }
     }
 
-    public function deleteConfirm(Association $association, Venue $venue) {
+    public function deleteConfirm(Association $association, Venue $venue)
+    {
         if (Bouncer::can('delete', $venue)) {
             return view('venue.delete', ['association' => $association, 'venue' => $venue]);
-        }
-        else {
+        } else {
             return view('denied');
         }
     }
 
-    public function delete(Association $association, Venue $venue) {
+    public function delete(Association $association, Venue $venue)
+    {
         if (Bouncer::can('delete', $venue)) {
             $venue->delete();
 
             return redirect()->route('association.venues', ['association' => $association])->with('success', 'Venue deleted successfully.');
-        }
-        else {
+        } else {
             return view('denied');
         }
     }
-
 }

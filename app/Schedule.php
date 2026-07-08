@@ -9,30 +9,35 @@ class Schedule extends Model
 {
     use SoftDeletes;
 
-    protected $fillable = array('name', 'association_id', 'series_id', 'division_id', 'start_date', 'end_date', 'sequence', 'archived' => 0);
+    protected $fillable = ['name', 'association_id', 'series_id', 'division_id', 'start_date', 'end_date', 'sequence', 'archived' => 0];
 
-    public function association() {
+    public function association()
+    {
         return $this->belongsTo('App\Association');
     }
 
-    public function series() {
+    public function series()
+    {
         return $this->belongsTo('App\Series');
     }
 
-    public function division() {
+    public function division()
+    {
         return $this->belongsTo('App\Division');
     }
 
-    public function rounds() {
+    public function rounds()
+    {
         return $this->hasMany('App\Round');
     }
 
-    public function matches() {
+    public function matches()
+    {
         return $this->hasMany('App\PLMatch');
     }
 
-    public function resultSubmissions() {
+    public function resultSubmissions()
+    {
         return $this->hasMany('App\ResultSubmission');
     }
-
 }

@@ -6,9 +6,8 @@ use Illuminate\Database\Eloquent\Model;
 
 class Machine extends Model
 {
-
-    public function game() {
+    public function game()
+    {
         return $this->hasOne('Game');
     }
-
 }

@@ -3,6 +3,7 @@
 namespace App\Http\Middleware;
 
 use Closure;
+use Illuminate\Http\Request;
 
 class SecurityHeaders
 {
@@ -14,8 +15,7 @@ class SecurityHeaders
      * forms/results/choose-*.blade.php) and external scripts (TinyMCE CDN,
      * Google Tag Manager) that a real CSP would need to account for first.
      *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  \Closure  $next
+     * @param  Request  $request
      * @return mixed
      */
     public function handle($request, Closure $next)

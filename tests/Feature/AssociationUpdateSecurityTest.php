@@ -15,9 +15,10 @@ class AssociationUpdateSecurityTest extends TestCase
     use RefreshDatabase;
 
     private $user;
+
     private $association;
 
-    public function setUp(): void
+    protected function setUp(): void
     {
         parent::setUp();
 
@@ -48,7 +49,7 @@ class AssociationUpdateSecurityTest extends TestCase
     private function makeZip(array $entries): UploadedFile
     {
         $path = tempnam(sys_get_temp_dir(), 'zip');
-        $zip = new \ZipArchive();
+        $zip = new \ZipArchive;
         $zip->open($path, \ZipArchive::CREATE | \ZipArchive::OVERWRITE);
         foreach ($entries as $name => $contents) {
             $zip->addFromString($name, $contents);

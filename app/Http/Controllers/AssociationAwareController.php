@@ -7,9 +7,8 @@ use Illuminate\Http\Request;
 
 class AssociationAwareController extends Controller
 {
-
     /**
-     * @var \App\Association|null $association
+     * @var Association|null
      */
     protected $association;
 
@@ -18,8 +17,8 @@ class AssociationAwareController extends Controller
      * reading the `association` request attribute ResolveAssociation sets -
      * see the doc comment on that method for why.
      */
-    public function __construct(Request $request) {
+    public function __construct(Request $request)
+    {
         $this->association = Association::resolveForRequest($request);
     }
-
 }

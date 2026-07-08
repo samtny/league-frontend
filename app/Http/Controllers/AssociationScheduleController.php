@@ -2,19 +2,16 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
-
-use App\Association;
 use App\Schedule;
+use Illuminate\Http\Response;
 
 class AssociationScheduleController extends AssociationAwareController
 {
-
     /**
      * Display the specified resource.
      *
      * @param  int  $id
-     * @return \Illuminate\Http\Response
+     * @return Response
      */
     public function showUpcoming()
     {
@@ -37,5 +34,4 @@ class AssociationScheduleController extends AssociationAwareController
             ]
         );
     }
-
 }

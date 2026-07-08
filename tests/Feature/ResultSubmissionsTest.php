@@ -6,8 +6,6 @@ use App\Association;
 use App\User;
 use Bouncer;
 use Tests\TestCase;
-use Illuminate\Foundation\Testing\WithFaker;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 
 class ResultSubmissionsTest extends TestCase
 {
@@ -16,7 +14,7 @@ class ResultSubmissionsTest extends TestCase
      *
      * @return void
      */
-    public function testExample()
+    public function test_example()
     {
         $user = User::factory()->create();
 

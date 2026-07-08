@@ -7,13 +7,14 @@ use App\PLMatch;
 use App\Round;
 use App\Schedule;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 
 class RoundsController extends Controller
 {
     /**
      * Display a listing of the resource.
      *
-     * @return \Illuminate\Http\Response
+     * @return Response
      */
     public function index()
     {
@@ -23,7 +24,7 @@ class RoundsController extends Controller
     /**
      * Show the form for creating a new resource.
      *
-     * @return \Illuminate\Http\Response
+     * @return Response
      */
     public function create(Association $association, Schedule $schedule)
     {
@@ -36,8 +37,7 @@ class RoundsController extends Controller
     /**
      * Store a newly created resource in storage.
      *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\Response
+     * @return Response
      */
     public function store(Association $association, Schedule $schedule, Request $request)
     {
@@ -46,7 +46,7 @@ class RoundsController extends Controller
             'start_date' => 'required|date',
         ]);
 
-        $round = new Round();
+        $round = new Round;
 
         $round->name = $request->name;
         $round->series_id = $schedule->series->id;
@@ -61,13 +61,13 @@ class RoundsController extends Controller
         foreach ($venues as $venue) {
             $match = new PLMatch;
 
-            $match->name = $venue->name . ' – ' . $round->start_date->format('m-d-Y');
+            $match->name = $venue->name.' – '.$round->start_date->format('m-d-Y');
             $match->association_id = $association->id;
 
-            if (!empty($schedule->series)) {
+            if (! empty($schedule->series)) {
                 $match->series_id = $schedule->series->id;
 
-                if (!empty($schedule->series->division)) {
+                if (! empty($schedule->series->division)) {
                     $match->division_id = $schedule->series->division->id;
                 }
             }
@@ -91,7 +91,7 @@ class RoundsController extends Controller
      * Display the specified resource.
      *
      * @param  int  $id
-     * @return \Illuminate\Http\Response
+     * @return Response
      */
     public function show($id)
     {
@@ -110,8 +110,7 @@ class RoundsController extends Controller
     /**
      * Update the specified resource in storage.
      *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\Response
+     * @return Response
      */
     public function update(Association $association, Schedule $schedule, Round $round, Request $request)
     {
@@ -128,8 +127,8 @@ class RoundsController extends Controller
         $round->save();
 
         foreach ($round->matches as $match) {
-            $home_team_id = $request->{'match_' . $match->id . '__home_team_id'};
-            $away_team_id = $request->{'match_' . $match->id . '__away_team_id'};
+            $home_team_id = $request->{'match_'.$match->id.'__home_team_id'};
+            $away_team_id = $request->{'match_'.$match->id.'__away_team_id'};
 
             $match->home_team_id = $home_team_id;
             $match->away_team_id = $away_team_id;
@@ -142,7 +141,8 @@ class RoundsController extends Controller
         return redirect()->route('schedule.rounds', ['association' => $association, 'schedule' => $schedule]);
     }
 
-    public function deleteConfirm(Association $association, Schedule $schedule, Round $round) {
+    public function deleteConfirm(Association $association, Schedule $schedule, Round $round)
+    {
         return view('round.delete-confirm', [
             'association' => $association,
             'schedule' => $schedule,

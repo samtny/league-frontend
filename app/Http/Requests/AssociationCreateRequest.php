@@ -27,5 +27,4 @@ class AssociationCreateRequest extends FormRequest
             'name' => 'required',
         ];
     }
-
 }

@@ -4,16 +4,13 @@ namespace App\Listeners;
 
 use App\Association;
 use App\AssociationUser;
-use Illuminate\Routing\Route;
-use Illuminate\Http\Request;
 use Illuminate\Auth\Events\Registered;
-use Illuminate\Queue\InteractsWithQueue;
-use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Http\Request;
+use Illuminate\Routing\Route;
 use Illuminate\Support\Arr;
 
 class UserRegistered
 {
-
     private $request;
 
     /**
@@ -29,7 +26,6 @@ class UserRegistered
     /**
      * Handle the event.
      *
-     * @param  \Illuminate\Auth\Events\Registered  $event
      * @return void
      */
     public function handle(Registered $event)
@@ -42,8 +38,8 @@ class UserRegistered
 
         $association = Association::where('subdomain', $subdomain)->first();
 
-        if (!empty($user) && !empty($association)) {
-            $associationUser = new AssociationUser();
+        if (! empty($user) && ! empty($association)) {
+            $associationUser = new AssociationUser;
 
             $associationUser->user_id = $user->id;
             $associationUser->association_id = $association->id;

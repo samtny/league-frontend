@@ -1,8 +1,6 @@
 <?php
 
 use App\TeamResult;
-use Illuminate\Support\Facades\Schema;
-use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Database\Migrations\Migration;
 
 class ResultsToTeamResults extends Migration
@@ -26,7 +24,7 @@ class ResultsToTeamResults extends Migration
         ');
 
         foreach ($team_results as $team_result) {
-            $teamResult = new TeamResult();
+            $teamResult = new TeamResult;
 
             $teamResult->schedule_id = $team_result->schedule_id;
             $teamResult->match_id = $team_result->match_id;
@@ -38,7 +36,7 @@ class ResultsToTeamResults extends Migration
 
             $teamResult->save();
 
-            $teamResult = NULL;
+            $teamResult = null;
         }
 
     }

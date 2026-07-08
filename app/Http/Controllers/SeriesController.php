@@ -9,8 +9,8 @@ use Illuminate\Http\Request;
 
 class SeriesController extends Controller
 {
-
-    public function view(Association $association, Series $series) {
+    public function view(Association $association, Series $series)
+    {
         return view('series.view', [
             'association' => $association,
             'series' => $series,
@@ -20,11 +20,10 @@ class SeriesController extends Controller
     /**
      * Store a new series.
      *
-     * @param  Association  $association
-     * @param  Request  $request
      * @return Response
      */
-    public function store(Association $association, Request $request) {
+    public function store(Association $association, Request $request)
+    {
         $validatedData = $request->validate([
             'name' => 'required|max:255',
         ]);
@@ -40,43 +39,44 @@ class SeriesController extends Controller
         return redirect()->route('association.series', ['association' => $association]);
     }
 
-    public function edit(Association $association, Series $series) {
+    public function edit(Association $association, Series $series)
+    {
         return view('series.edit', [
             'association' => $association,
             'current_user' => \Auth::user(),
             'series' => $series,
-            'start_date_string' => $series->start_date !== NULL ? date('Y-m-d', strtotime($series->start_date)) : NULL,
-            'end_date_string' => $series->end_date !== NULL ? date('Y-m-d', strtotime($series->end_date)) : NULL,
+            'start_date_string' => $series->start_date !== null ? date('Y-m-d', strtotime($series->start_date)) : null,
+            'end_date_string' => $series->end_date !== null ? date('Y-m-d', strtotime($series->end_date)) : null,
             'schedules' => Schedule::where('series_id', $series->id)->orderBy('sequence', 'ASC')->orderBy('start_date', 'ASC')->get(),
         ]);
     }
 
-    public function create(Association $association) {
+    public function create(Association $association)
+    {
         return view('series.create', [
             'association' => $association,
             'current_user' => \Auth::user(),
         ]);
     }
 
-    public function update(Association $association, Series $series, Request $request) {
+    public function update(Association $association, Series $series, Request $request)
+    {
         $validatedData = $request->validate([
             'name' => 'required|max:255',
         ]);
 
         $series->name = $request->name;
 
-        if ($request->start_date !== NULL) {
+        if ($request->start_date !== null) {
             $series->start_date = $request->start_date;
-        }
-        else {
-            $series->start_date = NULL;
+        } else {
+            $series->start_date = null;
         }
 
-        if ($request->end_date !== NULL) {
+        if ($request->end_date !== null) {
             $series->end_date = $request->end_date;
-        }
-        else {
-            $series->end_date = NULL;
+        } else {
+            $series->end_date = null;
         }
 
         $series->archived = $request->has('archived');
@@ -88,18 +88,20 @@ class SeriesController extends Controller
         return redirect()->route('series.view', ['association' => $association, 'series' => $series]);
     }
 
-    public function schedules(Association $association, Series $series) {
+    public function schedules(Association $association, Series $series)
+    {
         return view('series.schedules', ['association' => $association, 'series' => $series]);
     }
 
-    public function deleteConfirm(Association $association, Series $series) {
+    public function deleteConfirm(Association $association, Series $series)
+    {
         return view('series.delete', ['association' => $association, 'series' => $series]);
     }
 
-    public function delete(Association $association, Series $series) {
+    public function delete(Association $association, Series $series)
+    {
         $series->delete();
 
         return redirect()->route('association.series', ['association' => $association])->with('success', 'Series deleted successfully.');
     }
-
 }

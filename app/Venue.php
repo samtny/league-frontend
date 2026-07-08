@@ -9,14 +9,15 @@ class Venue extends Model
 {
     use SoftDeletes;
 
-    protected $fillable = array('name', 'address', 'association_id');
+    protected $fillable = ['name', 'address', 'association_id'];
 
-    public function association() {
+    public function association()
+    {
         return $this->belongsTo('App\Association');
     }
 
-    public function machines() {
+    public function machines()
+    {
         return $this->hasMany('Machine');
     }
-
 }

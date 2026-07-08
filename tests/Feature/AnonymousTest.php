@@ -3,8 +3,6 @@
 namespace Tests\Feature;
 
 use Tests\TestCase;
-use Illuminate\Foundation\Testing\WithFaker;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 
 class AnonymousTest extends TestCase
 {
@@ -13,7 +11,7 @@ class AnonymousTest extends TestCase
      *
      * @return void
      */
-    public function testExample()
+    public function test_example()
     {
         $response = $this->get('/admin');
 

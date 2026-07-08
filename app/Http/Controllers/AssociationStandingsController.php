@@ -2,18 +2,15 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
-
-use App\Association;
+use Illuminate\Http\Response;
 
 class AssociationStandingsController extends AssociationAwareController
 {
-
     /**
      * Display the specified resource.
      *
      * @param  int  $id
-     * @return \Illuminate\Http\Response
+     * @return Response
      */
     public function show()
     {
@@ -25,5 +22,4 @@ class AssociationStandingsController extends AssociationAwareController
             ]
         );
     }
-
 }

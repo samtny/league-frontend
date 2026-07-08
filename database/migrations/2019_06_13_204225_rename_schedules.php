@@ -1,9 +1,8 @@
 <?php
 
+use Illuminate\Database\Migrations\Migration;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
-use Illuminate\Database\Schema\Blueprint;
-use Illuminate\Database\Migrations\Migration;
 
 class RenameSchedules extends Migration
 {
@@ -20,7 +19,7 @@ class RenameSchedules extends Migration
         $schedules = DB::table('schedules')->get();
 
         foreach ($schedules as $schedule) {
-            $division = !empty($schedule->division_id)
+            $division = ! empty($schedule->division_id)
                 ? DB::table('divisions')->find($schedule->division_id)
                 : null;
 

@@ -6,12 +6,11 @@ use App\Association;
 use App\Series;
 use App\User;
 use Bouncer;
-use Illuminate\Http\Request;
 
 class UsersController extends Controller
 {
-
-    public function view(User $user) {
+    public function view(User $user)
+    {
         if (Bouncer::can('view-users')) {
             $associations = Association::where('user_id', $user->id)->get();
 
@@ -22,10 +21,8 @@ class UsersController extends Controller
                 'associations' => $associations,
                 'series' => $series,
             ]);
-        }
-        else {
+        } else {
             return view('denied');
         }
     }
-
 }

@@ -9,26 +9,30 @@ class Team extends Model
 {
     use SoftDeletes;
 
-    protected $fillable = array('name', 'venue_id', 'association_id', 'active');
+    protected $fillable = ['name', 'venue_id', 'association_id', 'active'];
 
-    public function association() {
+    public function association()
+    {
         return $this->belongsTo('App\Association');
     }
 
-    public function captains() {
+    public function captains()
+    {
         return $this->hasMany('App\User');
     }
 
-    public function members() {
+    public function members()
+    {
         return $this->hasMany('App\User');
     }
 
-    public function homeVenue() {
+    public function homeVenue()
+    {
         return $this->hasOne('App\Venue');
     }
 
-    public function roster() {
+    public function roster()
+    {
         return $this->hasMany('App\Member');
     }
-
 }

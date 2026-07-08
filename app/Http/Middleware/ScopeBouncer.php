@@ -2,23 +2,21 @@
 
 namespace App\Http\Middleware;
 
-use Silber\Bouncer\Bouncer;
-
 use Closure;
+use Illuminate\Http\Request;
+use Silber\Bouncer\Bouncer;
 
 class ScopeBouncer
 {
     /**
      * The Bouncer instance.
      *
-     * @var \Silber\Bouncer\Bouncer
+     * @var Bouncer
      */
     protected $bouncer;
 
     /**
      * Constructor.
-     *
-     * @param \Silber\Bouncer\Bouncer  $bouncer
      */
     public function __construct(Bouncer $bouncer)
     {
@@ -28,8 +26,7 @@ class ScopeBouncer
     /**
      * Set the proper Bouncer scope for the incoming request.
      *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  \Closure  $next
+     * @param  Request  $request
      * @return mixed
      */
     public function handle($request, Closure $next)
@@ -37,9 +34,9 @@ class ScopeBouncer
         // Here you may use whatever mechanism you use in your app
         // to determine the current tenant. To demonstrate, the
         // $tenantId is set here from the user's account_id.
-        //$tenantId = $request->user()->account_id;
+        // $tenantId = $request->user()->account_id;
 
-        //$this->bouncer->scope()->to($tenantId);
+        // $this->bouncer->scope()->to($tenantId);
 
         $this->bouncer->scope()->to(request('subdomain'))->onlyRelations()->dontScopeRoleAbilities();
 

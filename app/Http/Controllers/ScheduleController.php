@@ -9,18 +9,18 @@ use App\Round;
 use App\Schedule;
 use App\Series;
 use Illuminate\Http\Request;
-use Illuminate\Logging\Log;
 
 class ScheduleController extends Controller
 {
-
-    public function view(Association $association, Schedule $schedule) {
+    public function view(Association $association, Schedule $schedule)
+    {
         return view('schedule.view', ['association' => $association, 'schedule' => $schedule]);
     }
 
-    public function create(Association $association, Series $series) {
+    public function create(Association $association, Series $series)
+    {
         $available_series = Series::where(['association_id' => $association->id])->get()->all();
-        $available_divisions = Division::orderBy('sequence' , 'ASC')->where(['association_id' => $association->id])->get()->all();
+        $available_divisions = Division::orderBy('sequence', 'ASC')->where(['association_id' => $association->id])->get()->all();
 
         return view('schedule.create', [
             'association' => $association,
@@ -30,21 +30,24 @@ class ScheduleController extends Controller
         ]);
     }
 
-    public function edit(Association $association, Schedule $schedule) {
+    public function edit(Association $association, Schedule $schedule)
+    {
         return view('schedule.edit', [
             'association' => $association,
             'schedule' => $schedule,
         ]);
     }
 
-    public function rounds(Association $association, Schedule $schedule) {
+    public function rounds(Association $association, Schedule $schedule)
+    {
         return view('schedule.rounds', [
             'association' => $association,
             'schedule' => $schedule,
         ]);
     }
 
-    public function store(Association $association, Series $series, Request $request) {
+    public function store(Association $association, Series $series, Request $request)
+    {
         $validatedData = $request->validate([
             'name' => 'required|max:255',
         ]);
@@ -67,11 +70,10 @@ class ScheduleController extends Controller
 
         $division = Division::where(['id' => $division_id])->first();
 
-        if (!empty($division)) {
+        if (! empty($division)) {
             $schedule->name = $division->name;
             $schedule->sequence = $division->sequence;
-        }
-        else {
+        } else {
             $schedule->name = $schedule->start_date;
             $schedule->sequence = null;
         }
@@ -85,7 +87,8 @@ class ScheduleController extends Controller
         return redirect()->route('series.schedules', ['association' => $association, 'series' => $series]);
     }
 
-    public function update(Association $association, Schedule $schedule, Request $request) {
+    public function update(Association $association, Schedule $schedule, Request $request)
+    {
         $validatedData = $request->validate([
             'name' => 'required|max:255',
         ]);
@@ -116,7 +119,8 @@ class ScheduleController extends Controller
 
     }
 
-    private function generateRounds($association_id, $start_date, $end_date, $weekday, $schedule) {
+    private function generateRounds($association_id, $start_date, $end_date, $weekday, $schedule)
+    {
         $series = Series::where(['id' => $schedule->series_id])->first();
 
         $start_datetime = new \DateTime($start_date);
@@ -141,7 +145,7 @@ class ScheduleController extends Controller
 
                 $round->start_date = $start_datetime;
                 $round->end_date = $start_datetime;
-                $round->name = 'Round ' . $round_number;
+                $round->name = 'Round '.$round_number;
 
                 $round->save();
 
@@ -150,7 +154,7 @@ class ScheduleController extends Controller
                 foreach ($venues as $venue) {
                     $match = new PLMatch;
 
-                    $match->name = $venue->name . ' – ' . $round->start_date->format('m-d-Y');
+                    $match->name = $venue->name.' – '.$round->start_date->format('m-d-Y');
                     $match->association_id = $association_id;
                     $match->series_id = $schedule->series_id;
                     $match->division_id = $schedule->division_id;
@@ -172,7 +176,8 @@ class ScheduleController extends Controller
         }
     }
 
-    private function truncateRounds(Schedule $schedule) {
+    private function truncateRounds(Schedule $schedule)
+    {
         $rounds = Round::where(['schedule_id' => $schedule->id])->get();
 
         foreach ($rounds as $round) {
@@ -185,5 +190,4 @@ class ScheduleController extends Controller
             $round->delete();
         }
     }
-
 }

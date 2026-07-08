@@ -22,7 +22,7 @@ class AssociationFactory extends Factory
             // collisions against the DB-level unique constraint are
             // possible; the random suffix makes collisions a non-issue
             // regardless of Faker's internal state.
-            'subdomain' => strtolower($this->faker->word) . '-' . Str::random(8),
+            'subdomain' => strtolower($this->faker->word).'-'.Str::random(8),
             'user_id' => User::factory(),
         ];
     }

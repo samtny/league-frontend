@@ -15,7 +15,7 @@ class StandingsTest extends TestCase
      *
      * @return void
      */
-    public function testExample()
+    public function test_example()
     {
         Association::factory()->create(['subdomain' => 'testassoc']);
 

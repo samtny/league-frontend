@@ -6,8 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class Round extends Model
 {
-
-    protected $fillable = array('name', 'start_date', 'end_date', 'association_id', 'series_id', 'division_id', 'schedule_id', 'scores_closed');
+    protected $fillable = ['name', 'start_date', 'end_date', 'association_id', 'series_id', 'division_id', 'schedule_id', 'scores_closed'];
 
     /**
      * The attributes that should be mutated to dates.
@@ -20,7 +19,8 @@ class Round extends Model
     ];
 
     // Round belongs to a series:
-    public function series() {
+    public function series()
+    {
         return $this->belongsTo('App\Series');
     }
 
@@ -29,13 +29,14 @@ class Round extends Model
         return $this->belongsTo('App\Schedule');
     }
 
-    public function matches() {
+    public function matches()
+    {
         return $this->hasMany('App\PLMatch');
     }
 
-    public function scheduledMatches() {
+    public function scheduledMatches()
+    {
         return $this->hasMany('App\PLMatch')
             ->whereNotNull('home_team_id');
     }
-
 }

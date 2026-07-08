@@ -9,11 +9,11 @@ class Division extends Model
 {
     use SoftDeletes;
 
-    protected $fillable = array('name');
+    protected $fillable = ['name'];
 
     // Division relates to an association:
-    public function association() {
+    public function association()
+    {
         return $this->belongsTo('App\Association');
     }
-
 }

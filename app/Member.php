@@ -6,15 +6,15 @@ use Illuminate\Database\Eloquent\Model;
 
 class Member extends Model
 {
+    protected $fillable = ['name', 'role', 'order', 'team_id', 'association_id'];
 
-    protected $fillable = array('name', 'role', 'order', 'team_id', 'association_id');
-
-    public function association() {
+    public function association()
+    {
         return $this->belongsTo('App\Association');
     }
 
-    public function team() {
+    public function team()
+    {
         return $this->belongsTo('App\Team');
     }
-
 }

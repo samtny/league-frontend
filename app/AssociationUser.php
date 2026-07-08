@@ -6,15 +6,15 @@ use Illuminate\Database\Eloquent\Model;
 
 class AssociationUser extends Model
 {
+    protected $fillable = ['user_id', 'association_id'];
 
-    protected $fillable = array('user_id', 'association_id');
-
-    public function association() {
+    public function association()
+    {
         return $this->hasOne('App\Association');
     }
 
-    public function user() {
+    public function user()
+    {
         return $this->hasOne('App\User');
     }
-
 }

@@ -6,21 +6,18 @@ use App\Association;
 use App\User;
 use Bouncer;
 use Tests\TestCase;
-use Illuminate\Foundation\Testing\WithFaker;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 
 class AssociationAdminTest extends TestCase
 {
-
     private $user;
+
     private $association;
 
     /**
      * Setup the test environment.
-     *
-     * @return void
      */
-    public function setUp(): void {
+    protected function setUp(): void
+    {
         parent::setUp();
         $this->user = User::factory()->create();
 
@@ -38,10 +35,10 @@ class AssociationAdminTest extends TestCase
      *
      * @return void
      */
-    public function testViewAssociation()
+    public function test_view_association()
     {
         $response = $this->actingAs($this->user)
-            ->get('/admin/association/' . $this->association->id);
+            ->get('/admin/association/'.$this->association->id);
 
         $response->assertStatus(200);
     }
@@ -51,23 +48,21 @@ class AssociationAdminTest extends TestCase
      *
      * @return void
      */
-    public function testViewAssociationDivisions()
+    public function test_view_association_divisions()
     {
         $response = $this->actingAs($this->user)
-            ->get('/admin/association/' . $this->association->id . '/divisions');
+            ->get('/admin/association/'.$this->association->id.'/divisions');
 
         $response->assertStatus(200);
     }
 
     /**
      * Clean up the testing environment before the next test.
-     *
-     * @return void
      */
-    public function tearDown(): void {
+    protected function tearDown(): void
+    {
         parent::tearDown();
         $this->association->delete();
         $this->user->delete();
     }
-
 }

@@ -12,17 +12,19 @@ class Association extends Model
     use HasFactory;
     use SoftDeletes;
 
-    protected $fillable = array('name', 'user_id', 'subdomain', 'home_image_path', 'about', 'rules_file_path', 'favicon_metadata');
+    protected $fillable = ['name', 'user_id', 'subdomain', 'home_image_path', 'about', 'rules_file_path', 'favicon_metadata'];
 
     /**
      * The single place that turns a request host into a subdomain string.
      * Shared by every place that used to reimplement this parsing.
      */
-    public static function subdomainFromHost(string $host): ?string {
+    public static function subdomainFromHost(string $host): ?string
+    {
         return Arr::first(explode('.', $host));
     }
 
-    public static function findBySubdomain(string $host): ?self {
+    public static function findBySubdomain(string $host): ?self
+    {
         return static::where('subdomain', static::subdomainFromHost($host))->first();
     }
 
@@ -40,81 +42,97 @@ class Association extends Model
      * see it unset. Called both by ResolveAssociation and by
      * AssociationAwareController's constructor for that reason.
      */
-    public static function resolveForRequest($request): ?self {
+    public static function resolveForRequest($request): ?self
+    {
         $bound = $request->route('association');
 
         return $bound instanceof self ? $bound : static::findBySubdomain($request->getHost());
     }
 
-    public function user() {
+    public function user()
+    {
         return $this->hasOne('User');
     }
 
-    public function divisions() {
+    public function divisions()
+    {
         return $this->hasMany('App\Division');
     }
 
-    public function teams() {
+    public function teams()
+    {
         return $this->hasMany('App\Team');
     }
 
-    public function venues() {
+    public function venues()
+    {
         return $this->hasMany('App\Venue');
     }
 
-    public function series() {
+    public function series()
+    {
         return $this->hasMany('App\Series');
     }
 
-    public function activeSeries() {
+    public function activeSeries()
+    {
         return $this->series()->where('archived', 0);
     }
 
-    public function archivedSeries() {
+    public function archivedSeries()
+    {
         return $this->series()->where('archived', 1);
     }
 
-    public function schedules() {
+    public function schedules()
+    {
         return $this->hasMany('App\Schedule');
     }
 
-    public function activeSchedules() {
+    public function activeSchedules()
+    {
         return $this->schedules()
             ->where('archived', '!=', 1)
             ->orWhereNull('archived');
     }
 
-    public function archivedSchedules() {
+    public function archivedSchedules()
+    {
         return $this->schedules()
             ->where('archived', '=', 1);
     }
 
-    public function resultSubmissions() {
+    public function resultSubmissions()
+    {
         return $this->hasMany('App\ResultSubmission');
     }
 
-    public function rounds() {
+    public function rounds()
+    {
         return $this->hasManyThrough('App\Round', 'App\Schedule', 'association_id', 'schedule_id', 'id', 'id');
     }
 
-    public function activeRounds() {
+    public function activeRounds()
+    {
         return $this->rounds()
             ->where('rounds.start_date', '>=', date('Y-m-d', strtotime('today -7 days')))
-            ->where('rounds.start_date', '<=', date('Y-m-d', strtotime('now +7 days')) );
+            ->where('rounds.start_date', '<=', date('Y-m-d', strtotime('now +7 days')));
     }
 
-    public function users() {
+    public function users()
+    {
         return $this->hasManyThrough('App\User', 'App\AssociationUser', 'association_id', 'id', 'id', 'user_id');
     }
 
-    public function contactSubmissions() {
+    public function contactSubmissions()
+    {
         return $this->hasMany('App\ContactSubmission');
     }
 
-    public function activeContactSubmissions() {
+    public function activeContactSubmissions()
+    {
         return $this->contactSubmissions()
             ->where('archived', '!=', 1)
             ->orWhereNull('archived');
     }
-
 }
