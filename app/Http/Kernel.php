@@ -42,6 +42,11 @@ class Kernel extends HttpKernel
             'throttle:60,1',
             'bindings',
         ],
+
+        'admin.association' => [
+            \App\Http\Middleware\ResolveAssociation::class,
+            \App\Http\Middleware\EnsureManagesAssociation::class,
+        ],
     ];
 
     /**
@@ -61,9 +66,8 @@ class Kernel extends HttpKernel
         'signed' => \Illuminate\Routing\Middleware\ValidateSignature::class,
         'throttle' => \Illuminate\Routing\Middleware\ThrottleRequests::class,
         'verified' => \Illuminate\Auth\Middleware\EnsureEmailIsVerified::class,
-        'subdomain' => \App\Http\Middleware\Subdomain::class,
+        'subdomain' => \App\Http\Middleware\ResolveAssociation::class,
         'admin' => \App\Http\Middleware\CheckAdmin::class,
-        'admin.association' => \App\Http\Middleware\CheckAssociation::class,
     ];
 
     /**

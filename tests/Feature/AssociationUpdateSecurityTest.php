@@ -39,7 +39,7 @@ class AssociationUpdateSecurityTest extends TestCase
         // not a superadmin. This is the realistic attacker profile. Granted
         // directly rather than via BouncerSeeder to keep the test isolated -
         // 'view-admin-pages' is required by the outer CheckAdmin middleware,
-        // 'manage' (toManage) by the inner CheckAssociation middleware.
+        // 'manage' (toManage) by the inner EnsureManagesAssociation middleware.
         Bouncer::assign('assocadmin')->to($this->user);
         Bouncer::allow($this->user)->to('view-admin-pages');
         Bouncer::allow($this->user)->toManage($this->association);
@@ -68,9 +68,9 @@ class AssociationUpdateSecurityTest extends TestCase
     }
 
     /**
-     * CheckAssociation resolves $association purely from the request's Host
-     * header (update() doesn't type-hint Association, so implicit route
-     * model binding never kicks in) - route('association.update', ...)
+     * ResolveAssociation resolves $association purely from the request's
+     * Host header (update() doesn't type-hint Association, so implicit
+     * route model binding never kicks in) - route('association.update', ...)
      * builds a URL on APP_URL's host, which won't match. Build the URL on
      * the association's own subdomain instead, same as production traffic.
      */

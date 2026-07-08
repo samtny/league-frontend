@@ -18,17 +18,9 @@ use App\Http\Resources\AssociationCollection as AssociationCollectionResource;
 
 use Bouncer;
 use Illuminate\Http\Request;
-use Illuminate\Support\Arr;
-use Illuminate\Support\Str;
 
 class AssociationsController extends Controller
 {
-
-    public function __construct(Request $request) {
-        $subdomain = Arr::first(explode('.', \Request::getHost()));
-
-        $this->association = Association::where('subdomain', $subdomain)->first();
-    }
 
     public function index(Request $request) {
         $user = $request->user();

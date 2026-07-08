@@ -2,7 +2,7 @@
 
 namespace App\Providers;
 
-use Illuminate\Support\Arr;
+use App\Association;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
 
@@ -25,9 +25,6 @@ class DomainServiceProvider extends ServiceProvider
      */
     public function boot()
     {
-        // FIXME: redo routes so we always get association from there instead:
-        $subdomain = Arr::first(explode('.', request()->getHost()));
-
-        View::share('subdomain', $subdomain);
+        View::share('subdomain', Association::subdomainFromHost(request()->getHost()));
     }
 }

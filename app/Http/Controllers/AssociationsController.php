@@ -14,17 +14,10 @@ use App\User;
 use App\Venue;
 use Bouncer;
 use Illuminate\Http\Request;
-use Illuminate\Support\Arr;
 use Illuminate\Support\Str;
 
-class AssociationsController extends Controller
+class AssociationsController extends AssociationAwareController
 {
-
-    public function __construct(Request $request) {
-        $subdomain = Arr::first(explode('.', \Request::getHost()));
-
-        $this->association = Association::where('subdomain', $subdomain)->first();
-    }
 
     public function view(Association $association) {
         return view('association.view', ['association' => $association]);

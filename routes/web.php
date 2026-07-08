@@ -124,7 +124,14 @@ Route::prefix('admin')->middleware('admin')->group(function () {
         Route::get('{user}', 'UsersController@view')->name('user');
     });
 
-    // FIXME: route series under {association}:
+    // Not nested under {association} - EnsureManagesAssociation derives the
+    // owning association from the bound {series}/{schedule} model instead,
+    // except for series.create/series.store/series.update, which take no
+    // route-bound model at all (association comes from the request body /
+    // a cross-association dropdown) and so still fall back to resolving
+    // by request host subdomain. Nesting these under {association} would
+    // fix that too, but changes the create-series UX and is a separate,
+    // larger change.
     Route::prefix('series')->middleware('admin.association')->group(function () {
         Route::get('{series}/schedule/create', 'ScheduleController@create')->name('schedule.create');
         Route::post('{series}/schedule/create', 'ScheduleController@store');
@@ -140,7 +147,11 @@ Route::prefix('admin')->middleware('admin')->group(function () {
         Route::post('{series}/delete', 'SeriesController@delete')->name('series.delete');
     });
 
-    // FIXME: route schedule under {association}:
+    // Not nested under {association} - see note above the `series` group.
+    // schedule.update and round.update look up their model from the
+    // request body rather than a bound route parameter, so EnsureManages-
+    // Association can't derive the owning association from them either;
+    // those two still fall back to the request host subdomain.
     Route::prefix('schedule')->middleware('admin.association')->group(function () {
         Route::get('{schedule}/round/create', 'RoundsController@create')->name('round.create');
         Route::post('{schedule}/round', 'RoundsController@store')->name('round.store');
@@ -158,7 +169,9 @@ Route::prefix('admin')->middleware('admin')->group(function () {
         Route::get('{schedule}', 'ScheduleController@view')->name('schedule.view');
     });
 
-    // FIXME: route results under {association}:
+    // Not nested under {association} - see note above the `series` group.
+    // result_submission.update looks up its model by plain {id}, so it
+    // still falls back to the request host subdomain.
     Route::prefix('results')->middleware('admin.association')->group(function () {
         Route::get('{schedule}/edit', 'ResultsController@edit')->name('results.edit');
         Route::post('{schedule}/update', 'ResultsController@update')->name('results.update');

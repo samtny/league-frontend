@@ -2,23 +2,24 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
-
 use App\Association;
-use Illuminate\Support\Arr;
+use Illuminate\Http\Request;
 
 class AssociationAwareController extends Controller
 {
 
     /**
-     * @var \App\Association $association
+     * @var \App\Association|null $association
      */
     protected $association;
 
+    /**
+     * Resolves directly via Association::resolveForRequest() rather than
+     * reading the `association` request attribute ResolveAssociation sets -
+     * see the doc comment on that method for why.
+     */
     public function __construct(Request $request) {
-        $subdomain = Arr::first(explode('.', \Request::getHost()));
-
-        $this->association = Association::where('subdomain', $subdomain)->first();
+        $this->association = Association::resolveForRequest($request);
     }
 
 }
