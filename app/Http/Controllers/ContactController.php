@@ -14,6 +14,10 @@ class ContactController extends AssociationAwareController
 
     public function contactSubmit(Request $request)
     {
+        if (empty($this->association)) {
+            abort(404);
+        }
+
         $validatedData = $request->validate([
             'email' => 'required|email|max:255',
         ]);
@@ -23,7 +27,7 @@ class ContactController extends AssociationAwareController
         $contact->email = $request->email;
         $contact->reason = $request->reason;
         $contact->comment = $request->comment;
-        $contact->association_id = $request->association_id;
+        $contact->association_id = $this->association->id;
 
         $contact->save();
 
