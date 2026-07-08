@@ -135,7 +135,7 @@ Breadcrumbs::for('venue.edit', function ($trail, $venue) {
 
 Breadcrumbs::for('venue.deleteConfirm', function ($trail, $venue) {
     $trail->parent('association.venues', $venue->association);
-    $trail->push('Delete Venue', route('venue.deleteConfirm', ['venue' => $venue]));
+    $trail->push('Delete Venue', route('venue.deleteConfirm', ['association' => $venue->association, 'venue' => $venue]));
 });
 
 Breadcrumbs::for('association.series', function ($trail, $association) {
@@ -173,49 +173,49 @@ Breadcrumbs::for('association.user.token', function ($trail, $association, $user
     $trail->push('Token', route('association.user.token', ['association' => $association, 'user' => $user]));
 });
 
-Breadcrumbs::for('series.create', function ($trail) {
-    $trail->parent('admin');
-    $trail->push('Create Series', route('series.create'));
+Breadcrumbs::for('series.create', function ($trail, $association) {
+    $trail->parent('association.series', $association);
+    $trail->push('Create Series', route('series.create', ['association' => $association]));
 });
 
 Breadcrumbs::for('series.view', function ($trail, $series) {
     $trail->parent('association.series', $series->association);
-    $trail->push($series->name, route('series.view', $series));
+    $trail->push($series->name, route('series.view', ['association' => $series->association, 'series' => $series]));
 });
 
 Breadcrumbs::for('series.edit', function ($trail, $series) {
     $trail->parent('series.view', $series);
-    $trail->push($series->name, route('series.edit', $series));
+    $trail->push($series->name, route('series.edit', ['association' => $series->association, 'series' => $series]));
 });
 
 Breadcrumbs::for('series.deleteConfirm', function ($trail, $series) {
     $trail->parent('series.view', $series);
-    $trail->push('Delete Series', route('series.deleteConfirm', $series));
+    $trail->push('Delete Series', route('series.deleteConfirm', ['association' => $series->association, 'series' => $series]));
 });
 
 Breadcrumbs::for('series.schedules', function ($trail, $series) {
     $trail->parent('series.view', $series);
-    $trail->push(__('Schedules'), route('series.schedules', $series));
+    $trail->push(__('Schedules'), route('series.schedules', ['association' => $series->association, 'series' => $series]));
 });
 
 Breadcrumbs::for('schedule.create', function ($trail, $series) {
     $trail->parent('series.schedules', $series);
-    $trail->push(__('Create'), route('schedule.create', $series));
+    $trail->push(__('Create'), route('schedule.create', ['association' => $series->association, 'series' => $series]));
 });
 
 Breadcrumbs::for('schedule.view', function ($trail, $schedule) {
     $trail->parent('series.schedules', $schedule->series);
-    $trail->push($schedule->name ? $schedule->name : '<noname>', route('schedule.view', $schedule));
+    $trail->push($schedule->name ? $schedule->name : '<noname>', route('schedule.view', ['association' => $schedule->association, 'schedule' => $schedule]));
 });
 
 Breadcrumbs::for('schedule.edit', function ($trail, $schedule) {
     $trail->parent('schedule.view', $schedule);
-    $trail->push(__('Edit'), route('schedule.edit', $schedule));
+    $trail->push(__('Edit'), route('schedule.edit', ['association' => $schedule->association, 'schedule' => $schedule]));
 });
 
 Breadcrumbs::for('schedule.rounds', function ($trail, $schedule) {
     $trail->parent('schedule.view', $schedule);
-    $trail->push(__('Rounds'), route('schedule.rounds', $schedule));
+    $trail->push(__('Rounds'), route('schedule.rounds', ['association' => $schedule->association, 'schedule' => $schedule]));
 });
 
 Breadcrumbs::for('round.view', function ($trail, $schedule, $round) {
@@ -225,17 +225,17 @@ Breadcrumbs::for('round.view', function ($trail, $schedule, $round) {
 
 Breadcrumbs::for('round.create', function ($trail, $schedule) {
     $trail->parent('schedule.rounds', $schedule);
-    $trail->push(__('Create'), route('round.create', ['schedule' => $schedule]));
+    $trail->push(__('Create'), route('round.create', ['association' => $schedule->association, 'schedule' => $schedule]));
 });
 
 Breadcrumbs::for('round.edit', function ($trail, $schedule, $round) {
     $trail->parent('round.view', $schedule, $round);
-    $trail->push(__('Edit'), route('round.edit', ['schedule' => $schedule, 'round' => $round]));
+    $trail->push(__('Edit'), route('round.edit', ['association' => $schedule->association, 'schedule' => $schedule, 'round' => $round]));
 });
 
 Breadcrumbs::for('results.edit', function ($trail, $schedule) {
     $trail->parent('series.edit', $schedule->series);
-    $trail->push(__('Results - :start_date', ['start_date' => \Carbon\Carbon::parse($schedule->start_date)->format('m-d-Y')]), route('results.edit', $schedule));
+    $trail->push(__('Results - :start_date', ['start_date' => \Carbon\Carbon::parse($schedule->start_date)->format('m-d-Y')]), route('results.edit', ['association' => $schedule->association, 'schedule' => $schedule]));
 });
 
 Breadcrumbs::for('result_submissions.approve', function ($trail, $association) {

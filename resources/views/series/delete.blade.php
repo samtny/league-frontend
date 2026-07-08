@@ -11,7 +11,7 @@
         <h1 class="col">Delete <?php echo $series->name; ?>?</h1>
     </div>
     <div class="form">
-        <form method="POST" action="{{ route('series.delete', ['series' => $series]) }}">
+        <form method="POST" action="{{ route('series.delete', ['association' => $series->association, 'series' => $series]) }}">
             @csrf
 
             <input type="hidden" name="url" value="{{ URL::previous() }}">

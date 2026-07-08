@@ -14,17 +14,16 @@ use Illuminate\Logging\Log;
 class ScheduleController extends Controller
 {
 
-    public function view(Schedule $schedule) {
-        return view('schedule.view', ['schedule' => $schedule]);
+    public function view(Association $association, Schedule $schedule) {
+        return view('schedule.view', ['association' => $association, 'schedule' => $schedule]);
     }
 
-    public function create(Series $series) {
-        $association_id = $series->association_id;
-        $available_series = \App\Series::where(['association_id' => $series->association_id])->get()->all();
-        $available_divisions = \App\Division::orderBy('sequence' , 'ASC')->where(['association_id' => $series->association_id])->get()->all();
+    public function create(Association $association, Series $series) {
+        $available_series = Series::where(['association_id' => $association->id])->get()->all();
+        $available_divisions = Division::orderBy('sequence' , 'ASC')->where(['association_id' => $association->id])->get()->all();
 
         return view('schedule.create', [
-            'association_id' => $association_id,
+            'association' => $association,
             'series' => $series,
             'available_series' => $available_series,
             'available_divisions' => $available_divisions,
@@ -33,35 +32,34 @@ class ScheduleController extends Controller
 
     public function edit(Association $association, Schedule $schedule) {
         return view('schedule.edit', [
-            'association' => $schedule->association,
+            'association' => $association,
             'schedule' => $schedule,
         ]);
     }
 
-    public function rounds(Schedule $schedule) {
+    public function rounds(Association $association, Schedule $schedule) {
         return view('schedule.rounds', [
+            'association' => $association,
             'schedule' => $schedule,
         ]);
     }
 
-    public function store(Series $series, Request $request) {
+    public function store(Association $association, Series $series, Request $request) {
         $validatedData = $request->validate([
             'name' => 'required|max:255',
         ]);
 
         $name = $request->name;
-        $association_id = $series->association->id;
         $division_id = $request->division_id;
         $start_date = $request->start_date;
         $end_date = $request->end_date;
         $weekday = $request->weekday;
-        $archived = $request->archived;
         $generate = $request->generate;
 
         $schedule = new Schedule;
 
         $schedule->name = $name;
-        $schedule->association_id = $association_id;
+        $schedule->association_id = $association->id;
         $schedule->series_id = $series->id;
         $schedule->division_id = $division_id;
         $schedule->start_date = $start_date;
@@ -81,44 +79,40 @@ class ScheduleController extends Controller
         $schedule->save();
 
         if ($generate) {
-            $this->generateRounds($association_id, $start_date, $end_date, $weekday, $schedule);
+            $this->generateRounds($association->id, $start_date, $end_date, $weekday, $schedule);
         }
 
-        return redirect()->route('series.schedules', ['series' => $series]);
+        return redirect()->route('series.schedules', ['association' => $association, 'series' => $series]);
     }
 
-    public function update(Request $request) {
+    public function update(Association $association, Schedule $schedule, Request $request) {
         $validatedData = $request->validate([
             'name' => 'required|max:255',
         ]);
 
-        $schedule = Schedule::find($request->id);
-
         $name = $request->name;
-        $association_id = $schedule->association_id;
         $division_id = $request->division_id;
         $start_date = $request->start_date;
         $end_date = $request->end_date;
         $weekday = $request->weekday;
-        $archived = $request->archived;
         $generate = $request->generate;
 
         $schedule->name = $name;
         $schedule->division_id = $division_id;
         $schedule->start_date = $start_date;
         $schedule->end_date = $end_date;
-        $schedule->archived = $archived;
+        $schedule->archived = $request->archived;
 
         $schedule->save();
 
         if ($generate) {
             $this->truncateRounds($schedule);
-            $this->generateRounds($association_id, $start_date, $end_date, $weekday, $schedule);
+            $this->generateRounds($association->id, $start_date, $end_date, $weekday, $schedule);
         }
 
         $request->session()->flash('message', __('Successfully updated schedule'));
 
-        return redirect()->route('schedule.view', ['schedule' => $schedule]);
+        return redirect()->route('schedule.view', ['association' => $association, 'schedule' => $schedule]);
 
     }
 

@@ -13,7 +13,7 @@
         <?php if (!empty($series->schedules)): ?>
         <div class="list-group">
             <?php foreach ($series->schedules as $index => $item): ?>
-                <a class="list-group-item list-group-action" href="{{ route('schedule.view', ['schedule' => $item ])}}">
+                <a class="list-group-item list-group-action" href="{{ route('schedule.view', ['association' => $series->association, 'schedule' => $item ])}}">
                     {{ $item->name }}
                 </a>
             <?php endforeach; ?>
@@ -27,7 +27,7 @@
     </div>
     <div class="actions row">
         <div class="col">
-            <a class="btn btn-primary" href="{{ route('schedule.create', [ 'series' => $series ]) }}">Create Schedule</a>
+            <a class="btn btn-primary" href="{{ route('schedule.create', [ 'association' => $series->association, 'series' => $series ]) }}">Create Schedule</a>
         </div>
     </div>
 @endsection

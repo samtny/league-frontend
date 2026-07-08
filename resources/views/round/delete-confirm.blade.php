@@ -11,10 +11,8 @@
         <h1 class="col">Delete Round</h1>
     </div>
     <div class="form">
-        <form method="POST" action="{{ route('round.delete', ['schedule' => $schedule, 'round' => $round]) }}">
+        <form method="POST" action="{{ route('round.delete', ['association' => $schedule->association, 'schedule' => $schedule, 'round' => $round]) }}">
             @csrf
-
-            <input type="hidden" name="id" value="<?php echo $round->id; ?>">
 
             <input type="hidden" name="url" value="{{ URL::previous() }}">
 

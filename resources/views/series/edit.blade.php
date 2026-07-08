@@ -15,10 +15,8 @@
         </div>
     </div>
     <div class="form">
-        <form method="POST" action="{{ route('series.update', ['series' => $series ]) }}">
+        <form method="POST" action="{{ route('series.update', ['association' => $association, 'series' => $series ]) }}">
             @csrf
-
-            <input type="hidden" name="id" value="{{ $series->id }}">
 
             <input type="hidden" name="url" value="{{  URL::previous()  }}">
 
@@ -55,7 +53,7 @@
                     <button class="btn btn-primary" id="submit" type="submit">Update</button>
                 </div>
                 <div class="mb-3">
-                    <a class="btn btn-warning" href="{{ route('series.deleteConfirm', [ 'series' => $series ]) }}">Delete Series</a>
+                    <a class="btn btn-warning" href="{{ route('series.deleteConfirm', [ 'association' => $association, 'series' => $series ]) }}">Delete Series</a>
                 </div>
             </div>
         </form>

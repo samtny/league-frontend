@@ -11,7 +11,7 @@
         <h1 class="col"><?php echo $venue->name; ?></h1>
     </div>
     <div class="form">
-        <form method="POST" action="{{ route('venue.update', ['venue' => $venue])}}">
+        <form method="POST" action="{{ route('venue.update', ['association' => $association, 'venue' => $venue])}}">
             @csrf
 
             <input type="hidden" name="url" value="{{  URL::previous()  }}">
@@ -29,7 +29,7 @@
                     <input class="btn btn-primary" id="submit" type="submit" value="Update"/>
                 </div>
                 <div class="mb-3">
-                    <a class="btn btn-warning" href="{{ route('venue.deleteConfirm', ['venue' => $venue]) }}">Delete Venue</a>
+                    <a class="btn btn-warning" href="{{ route('venue.deleteConfirm', ['association' => $association, 'venue' => $venue]) }}">Delete Venue</a>
                 </div>
             </div>
 

@@ -11,10 +11,8 @@
         <h1 class="col">Edit Round</h1>
     </div>
     <div class="form">
-        <form method="POST" action="{{ route('round.update', ['schedule' => $schedule, 'id' => $round->id]) }}">
+        <form method="POST" action="{{ route('round.update', ['association' => $schedule->association, 'schedule' => $schedule, 'round' => $round]) }}">
             @csrf
-
-            <input type="hidden" name="id" value="<?php echo $schedule->id; ?>">
 
             <input type="hidden" name="url" value="{{ URL::previous() }}">
 
@@ -112,7 +110,7 @@
                     <input id="submit" class="btn btn-primary" type="submit" value="Update"/>
                 </div>
                 <div class="mb-3">
-                    <a class="btn btn-warning" type="submit" href="{{ route('round.delete-confirm', ['schedule' => $schedule, 'round' => $round]) }}">Delete Round</a>
+                    <a class="btn btn-warning" type="submit" href="{{ route('round.delete-confirm', ['association' => $schedule->association, 'schedule' => $schedule, 'round' => $round]) }}">Delete Round</a>
                 </div>
             </div>
 

@@ -3,17 +3,16 @@
 namespace App\Http\Controllers;
 
 use App\Association;
-use App\Round;
 use App\Schedule;
 use App\Series;
-use Bouncer;
 use Illuminate\Http\Request;
 
 class SeriesController extends Controller
 {
 
-    public function view(Series $series) {
+    public function view(Association $association, Series $series) {
         return view('series.view', [
+            'association' => $association,
             'series' => $series,
         ]);
     }
@@ -21,63 +20,52 @@ class SeriesController extends Controller
     /**
      * Store a new series.
      *
+     * @param  Association  $association
      * @param  Request  $request
      * @return Response
      */
-    public function store(Request $request) {
+    public function store(Association $association, Request $request) {
         $validatedData = $request->validate([
             'name' => 'required|max:255',
         ]);
 
-        $series = new series;
+        $series = new Series;
 
         $series->name = $request->name;
-        $series->user_id = $request->user_id;
-        $series->association_id = $request->association_id;
+        $series->user_id = \Auth::user()->id;
+        $series->association_id = $association->id;
 
         $series->save();
 
-        return redirect()->route('association.series', ['association' => Association::find($request->association_id)]);
+        return redirect()->route('association.series', ['association' => $association]);
     }
 
-    public function edit(Series $series) {
+    public function edit(Association $association, Series $series) {
         return view('series.edit', [
+            'association' => $association,
             'current_user' => \Auth::user(),
             'series' => $series,
-            //'start_date_string' => $series->start_date !== NULL ? date('Y-m-d', $series->start_date) : NULL,
             'start_date_string' => $series->start_date !== NULL ? date('Y-m-d', strtotime($series->start_date)) : NULL,
-            //'end_date_string' => $series->end_date !== NULL ? date('Y-m-d', $series->end_date) : NULL,
             'end_date_string' => $series->end_date !== NULL ? date('Y-m-d', strtotime($series->end_date)) : NULL,
-            'associations' => Association::where('user_id', \Auth::user()->id)->get(),
-            'association_id' => $series->association_id,
             'schedules' => Schedule::where('series_id', $series->id)->orderBy('sequence', 'ASC')->orderBy('start_date', 'ASC')->get(),
         ]);
     }
 
-    public function create() {
+    public function create(Association $association) {
         return view('series.create', [
+            'association' => $association,
             'current_user' => \Auth::user(),
-            'associations' => Association::where('user_id', \Auth::user()->id)->get(),
         ]);
     }
 
-    public function update(Request $request) {
+    public function update(Association $association, Series $series, Request $request) {
         $validatedData = $request->validate([
             'name' => 'required|max:255',
         ]);
 
-        $series = series::find($request->id);
-
         $series->name = $request->name;
-        //$series->user_id = $request->user_id;
-
-        if (isset($request->association_id)) {
-            $series->association_id = $request->association_id;
-        }
 
         if ($request->start_date !== NULL) {
-            //$start_date_timestamp = strtotime($request->start_date);
-            //$series->start_date = $start_date_timestamp;
             $series->start_date = $request->start_date;
         }
         else {
@@ -85,8 +73,6 @@ class SeriesController extends Controller
         }
 
         if ($request->end_date !== NULL) {
-            //$end_date_timestamp = strtotime($request->end_date);
-            //$series->end_date = $end_date_timestamp;
             $series->end_date = $request->end_date;
         }
         else {
@@ -99,20 +85,18 @@ class SeriesController extends Controller
 
         $request->session()->flash('message', __('Successfully updated series :series!', ['series' => $series->name]));
 
-        return redirect()->route('series.view', ['series' => $series]);
+        return redirect()->route('series.view', ['association' => $association, 'series' => $series]);
     }
 
-    public function schedules(Series $series) {
-        return view('series.schedules', ['series' => $series]);
+    public function schedules(Association $association, Series $series) {
+        return view('series.schedules', ['association' => $association, 'series' => $series]);
     }
 
-    public function deleteConfirm(Series $series) {
-        return view('series.delete', ['series' => $series]);
+    public function deleteConfirm(Association $association, Series $series) {
+        return view('series.delete', ['association' => $association, 'series' => $series]);
     }
 
-    public function delete(Series $series) {
-        $association = $series->association;
-
+    public function delete(Association $association, Series $series) {
         $series->delete();
 
         return redirect()->route('association.series', ['association' => $association])->with('success', 'Series deleted successfully.');

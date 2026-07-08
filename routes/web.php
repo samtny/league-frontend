@@ -48,9 +48,9 @@ Route::prefix('admin')->middleware('admin')->group(function () {
         Route::get('{association}/venue/create', 'VenuesController@create')->name('venue.create');
         Route::post('{association}/venue/create', 'VenuesController@store');
         Route::get('{association}/venue/{venue}/edit', 'VenuesController@edit')->name('venue.edit');
-        Route::post('venue/{venue}/update', 'VenuesController@update')->name('venue.update');
-        Route::get('venue/{venue}/delete', 'VenuesController@deleteConfirm')->name('venue.deleteConfirm');
-        Route::post('venue/{venue}/delete', 'VenuesController@delete')->name('venue.delete');
+        Route::post('{association}/venue/{venue}/update', 'VenuesController@update')->name('venue.update');
+        Route::get('{association}/venue/{venue}/delete', 'VenuesController@deleteConfirm')->name('venue.deleteConfirm');
+        Route::post('{association}/venue/{venue}/delete', 'VenuesController@delete')->name('venue.delete');
 
         Route::get('{association}/team/create', 'TeamsController@create')->name('team.create');
         Route::post('{association}/team/create', 'TeamsController@store');
@@ -76,12 +76,39 @@ Route::prefix('admin')->middleware('admin')->group(function () {
         Route::get('{association}/division/{division}/delete', 'DivisionsController@deleteConfirm')->name('division.deleteConfirm');
         Route::post('{association}/division/{division}/delete', 'DivisionsController@delete')->name('division.delete');
 
+        Route::get('{association}/series/create', 'SeriesController@create')->name('series.create');
+        Route::post('{association}/series/create', 'SeriesController@store');
+        Route::get('{association}/series/archived', 'AssociationsController@seriesArchived')->name('association.series.archived');
+        Route::get('{association}/series/{series}', 'SeriesController@view')->name('series.view');
+        Route::get('{association}/series/{series}/edit', 'SeriesController@edit')->name('series.edit');
+        Route::post('{association}/series/{series}/update', 'SeriesController@update')->name('series.update');
+        Route::get('{association}/series/{series}/delete', 'SeriesController@deleteConfirm')->name('series.deleteConfirm');
+        Route::post('{association}/series/{series}/delete', 'SeriesController@delete')->name('series.delete');
+        Route::get('{association}/series/{series}/schedules', 'SeriesController@schedules')->name('series.schedules');
+        Route::get('{association}/series/{series}/schedule/create', 'ScheduleController@create')->name('schedule.create');
+        Route::post('{association}/series/{series}/schedule/create', 'ScheduleController@store');
+
+        Route::get('{association}/schedule/{schedule}', 'ScheduleController@view')->name('schedule.view');
+        Route::get('{association}/schedule/{schedule}/edit', 'ScheduleController@edit')->name('schedule.edit');
+        Route::post('{association}/schedule/{schedule}/update', 'ScheduleController@update')->name('schedule.update');
+        Route::get('{association}/schedule/{schedule}/rounds', 'ScheduleController@rounds')->name('schedule.rounds');
+        Route::get('{association}/schedule/{schedule}/round/create', 'RoundsController@create')->name('round.create');
+        Route::post('{association}/schedule/{schedule}/round', 'RoundsController@store')->name('round.store');
+        Route::get('{association}/schedule/{schedule}/round/{round}/edit', 'RoundsController@edit')->name('round.edit');
+        Route::post('{association}/schedule/{schedule}/round/{round}/update', 'RoundsController@update')->name('round.update');
+        Route::get('{association}/schedule/{schedule}/round/{round}/delete-confirm', 'RoundsController@deleteConfirm')->name('round.delete-confirm');
+        Route::post('{association}/schedule/{schedule}/round/{round}/delete', 'RoundsController@destroy')->name('round.delete');
+
+        Route::get('{association}/results/submissions', 'ResultSubmissionsController@index')->name('result_submissions.list');
+        Route::get('{association}/results/{schedule}/edit', 'ResultsController@edit')->name('results.edit');
+        Route::post('{association}/results/{schedule}/update', 'ResultsController@update')->name('results.update');
+        Route::post('{association}/results/result_submission/{id}', 'ResultSubmissionsController@update')->name('result_submission.update');
+
         Route::get('{association}/edit', 'AssociationsController@edit')->name('association.edit');
         Route::get('{association}/divisions', 'AssociationsController@divisions')->name('association.divisions');
         Route::get('{association}/teams', 'AssociationsController@teams')->name('association.teams');
         Route::get('{association}/venues', 'AssociationsController@venues')->name('association.venues');
         Route::get('{association}/series', 'AssociationsController@series')->name('association.series');
-        Route::get('{association}/series/archived', 'AssociationsController@seriesArchived')->name('association.series.archived');
         Route::get('{association}/users', 'AssociationsController@users')->name('association.users');
 
         Route::get('create', 'AssociationsController@create')->name('association.create');
@@ -122,63 +149,6 @@ Route::prefix('admin')->middleware('admin')->group(function () {
     Route::prefix('user')->group(function () {
         Route::get('create', 'UsersController@create')->name('user');
         Route::get('{user}', 'UsersController@view')->name('user');
-    });
-
-    // Not nested under {association} - EnsureManagesAssociation derives the
-    // owning association from the bound {series}/{schedule} model instead,
-    // except for series.create/series.store/series.update, which take no
-    // route-bound model at all (association comes from the request body /
-    // a cross-association dropdown) and so still fall back to resolving
-    // by request host subdomain. Nesting these under {association} would
-    // fix that too, but changes the create-series UX and is a separate,
-    // larger change.
-    Route::prefix('series')->middleware('admin.association')->group(function () {
-        Route::get('{series}/schedule/create', 'ScheduleController@create')->name('schedule.create');
-        Route::post('{series}/schedule/create', 'ScheduleController@store');
-
-        Route::get('{series}/schedules', 'SeriesController@schedules')->name('series.schedules');
-
-        Route::get('{series}/edit', 'SeriesController@edit')->name('series.edit');
-        Route::get('create', 'SeriesController@create')->name('series.create');
-        Route::post('create', 'SeriesController@store');
-        Route::post('update', 'SeriesController@update')->name('series.update');
-        Route::get('{series}', 'SeriesController@view')->name('series.view');
-        Route::get('{series}/delete', 'SeriesController@deleteConfirm')->name('series.deleteConfirm');
-        Route::post('{series}/delete', 'SeriesController@delete')->name('series.delete');
-    });
-
-    // Not nested under {association} - see note above the `series` group.
-    // schedule.update and round.update look up their model from the
-    // request body rather than a bound route parameter, so EnsureManages-
-    // Association can't derive the owning association from them either;
-    // those two still fall back to the request host subdomain.
-    Route::prefix('schedule')->middleware('admin.association')->group(function () {
-        Route::get('{schedule}/round/create', 'RoundsController@create')->name('round.create');
-        Route::post('{schedule}/round', 'RoundsController@store')->name('round.store');
-
-        Route::get('{schedule}/round/{round}/edit', 'RoundsController@edit')->name('round.edit');
-        Route::post('{schedule}/round/{id}/update', 'RoundsController@update')->name('round.update');
-
-        Route::get('{schedule}/round/{round}/delete-confirm', 'RoundsController@deleteConfirm')->name('round.delete-confirm');
-        Route::post('{schedule}/round/{round}/delete', 'RoundsController@destroy')->name('round.delete');
-
-        Route::get('{schedule}/rounds', 'ScheduleController@rounds')->name('schedule.rounds');
-
-        Route::get('{schedule}/edit', 'ScheduleController@edit')->name('schedule.edit');
-        Route::post('{schedule}/update', 'ScheduleController@update')->name('schedule.update');
-        Route::get('{schedule}', 'ScheduleController@view')->name('schedule.view');
-    });
-
-    // Not nested under {association} - see note above the `series` group.
-    // result_submission.update looks up its model by plain {id}, so it
-    // still falls back to the request host subdomain.
-    Route::prefix('results')->middleware('admin.association')->group(function () {
-        Route::get('{schedule}/edit', 'ResultsController@edit')->name('results.edit');
-        Route::post('{schedule}/update', 'ResultsController@update')->name('results.update');
-        Route::get('{association}/results/submissions', 'ResultSubmissionsController@index')->name('result_submissions.list');
-        Route::prefix('result_submission')->group(function () {
-            Route::post('{id}', 'ResultSubmissionsController@update')->name('result_submission.update');
-        });
     });
 
     Route::prefix('onboard')->group(function () {

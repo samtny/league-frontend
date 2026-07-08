@@ -13,8 +13,8 @@
     <div class="links row">
         <div class="col">
             <div class="list-group">
-                <a class="list-group-item list-group-item-action" href="{{ route('schedule.edit', ['schedule' => $schedule]) }}">Edit Details</a>
-                <a class="list-group-item list-group-item-action" href="{{ route('schedule.rounds', ['schedule' => $schedule]) }}">Rounds</a>
+                <a class="list-group-item list-group-item-action" href="{{ route('schedule.edit', ['association' => $schedule->association, 'schedule' => $schedule]) }}">Edit Details</a>
+                <a class="list-group-item list-group-item-action" href="{{ route('schedule.rounds', ['association' => $schedule->association, 'schedule' => $schedule]) }}">Rounds</a>
             </div>
         </div>
     </div>

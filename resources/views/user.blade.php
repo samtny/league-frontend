@@ -40,23 +40,22 @@
         Series
         <?php if (!empty($series)): ?>
             <?php foreach ($series as $index => $item): ?>
-                <a href="{{ route('series.view', ['series' => $item]) }}">
-                    <?php echo ('<div class="series">' . $item->name . '</div>'); ?>
-                </a>
-                <a href="{{ route('series.edit', ['series' => $item]) }}">
-                    Edit
-                </a>
+                <?php if ($item->association): ?>
+                    <a href="{{ route('series.view', ['association' => $item->association, 'series' => $item]) }}">
+                        <?php echo ('<div class="series">' . $item->name . '</div>'); ?>
+                    </a>
+                    <a href="{{ route('series.edit', ['association' => $item->association, 'series' => $item]) }}">
+                        Edit
+                    </a>
+                <?php else: ?>
+                    <div class="series"><?php echo $item->name; ?> (no association)</div>
+                <?php endif; ?>
             <?php endforeach; ?>
         <?php else: ?>
             <div class="message">
                 No Series.
             </div>
         <?php endif; ?>
-        @can ('create', App\Series::class)
-        <div class="links">
-            <a href="{{ route('series.create') }}">Create Series</a>
-        </div>
-        @endcan
     </div>
 
 @endsection

@@ -11,10 +11,8 @@
         <h1 class="col">Create Round</h1>
     </div>
     <div class="form">
-        <form method="POST" action="{{ route('round.store', ['schedule' => $schedule]) }}">
+        <form method="POST" action="{{ route('round.store', ['association' => $schedule->association, 'schedule' => $schedule]) }}">
             @csrf
-
-            <input type="hidden" name="id" value="<?php echo $schedule->id; ?>">
 
             <input type="hidden" name="url" value="{{ URL::previous() }}">
 

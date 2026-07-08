@@ -28,7 +28,7 @@
                     <h2 class="text-muted">Active Rounds</h2>
                     <div class="list-group">
                     @forelse ($association->activeRounds->sortBy('start_date') as $round)
-                    <a class="list-group-item list-group-item-action" href="{{ route('round.edit', ['schedule' => $round->schedule, 'round' => $round]) }}">
+                    <a class="list-group-item list-group-item-action" href="{{ route('round.edit', ['association' => $association, 'schedule' => $round->schedule, 'round' => $round]) }}">
                         <?php echo !empty($round->series) ? $round->series->name : '[no series]'; ?> - <?php echo $round->name; ?> - <?php echo $round->start_date->format('m-d-Y'); ?>
                     </a>
                     @empty

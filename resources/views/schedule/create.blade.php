@@ -11,12 +11,8 @@
         Create Schedule
     </h1>
     <div class="form">
-        <form method="POST" action="{{ route('schedule.create', ['series' => $series ]) }}">
+        <form method="POST" action="{{ route('schedule.create', ['association' => $association, 'series' => $series ]) }}">
             @csrf
-
-            <input type="hidden" name="association_id" value="<?php echo $association_id; ?>" />
-
-            <input type="hidden" name="series_id" value="{{ $series->id }}">
 
             <input type="hidden" name="url" value="{{ URL::previous() }}">
 

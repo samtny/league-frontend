@@ -11,10 +11,8 @@
         <h1 class="col">Edit Results</h1>
     </div>
     <div class="form">
-        <form method="POST" action="{{ route('results.update', ['schedule' => $schedule]) }}">
+        <form method="POST" action="{{ route('results.update', ['association' => $schedule->association, 'schedule' => $schedule]) }}">
             @csrf
-
-            <input type="hidden" name="id" value="<?php echo $schedule->id; ?>">
 
             <input type="hidden" name="url" value="{{ URL::previous() }}">
 

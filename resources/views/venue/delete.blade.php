@@ -11,7 +11,7 @@
         <h1 class="col">Delete <?php echo $venue->name; ?>?</h1>
     </div>
     <div class="form">
-        <form method="POST" action="{{ route('venue.delete', ['venue' => $venue])}}">
+        <form method="POST" action="{{ route('venue.delete', ['association' => $association, 'venue' => $venue])}}">
             @csrf
 
             <input type="hidden" name="url" value="{{ URL::previous() }}">

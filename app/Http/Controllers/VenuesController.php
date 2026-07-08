@@ -38,45 +38,41 @@ class VenuesController extends Controller
 
     public function edit(Association $association, Venue $venue) {
         if (Bouncer::can('edit', Venue::class)) {
-            return view('venue.edit', ['venue' => $venue]);
+            return view('venue.edit', ['association' => $association, 'venue' => $venue]);
         }
         else {
             return view('denied');
         }
     }
 
-    public function update(Venue $venue, Request $request) {
+    public function update(Association $association, Venue $venue, Request $request) {
         if (Bouncer::can('update', Venue::class)) {
             $validatedData = $request->validate([
                 'name' => 'required|max:255',
             ]);
 
-            $venue = Venue::where(['id' => $venue->id])->first();
-
             $venue->name = $request->name;
 
             $venue->save();
 
-            return redirect()->route('association.venues', ['association' => $venue->association]);
+            return redirect()->route('association.venues', ['association' => $association]);
         }
         else {
             return view('denied');
         }
     }
 
-    public function deleteConfirm(Venue $venue) {
+    public function deleteConfirm(Association $association, Venue $venue) {
         if (Bouncer::can('delete', $venue)) {
-            return view('venue.delete', ['venue' => $venue]);
+            return view('venue.delete', ['association' => $association, 'venue' => $venue]);
         }
         else {
             return view('denied');
         }
     }
 
-    public function delete(Venue $venue) {
+    public function delete(Association $association, Venue $venue) {
         if (Bouncer::can('delete', $venue)) {
-            $association = $venue->association;
-
             $venue->delete();
 
             return redirect()->route('association.venues', ['association' => $association])->with('success', 'Venue deleted successfully.');

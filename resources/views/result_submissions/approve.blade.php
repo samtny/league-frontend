@@ -24,7 +24,7 @@
                     <h2 class="text-muted"><?php echo $seriesItem->name; ?></h2>
                     <h3 class="text-muted"><?php echo $schedule->name; ?></h3>
                     <?php foreach ($schedule->resultSubmissions->where('approved', FALSE) as $submission): ?>
-                    <form class="d-flex flex-wrap align-items-center" method="POST" action="{{ route('result_submission.update', ['id' => $submission->id]) }}">
+                    <form class="d-flex flex-wrap align-items-center" method="POST" action="{{ route('result_submission.update', ['association' => $association, 'id' => $submission->id]) }}">
                         @csrf
                         <input type="hidden" name="result_submission_id" value="{{ $submission->id }}">
                         <div class="mb-3 me-2">

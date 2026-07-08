@@ -70,7 +70,7 @@ class ResultSubmissionsController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function update(Request $request, $id)
+    public function update(Association $association, Request $request, $id)
     {
         $submission = ResultSubmission::find($id);
 

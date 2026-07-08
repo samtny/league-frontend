@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Association;
 use App\PLMatch;
 use App\Round;
 use App\Schedule;
@@ -24,9 +25,10 @@ class RoundsController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function create(Schedule $schedule)
+    public function create(Association $association, Schedule $schedule)
     {
         return view('round.create', [
+            'association' => $association,
             'schedule' => $schedule,
         ]);
     }
@@ -37,7 +39,7 @@ class RoundsController extends Controller
      * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\Response
      */
-    public function store(Request $request, Schedule $schedule)
+    public function store(Association $association, Schedule $schedule, Request $request)
     {
         $validatedData = $request->validate([
             'name' => 'required|max:255',
@@ -54,7 +56,6 @@ class RoundsController extends Controller
 
         $round->save();
 
-        $association = $schedule->association;
         $venues = $association->venues;
 
         foreach ($venues as $venue) {
@@ -83,7 +84,7 @@ class RoundsController extends Controller
             $match->save();
         }
 
-        return redirect()->route('schedule.rounds', ['schedule' => $schedule]);
+        return redirect()->route('schedule.rounds', ['association' => $association, 'schedule' => $schedule]);
     }
 
     /**
@@ -97,9 +98,10 @@ class RoundsController extends Controller
         //
     }
 
-    public function edit(Schedule $schedule, Round $round)
+    public function edit(Association $association, Schedule $schedule, Round $round)
     {
         return view('round.edit', [
+            'association' => $association,
             'schedule' => $schedule,
             'round' => $round,
         ]);
@@ -109,18 +111,14 @@ class RoundsController extends Controller
      * Update the specified resource in storage.
      *
      * @param  \Illuminate\Http\Request  $request
-     * @param \App\Schedule $schedule
-     * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function update(Request $request, $schedule, $id)
+    public function update(Association $association, Schedule $schedule, Round $round, Request $request)
     {
         $validatedData = $request->validate([
             'name' => 'required|max:255',
             'start_date' => 'required|date',
         ]);
-
-        $round = Round::find($id);
 
         $round->name = $request->name;
         $round->start_date = $request->start_date;
@@ -141,24 +139,21 @@ class RoundsController extends Controller
 
         $request->session()->flash('message', __('Successfully updated round'));
 
-        return redirect()->route('schedule.rounds', ['schedule' => $schedule]);
+        return redirect()->route('schedule.rounds', ['association' => $association, 'schedule' => $schedule]);
     }
 
-    public function deleteConfirm(Schedule $schedule, Round $round) {
+    public function deleteConfirm(Association $association, Schedule $schedule, Round $round) {
         return view('round.delete-confirm', [
+            'association' => $association,
             'schedule' => $schedule,
             'round' => $round,
         ]);
     }
 
-    public function destroy(Schedule $schedule, Round $round)
+    public function destroy(Association $association, Schedule $schedule, Round $round)
     {
-        $round = Round::find($round->id);
+        $round->delete();
 
-        if (!empty($round)) {
-            $round->delete();
-        }
-
-        return redirect()->route('schedule.rounds', ['schedule' => $schedule]);
+        return redirect()->route('schedule.rounds', ['association' => $association, 'schedule' => $schedule]);
     }
 }
