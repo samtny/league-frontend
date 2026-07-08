@@ -9,6 +9,11 @@ use Illuminate\Http\Request;
 
 class DivisionsController extends Controller
 {
+    public function index(Association $association)
+    {
+        return view('association.divisions', ['association' => $association]);
+    }
+
     public function create(Association $association)
     {
         return view('division.create', [

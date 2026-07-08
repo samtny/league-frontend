@@ -8,6 +8,16 @@ use Illuminate\Http\Request;
 
 class ContactSubmissionsController extends Controller
 {
+    /**
+     * Display a listing of the resource.
+     *
+     * @return \Illuminate\Http\Response
+     */
+    public function index(Association $association)
+    {
+        return view('association.contact_submissions', ['association' => $association]);
+    }
+
     public function view(Association $association, ContactSubmission $contactSubmission)
     {
         return view('contact_submission.view', ['association' => $association, 'contactSubmission' => $contactSubmission]);

@@ -9,6 +9,16 @@ use Illuminate\Http\Request;
 
 class SeriesController extends Controller
 {
+    public function index(Association $association)
+    {
+        return view('association.series', ['association' => $association]);
+    }
+
+    public function archived(Association $association)
+    {
+        return view('association.series_archived', ['association' => $association]);
+    }
+
     public function view(Association $association, Series $series)
     {
         return view('series.view', [

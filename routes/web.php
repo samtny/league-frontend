@@ -1,7 +1,7 @@
 <?php
 
 use App\Association;
-use App\Http\Controllers\AssociationsController;
+use App\Http\Controllers\AssociationFrontendController;
 use App\Series;
 use App\User;
 use Spatie\Honeypot\ProtectAgainstSpam;
@@ -19,29 +19,29 @@ use Spatie\Honeypot\ProtectAgainstSpam;
 
 Route::domain('{subdomain}.pinballleague.org')->middleware('subdomain')->group(function () {
     // TODO: laravel 8 supports standard PHP callable syntax instead of strings.
-    Route::get('/', [AssociationsController::class, 'home'])->name('association.home');
+    Route::get('/', [AssociationFrontendController::class, 'home'])->name('association.home');
 
-    Route::get('/submit', 'AssociationsController@submitScoreBegin')->name('association.submit.score.step1');
-    Route::post('/submit/step2', 'AssociationsController@submitScoreStep2')->name('association.submit.score.step2');
-    Route::post('/submit/step3', 'AssociationsController@submitScoreStep3')->name('association.submit.score.step3');
-    Route::post('/submit/step4', 'AssociationsController@submitScoreStep4')->name('association.submit.score.step4')
+    Route::get('/submit', 'ScoreSubmissionController@step1')->name('association.submit.score.step1');
+    Route::post('/submit/step2', 'ScoreSubmissionController@step2')->name('association.submit.score.step2');
+    Route::post('/submit/step3', 'ScoreSubmissionController@step3')->name('association.submit.score.step3');
+    Route::post('/submit/step4', 'ScoreSubmissionController@step4')->name('association.submit.score.step4')
         ->middleware(ProtectAgainstSpam::class);
-    Route::post('/submit/step5', 'AssociationsController@submitScoreStep5')->name('association.submit.score.step5')
+    Route::post('/submit/step5', 'ScoreSubmissionController@step5')->name('association.submit.score.step5')
         ->middleware(ProtectAgainstSpam::class);
     Route::get('/standings', 'AssociationStandingsController@show')->name('association.standings');
     Route::get('/standings/archive', 'AssociationStandingsArchiveController@show')->name('association.standings.archive');
     Route::get('/schedule', 'AssociationScheduleController@showUpcoming')->name('association.schedule');
     Route::get('/schedule/{schedule}/full', 'AssociationScheduleController@showFull')->name('association.schedule.full');
     Route::get('/roster', 'AssociationRosterController@show')->name('association.roster');
-    Route::get('/rules', 'AssociationsController@rules')->name('association.rules');
-    Route::get('/css/association.css', 'AssociationsController@css')->name('association.css');
+    Route::get('/rules', 'AssociationFrontendController@rules')->name('association.rules');
+    Route::get('/css/association.css', 'AssociationFrontendController@css')->name('association.css');
 
-    Route::get('/about', 'AssociationsController@about')->name('about');
-    Route::get('/contact', 'AssociationsController@contact')->name('contact');
-    Route::post('/contact', 'AssociationsController@contactSubmit')->name('contact.submit')
+    Route::get('/about', 'AssociationFrontendController@about')->name('about');
+    Route::get('/contact', 'ContactController@contact')->name('contact');
+    Route::post('/contact', 'ContactController@contactSubmit')->name('contact.submit')
         ->middleware(ProtectAgainstSpam::class);
 
-    Route::get('/contact/thanks', 'AssociationsController@contactThanks')->name('contact.thanks');
+    Route::get('/contact/thanks', 'ContactController@contactThanks')->name('contact.thanks');
 });
 
 Route::prefix('admin')->middleware('admin')->group(function () {
@@ -81,7 +81,7 @@ Route::prefix('admin')->middleware('admin')->group(function () {
 
         Route::get('{association}/series/create', 'SeriesController@create')->name('series.create');
         Route::post('{association}/series/create', 'SeriesController@store');
-        Route::get('{association}/series/archived', 'AssociationsController@seriesArchived')->name('association.series.archived');
+        Route::get('{association}/series/archived', 'SeriesController@archived')->name('association.series.archived');
         Route::get('{association}/series/{series}', 'SeriesController@view')->name('series.view');
         Route::get('{association}/series/{series}/edit', 'SeriesController@edit')->name('series.edit');
         Route::post('{association}/series/{series}/update', 'SeriesController@update')->name('series.update');
@@ -108,11 +108,11 @@ Route::prefix('admin')->middleware('admin')->group(function () {
         Route::post('{association}/results/result_submission/{id}', 'ResultSubmissionsController@update')->name('result_submission.update');
 
         Route::get('{association}/edit', 'AssociationsController@edit')->name('association.edit');
-        Route::get('{association}/divisions', 'AssociationsController@divisions')->name('association.divisions');
-        Route::get('{association}/teams', 'AssociationsController@teams')->name('association.teams');
-        Route::get('{association}/venues', 'AssociationsController@venues')->name('association.venues');
-        Route::get('{association}/series', 'AssociationsController@series')->name('association.series');
-        Route::get('{association}/users', 'AssociationsController@users')->name('association.users');
+        Route::get('{association}/divisions', 'DivisionsController@index')->name('association.divisions');
+        Route::get('{association}/teams', 'TeamsController@index')->name('association.teams');
+        Route::get('{association}/venues', 'VenuesController@index')->name('association.venues');
+        Route::get('{association}/series', 'SeriesController@index')->name('association.series');
+        Route::get('{association}/users', 'AssociationUsersController@index')->name('association.users');
 
         Route::get('create', 'AssociationsController@create')->name('association.create');
         Route::post('create', 'AssociationsController@store');
@@ -125,21 +125,22 @@ Route::prefix('admin')->middleware('admin')->group(function () {
             });
         });
 
-        Route::get('{association}/user/{user}', 'AssociationsController@viewUser')->name('association.user.view');
-        Route::get('{association}/user/{user}/edit', 'AssociationsController@editUser')->name('association.user.edit');
+        Route::get('{association}/user/add', 'AssociationUsersController@create')->name('association.user.add');
 
-        Route::post('{association}/user/{user}/update', 'AssociationsController@updateUser')->name('association.user.update');
-        Route::get('{association}/user/add', 'AssociationsController@addUser')->name('association.user.add');
+        Route::get('{association}/user/{user}', 'AssociationUsersController@view')->name('association.user.view');
+        Route::get('{association}/user/{user}/edit', 'AssociationUsersController@edit')->name('association.user.edit');
 
-        Route::get('{association}/user/{user}/token', 'AssociationsController@userToken')->name('association.user.token');
-        Route::post('{association}/user/{user}/token', 'AssociationsController@userTokenRefresh')->name('association.user.token.refresh');
+        Route::post('{association}/user/{user}/update', 'AssociationUsersController@update')->name('association.user.update');
+
+        Route::get('{association}/user/{user}/token', 'AssociationUsersController@token')->name('association.user.token');
+        Route::post('{association}/user/{user}/token', 'AssociationUsersController@tokenRefresh')->name('association.user.token.refresh');
 
         Route::get('{association}/undelete', 'AssociationsController@undeleteConfirm')->name('association.undeleteConfirm');
         Route::post('{association}/undelete', 'AssociationsController@undelete')->name('association.undelete');
 
         Route::get('{association}', 'AssociationsController@view')->name('association.view');
 
-        Route::get('{association}/contact/submissions', 'AssociationsController@contactSubmissions')->name('contact_submissions.list');
+        Route::get('{association}/contact/submissions', 'ContactSubmissionsController@index')->name('contact_submissions.list');
 
         Route::get('{association}/contact/submission/{contactSubmission}', 'ContactSubmissionsController@view')->name('contact_submission.view');
         Route::post('{association}/contact/submission/{contactSubmission}/archive', 'ContactSubmissionsController@archive')->name('contact_submission.archive');

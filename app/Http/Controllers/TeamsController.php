@@ -9,6 +9,11 @@ use Illuminate\Http\Request;
 
 class TeamsController extends Controller
 {
+    public function index(Association $association)
+    {
+        return view('association.teams', ['association' => $association]);
+    }
+
     public function create(Association $association)
     {
         return view('team.create', [
