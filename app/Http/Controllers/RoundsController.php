@@ -12,16 +12,6 @@ use Illuminate\Http\Response;
 class RoundsController extends Controller
 {
     /**
-     * Display a listing of the resource.
-     *
-     * @return Response
-     */
-    public function index()
-    {
-        //
-    }
-
-    /**
      * Show the form for creating a new resource.
      *
      * @return Response
@@ -85,17 +75,6 @@ class RoundsController extends Controller
         }
 
         return redirect()->route('schedule.rounds', ['association' => $association, 'schedule' => $schedule]);
-    }
-
-    /**
-     * Display the specified resource.
-     *
-     * @param  int  $id
-     * @return Response
-     */
-    public function show($id)
-    {
-        //
     }
 
     public function edit(Association $association, Schedule $schedule, Round $round)

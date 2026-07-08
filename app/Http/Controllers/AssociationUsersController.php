@@ -41,7 +41,7 @@ class AssociationUsersController extends Controller
             return redirect($url)->with('success', 'Data saved successfully!');
         }
 
-        return redirect()->route('user', ['id' => \Auth::user()->id]);
+        return redirect()->route('user', ['user' => \Auth::user()->id]);
 
     }
 

@@ -10,7 +10,7 @@ use App\Series;
 use App\Venue;
 use Bouncer;
 
-class AssociationsController extends AssociationAwareController
+class AssociationsController extends Controller
 {
     public function view(Association $association)
     {
@@ -105,7 +105,7 @@ class AssociationsController extends AssociationAwareController
             return redirect($url)->with('success', 'Data saved successfully!');
         }
 
-        return redirect()->route('user', ['id' => \Auth::user()->id]);
+        return redirect()->route('user', ['user' => \Auth::user()->id]);
 
     }
 
@@ -210,5 +210,16 @@ class AssociationsController extends AssociationAwareController
             'association' => $association,
             'current_user' => \Auth::user(),
         ]);
+    }
+
+    public function deleted()
+    {
+        if (Bouncer::can('administer-associations')) {
+            $associations = Association::onlyTrashed()->get();
+
+            return view('admin.associations.trashed', ['associations' => $associations]);
+        } else {
+            return view('denied');
+        }
     }
 }

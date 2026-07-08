@@ -235,11 +235,6 @@ Breadcrumbs::for('round.edit', function ($trail, $schedule, $round) {
     $trail->push(__('Edit'), route('round.edit', ['association' => $schedule->association, 'schedule' => $schedule, 'round' => $round]));
 });
 
-Breadcrumbs::for('results.edit', function ($trail, $schedule) {
-    $trail->parent('series.edit', $schedule->series);
-    $trail->push(__('Results - :start_date', ['start_date' => Carbon::parse($schedule->start_date)->format('m-d-Y')]), route('results.edit', ['association' => $schedule->association, 'schedule' => $schedule]));
-});
-
 Breadcrumbs::for('result_submissions.approve', function ($trail, $association) {
     $trail->parent('association.view', $association);
     $trail->push(__('Score Submissions', ['association', $association]));

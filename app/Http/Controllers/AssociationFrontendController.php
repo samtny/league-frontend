@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Schedule;
+
 class AssociationFrontendController extends AssociationAwareController
 {
     public function home()
@@ -40,5 +42,45 @@ class AssociationFrontendController extends AssociationAwareController
         $response->header('Cache-Control', 'public, max-age=300, must-revalidate');
 
         return $response;
+    }
+
+    public function standings()
+    {
+        return view('association.standings', [
+            'association' => $this->association,
+            'schedules' => $this->association->activeSchedules,
+        ]);
+    }
+
+    public function standingsArchive()
+    {
+        return view('association.standings.archive', [
+            'association' => $this->association,
+            'schedules' => $this->association->archivedSchedules,
+        ]);
+    }
+
+    public function schedule()
+    {
+        return view('association.schedule', [
+            'association' => $this->association,
+            'schedules' => $this->association->activeSchedules,
+        ]);
+    }
+
+    public function scheduleFull($string, Schedule $schedule)
+    {
+        return view('association.schedule.full', [
+            'association' => $this->association,
+            'schedule' => $schedule,
+        ]);
+    }
+
+    public function roster()
+    {
+        return view('association.roster', [
+            'association' => $this->association,
+            'teams' => $this->association->teams->where('active', true),
+        ]);
     }
 }

@@ -28,11 +28,11 @@ Route::domain('{subdomain}.pinballleague.org')->middleware('subdomain')->group(f
         ->middleware(ProtectAgainstSpam::class);
     Route::post('/submit/step5', 'ScoreSubmissionController@step5')->name('association.submit.score.step5')
         ->middleware(ProtectAgainstSpam::class);
-    Route::get('/standings', 'AssociationStandingsController@show')->name('association.standings');
-    Route::get('/standings/archive', 'AssociationStandingsArchiveController@show')->name('association.standings.archive');
-    Route::get('/schedule', 'AssociationScheduleController@showUpcoming')->name('association.schedule');
-    Route::get('/schedule/{schedule}/full', 'AssociationScheduleController@showFull')->name('association.schedule.full');
-    Route::get('/roster', 'AssociationRosterController@show')->name('association.roster');
+    Route::get('/standings', 'AssociationFrontendController@standings')->name('association.standings');
+    Route::get('/standings/archive', 'AssociationFrontendController@standingsArchive')->name('association.standings.archive');
+    Route::get('/schedule', 'AssociationFrontendController@schedule')->name('association.schedule');
+    Route::get('/schedule/{schedule}/full', 'AssociationFrontendController@scheduleFull')->name('association.schedule.full');
+    Route::get('/roster', 'AssociationFrontendController@roster')->name('association.roster');
     Route::get('/rules', 'AssociationFrontendController@rules')->name('association.rules');
     Route::get('/css/association.css', 'AssociationFrontendController@css')->name('association.css');
 
@@ -103,8 +103,6 @@ Route::prefix('admin')->middleware('admin')->group(function () {
         Route::post('{association}/schedule/{schedule}/round/{round}/delete', 'RoundsController@destroy')->name('round.delete');
 
         Route::get('{association}/results/submissions', 'ResultSubmissionsController@index')->name('result_submissions.list');
-        Route::get('{association}/results/{schedule}/edit', 'ResultsController@edit')->name('results.edit');
-        Route::post('{association}/results/{schedule}/update', 'ResultsController@update')->name('results.update');
         Route::post('{association}/results/result_submission/{id}', 'ResultSubmissionsController@update')->name('result_submission.update');
 
         Route::get('{association}/edit', 'AssociationsController@edit')->name('association.edit');
@@ -151,7 +149,6 @@ Route::prefix('admin')->middleware('admin')->group(function () {
     });
 
     Route::prefix('user')->group(function () {
-        Route::get('create', 'UsersController@create')->name('user');
         Route::get('{user}', 'UsersController@view')->name('user');
     });
 
@@ -164,8 +161,8 @@ Route::prefix('admin')->middleware('admin')->group(function () {
         })->name('onboard.series');
     });
 
-    Route::get('users', 'AdminController@users')->name('admin.users');
-    Route::get('associations/deleted', 'AdminController@associationsDeleted')->name('admin.associations.deleted');
+    Route::get('users', 'UsersController@index')->name('admin.users');
+    Route::get('associations/deleted', 'AssociationsController@deleted')->name('admin.associations.deleted');
 
     Route::get('/', 'AdminController@admin')->name('admin');
 

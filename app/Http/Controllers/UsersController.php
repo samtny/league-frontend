@@ -9,6 +9,17 @@ use Bouncer;
 
 class UsersController extends Controller
 {
+    public function index()
+    {
+        if (Bouncer::can('administer-users')) {
+            return view('admin.users', [
+                'users' => User::all(),
+            ]);
+        } else {
+            return view('denied');
+        }
+    }
+
     public function view(User $user)
     {
         if (Bouncer::can('view-users')) {
