@@ -64,9 +64,9 @@ if [ "$BUILD" = true ]; then
 fi
 
 if [ "$CONFIG" != "local" ]; then
-  rsync -ruvz --files-from "deploy.files" . "${USER}@${HOST}:${DOCROOT}"
+  rsync -rvz --delete --filter='protect bootstrap/cache/***' --files-from "deploy.files" . "${USER}@${HOST}:${DOCROOT}"
 else
-  rsync -ruvz --files-from "deploy.files" . "${DOCROOT}"
+  rsync -rvz --delete --filter='protect bootstrap/cache/***' --files-from "deploy.files" . "${DOCROOT}"
 fi
 
 if [ "$DEPENDENCIES" = true ]; then
