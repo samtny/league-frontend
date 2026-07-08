@@ -3,7 +3,6 @@
 namespace App\Http\Controllers;
 
 use App\Association;
-use App\PLMatch;
 use App\Round;
 use App\Schedule;
 use Illuminate\Http\Request;
@@ -39,40 +38,15 @@ class RoundsController extends Controller
         $round = new Round;
 
         $round->name = $request->name;
-        $round->series_id = $schedule->series->id;
+        $round->series_id = $schedule->series_id;
+        $round->division_id = $schedule->division_id;
         $round->schedule_id = $schedule->id;
         $round->start_date = $request->start_date;
         $round->end_date = $request->end_date;
 
         $round->save();
 
-        $venues = $association->venues;
-
-        foreach ($venues as $venue) {
-            $match = new PLMatch;
-
-            $match->name = $venue->name.' – '.$round->start_date->format('m-d-Y');
-            $match->association_id = $association->id;
-
-            if (! empty($schedule->series)) {
-                $match->series_id = $schedule->series->id;
-
-                if (! empty($schedule->series->division)) {
-                    $match->division_id = $schedule->series->division->id;
-                }
-            }
-
-            // Unique key fields:
-            $match->schedule_id = $schedule->id;
-            $match->round_id = $round->id;
-            $match->venue_id = $venue->id;
-            $match->sequence = 1;
-
-            $match->start_date = $round->start_date;
-            $match->end_date = $round->end_date;
-
-            $match->save();
-        }
+        $round->createMatches();
 
         return redirect()->route('schedule.rounds', ['association' => $association, 'schedule' => $schedule]);
     }

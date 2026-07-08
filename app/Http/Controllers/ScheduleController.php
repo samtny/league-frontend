@@ -81,7 +81,7 @@ class ScheduleController extends Controller
         $schedule->save();
 
         if ($generate) {
-            $this->generateRounds($association->id, $start_date, $end_date, $weekday, $schedule);
+            $this->generateRounds($start_date, $end_date, $weekday, $schedule);
         }
 
         return redirect()->route('series.schedules', ['association' => $association, 'series' => $series]);
@@ -110,7 +110,7 @@ class ScheduleController extends Controller
 
         if ($generate) {
             $this->truncateRounds($schedule);
-            $this->generateRounds($association->id, $start_date, $end_date, $weekday, $schedule);
+            $this->generateRounds($start_date, $end_date, $weekday, $schedule);
         }
 
         $request->session()->flash('message', __('Successfully updated schedule'));
@@ -119,19 +119,14 @@ class ScheduleController extends Controller
 
     }
 
-    private function generateRounds($association_id, $start_date, $end_date, $weekday, $schedule)
+    private function generateRounds($start_date, $end_date, $weekday, $schedule)
     {
-        $series = Series::where(['id' => $schedule->series_id])->first();
-
         $start_datetime = new \DateTime($start_date);
         $end_datetime = new \DateTime($end_date);
 
         $days_interval = $start_datetime->diff($end_datetime);
 
         $days = $days_interval->format('%a');
-
-        $association = Association::where(['id' => $association_id])->first();
-        $venues = $association->venues;
 
         $round_number = 1;
 
@@ -151,25 +146,7 @@ class ScheduleController extends Controller
 
                 $round_number += 1;
 
-                foreach ($venues as $venue) {
-                    $match = new PLMatch;
-
-                    $match->name = $venue->name.' – '.$round->start_date->format('m-d-Y');
-                    $match->association_id = $association_id;
-                    $match->series_id = $schedule->series_id;
-                    $match->division_id = $schedule->division_id;
-
-                    // Unique key fields:
-                    $match->schedule_id = $schedule->id;
-                    $match->round_id = $round->id;
-                    $match->venue_id = $venue->id;
-                    $match->sequence = 1;
-
-                    $match->start_date = $round->start_date;
-                    $match->end_date = $round->end_date;
-
-                    $match->save();
-                }
+                $round->createMatches();
             }
 
             $start_datetime->add(new \DateInterval('P1D'));
