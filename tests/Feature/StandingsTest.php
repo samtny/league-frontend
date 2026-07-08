@@ -2,12 +2,14 @@
 
 namespace Tests\Feature;
 
-use Tests\TestCase;
-use Illuminate\Foundation\Testing\WithFaker;
+use App\Association;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\TestCase;
 
 class StandingsTest extends TestCase
 {
+    use RefreshDatabase;
+
     /**
      * A basic feature test example.
      *
@@ -15,7 +17,9 @@ class StandingsTest extends TestCase
      */
     public function testExample()
     {
-        $response = $this->get('/standings');
+        Association::factory()->create(['subdomain' => 'testassoc']);
+
+        $response = $this->get('http://testassoc.pinballleague.org/standings');
 
         $response->assertStatus(200);
 

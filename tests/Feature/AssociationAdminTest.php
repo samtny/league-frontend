@@ -22,13 +22,14 @@ class AssociationAdminTest extends TestCase
      */
     public function setUp(): void {
         parent::setUp();
-        $this->user = factory(User::class)->create();
+        $this->user = User::factory()->create();
 
-        $this->association = factory(Association::class)->create([
+        $this->association = Association::factory()->create([
             'user_id' => $this->user->id,
         ]);
 
         Bouncer::assign('assocadmin')->to($this->user);
+        Bouncer::allow($this->user)->to('view-admin-pages');
         Bouncer::allow($this->user)->toManage($this->association);
     }
 

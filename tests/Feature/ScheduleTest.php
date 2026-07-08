@@ -2,12 +2,14 @@
 
 namespace Tests\Feature;
 
-use Tests\TestCase;
-use Illuminate\Foundation\Testing\WithFaker;
+use App\Association;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\TestCase;
 
 class ScheduleTest extends TestCase
 {
+    use RefreshDatabase;
+
     /**
      * A basic feature test example.
      *
@@ -15,7 +17,9 @@ class ScheduleTest extends TestCase
      */
     public function testExample()
     {
-        $response = $this->get('/schedule');
+        Association::factory()->create(['subdomain' => 'testassoc']);
+
+        $response = $this->get('http://testassoc.pinballleague.org/schedule');
 
         $response->assertStatus(200);
 

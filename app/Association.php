@@ -2,12 +2,14 @@
 
 namespace App;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Arr;
 
 class Association extends Model
 {
+    use HasFactory;
     use SoftDeletes;
 
     protected $fillable = array('name', 'user_id', 'subdomain', 'home_image_path', 'about', 'rules_file_path', 'favicon_metadata');

@@ -18,17 +18,18 @@ class ResultSubmissionsTest extends TestCase
      */
     public function testExample()
     {
-        $user = factory(User::class)->create();
+        $user = User::factory()->create();
 
-        $association = factory(Association::class)->create([
+        $association = Association::factory()->create([
             'user_id' => $user->id,
         ]);
 
         Bouncer::assign('assocadmin')->to($user);
+        Bouncer::allow($user)->to('view-admin-pages');
         Bouncer::allow($user)->toManage($association);
 
         $response = $this->actingAs($user)
-            ->get('/admin/results/' . $association->id . '/results/submissions');
+            ->get(route('result_submissions.list', $association));
 
         $user->delete();
 
