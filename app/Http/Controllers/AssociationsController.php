@@ -318,18 +318,27 @@ class AssociationsController extends Controller
 
     public function update(Request $request) {
 
+        $request->validate([
+            'subdomain' => 'nullable|string|max:255|regex:/^[a-z0-9-]+$/',
+            'home_image_file' => 'nullable|file|mimes:jpg,jpeg,png,gif,webp|max:5120',
+            'rules_file' => 'nullable|file|mimes:pdf|max:10240',
+            'favicon' => 'nullable|file|mimes:zip|max:2048',
+            'about' => 'nullable|string',
+            'favicon_metadata' => 'nullable|string',
+        ]);
+
         $association = Association::find($request->id);
 
         $association->name = $request->name;
         $association->user_id = $request->user_id;
 
-        if (isset($request->subdomain)) {
+        if ($request->filled('subdomain') && Bouncer::can('administer-subdomains')) {
             $association->subdomain = $request->subdomain;
         }
 
         if (isset($request->home_image_file)) {
             $path = $request->home_image_file->storeAs(
-                'home_image_file/' . $association->subdomain, $request->home_image_file->getClientOriginalName(), 'public'
+                'home_image_file/' . $association->subdomain, $request->home_image_file->hashName(), 'public'
             );
 
             $association->home_image_path = $path;
@@ -337,7 +346,7 @@ class AssociationsController extends Controller
 
         if (isset($request->rules_file)) {
             $path = $request->rules_file->storeAs(
-                'rules_file/' . $association->subdomain, $request->rules_file->getClientOriginalName(), 'public'
+                'rules_file/' . $association->subdomain, $request->rules_file->hashName(), 'public'
             );
 
             $association->rules_file_path = $path;
@@ -350,17 +359,12 @@ class AssociationsController extends Controller
                 mkdir($faviconDir, 0755, true);
             }
 
-            $zip = new \ZipArchive();
-
-            if ($zip->open($request->favicon->getPathname()) === true) {
-                $zip->extractTo($faviconDir);
-                $zip->close();
-            }
+            $this->extractFaviconArchive($request->favicon->getPathname(), $faviconDir);
         }
 
-        $association->favicon_metadata = $request->favicon_metadata;
+        $association->favicon_metadata = \Purifier::clean($request->favicon_metadata, 'favicon_metadata');
 
-        $association->about = $request->about;
+        $association->about = \Purifier::clean($request->about, 'about');
 
         $association->save();
 
@@ -374,6 +378,49 @@ class AssociationsController extends Controller
 
         return redirect()->route('user', ['id' => \Auth::user()->id]);
 
+    }
+
+    /**
+     * Extract a favicon zip into $destDir only if every entry is a safe,
+     * allow-listed filename with no path-traversal segments. If any entry
+     * fails validation, nothing is extracted.
+     */
+    private function extractFaviconArchive(string $zipPath, string $destDir): void {
+        $allowedExtensions = ['ico', 'png', 'svg', 'json', 'xml', 'webmanifest'];
+
+        $zip = new \ZipArchive();
+
+        if ($zip->open($zipPath) !== true) {
+            return;
+        }
+
+        for ($i = 0; $i < $zip->numFiles; $i++) {
+            $entryName = $zip->getNameIndex($i);
+
+            if ($entryName === false
+                || str_contains($entryName, '..')
+                || str_starts_with($entryName, '/')
+                || str_contains($entryName, "\\")
+            ) {
+                $zip->close();
+                return;
+            }
+
+            // Directory entries (e.g. "icons/") are safe to create, they carry no extension.
+            if (str_ends_with($entryName, '/')) {
+                continue;
+            }
+
+            $extension = strtolower(pathinfo($entryName, PATHINFO_EXTENSION));
+
+            if (! in_array($extension, $allowedExtensions, true)) {
+                $zip->close();
+                return;
+            }
+        }
+
+        $zip->extractTo($destDir);
+        $zip->close();
     }
 
     public function create() {

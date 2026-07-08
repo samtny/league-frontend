@@ -186,4 +186,18 @@ Route::prefix('admin')->middleware('admin')->group(function () {
 
 Auth::routes();
 
+// Auth::routes() doesn't expose a way to attach middleware to individual
+// routes it registers, and the POST register route isn't even named -
+// match by URI + method instead of RouteCollection::getByName(), which
+// unreliably misses these routes at this point in registration. Login
+// already gets framework-level throttling via ThrottlesLogins, but
+// registration and password-reset-request had none.
+foreach (Route::getRoutes() as $route) {
+    if (in_array('POST', $route->methods())
+        && in_array($route->uri(), ['register', 'password/email'], true)
+    ) {
+        $route->middleware('throttle:5,1');
+    }
+}
+
 Route::get('/', 'AppController@default');
