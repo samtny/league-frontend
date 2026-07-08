@@ -18,7 +18,7 @@
         <div class="col-md-12 mb-3">
             <div class="list-group">
                 <?php foreach ($association->activeContactSubmissions as $message): ?>
-                    <a class="list-group-item list-group-item-action" href="{{ route('contact_submission.view', ['association' => $association, 'contact_submission' => $message]) }}">
+                    <a class="list-group-item list-group-item-action" href="{{ route('contact_submission.view', ['association' => $association, 'contactSubmission' => $message]) }}">
                         <?php echo ('<div class="message">' . $message->email . ' — ' . $message->reason . ' — <small>' . $message->comment . '</small></div>'); ?>
                     </a>
                 <?php endforeach; ?>

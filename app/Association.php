@@ -92,8 +92,10 @@ class Association extends Model
     public function activeSchedules()
     {
         return $this->schedules()
-            ->where('archived', '!=', 1)
-            ->orWhereNull('archived');
+            ->where(function ($query) {
+                $query->where('archived', '!=', 1)
+                    ->orWhereNull('archived');
+            });
     }
 
     public function archivedSchedules()
@@ -132,7 +134,9 @@ class Association extends Model
     public function activeContactSubmissions()
     {
         return $this->contactSubmissions()
-            ->where('archived', '!=', 1)
-            ->orWhereNull('archived');
+            ->where(function ($query) {
+                $query->where('archived', '!=', 1)
+                    ->orWhereNull('archived');
+            });
     }
 }
