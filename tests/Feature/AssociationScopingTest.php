@@ -81,4 +81,50 @@ class AssociationScopingTest extends TestCase
         $this->assertCount(1, $associationA->activeContactSubmissions()->get());
         $this->assertCount(1, $associationB->activeContactSubmissions()->get());
     }
+
+    public function test_admin_resource_listing_pages_do_not_leak_other_associations_data()
+    {
+        \Bouncer::allow('superadmin')->everything();
+        $admin = User::factory()->create();
+        \Bouncer::assign('superadmin')->to($admin);
+        $this->actingAs($admin);
+
+        $associationA = Association::factory()->create(['subdomain' => 'listing-a']);
+        $associationB = Association::factory()->create(['subdomain' => 'listing-b']);
+
+        $divisionA = new Division(['name' => 'Division Alpha']);
+        $divisionA->association_id = $associationA->id;
+        $divisionA->save();
+        $divisionB = new Division(['name' => 'Division Bravo']);
+        $divisionB->association_id = $associationB->id;
+        $divisionB->save();
+
+        \App\Venue::create(['name' => 'Venue Alpha', 'association_id' => $associationA->id]);
+        \App\Venue::create(['name' => 'Venue Bravo', 'association_id' => $associationB->id]);
+
+        \App\Team::create(['name' => 'Team Alpha', 'association_id' => $associationA->id]);
+        \App\Team::create(['name' => 'Team Bravo', 'association_id' => $associationB->id]);
+
+        Series::create(['name' => 'Series Alpha', 'association_id' => $associationA->id]);
+        Series::create(['name' => 'Series Bravo', 'association_id' => $associationB->id]);
+
+        $userA = User::factory()->create(['name' => 'User Alpha']);
+        $userB = User::factory()->create(['name' => 'User Bravo']);
+        \App\AssociationUser::create(['user_id' => $userA->id, 'association_id' => $associationA->id]);
+        \App\AssociationUser::create(['user_id' => $userB->id, 'association_id' => $associationB->id]);
+
+        $pages = [
+            ['association.divisions', 'Division Alpha', 'Division Bravo'],
+            ['association.teams', 'Team Alpha', 'Team Bravo'],
+            ['association.venues', 'Venue Alpha', 'Venue Bravo'],
+            ['association.series', 'Series Alpha', 'Series Bravo'],
+            ['association.users', 'User Alpha', 'User Bravo'],
+        ];
+
+        foreach ($pages as [$routeName, $seeText, $dontSeeText]) {
+            $response = $this->get(route($routeName, $associationA));
+            $response->assertStatus(200);
+            $response->assertSee($seeText)->assertDontSee($dontSeeText);
+        }
+    }
 }

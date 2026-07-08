@@ -3,7 +3,6 @@
 use App\Association;
 use App\Http\Controllers\AssociationFrontendController;
 use App\Series;
-use App\User;
 use Spatie\Honeypot\ProtectAgainstSpam;
 
 /*
@@ -117,12 +116,6 @@ Route::prefix('admin')->middleware('admin')->group(function () {
         Route::post('{association}/update', 'AssociationsController@update')->name('association.update');
         Route::get('{association}/delete', 'AssociationsController@deleteConfirm')->name('association.deleteConfirm');
         Route::post('{association}/delete', 'AssociationsController@delete')->name('association.delete');
-        Route::get('{association}/undelete', function () {
-            Route::bind('trashed_user', function ($id) {
-                return User::onlyTrashed()->find($id);
-            });
-        });
-
         Route::get('{association}/user/add', 'AssociationUsersController@create')->name('association.user.add');
 
         Route::get('{association}/user/{user}', 'AssociationUsersController@view')->name('association.user.view');
