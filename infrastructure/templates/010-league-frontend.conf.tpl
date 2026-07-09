@@ -26,7 +26,7 @@
     </Directory>
 
     <FilesMatch \.php$>
-        SetHandler "proxy:unix:/run/php/php8.4-fpm.sock|fcgi://localhost"
+        SetHandler "proxy:unix:/run/php/php8.5-fpm.sock|fcgi://localhost"
     </FilesMatch>
 
 </VirtualHost>

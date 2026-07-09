@@ -2,7 +2,7 @@
 user = www-data
 group = www-data
 
-listen = /run/php/php8.4-fpm.sock
+listen = /run/php/php8.5-fpm.sock
 listen.owner = www-data
 listen.group = www-data
 listen.allowed_clients = 127.0.0.1

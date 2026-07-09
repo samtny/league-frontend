@@ -1,5 +1,6 @@
 #!/bin/bash
 
+set -e
 set -x
 exec > >(tee /var/log/user-data.log | logger -t user-data) 2>&1
 echo BEGIN
@@ -15,15 +16,12 @@ fi
 export DEBIAN_FRONTEND=noninteractive
 
 apt-get update -y
-apt-get install -y unattended-upgrades vim curl unzip rsync software-properties-common awscli
+apt-get install -y unattended-upgrades vim curl unzip rsync awscli
 
 cat > /etc/apt/apt.conf.d/20auto-upgrades <<'EOF'
 APT::Periodic::Update-Package-Lists "1";
 APT::Periodic::Unattended-Upgrade "1";
 EOF
-
-add-apt-repository -y ppa:ondrej/php
-apt-get update -y
 
 ### Apache ###
 
@@ -68,35 +66,40 @@ LogFormat "%%{X-Forwarded-For}i %h %l %u %t \"%r\" %>s %b %D \"%%{Referer}i\" \"
 EOF
 a2enconf ec2
 
-### PHP 8.4 ###
+### PHP 8.5 ###
+# Ubuntu 26.04 ("resolute") ships PHP 8.5 natively. The ondrej/php PPA (which
+# would let us pin an exact version like 8.4) has no resolute build yet, and
+# 8.5 satisfies this app's composer.json (php ^8.2) requirement, so we use
+# the distro-native package with no PPA dependency.
+#
+# Two packages from the legacy php8.1 list don't exist under this naming:
+# DOM is bundled into php8.5-xml (no separate php8.5-dom), and OPcache is
+# compiled into core PHP 8.5 (no separate php8.5-opcache package).
 
 apt-get install -y \
-  php8.4-fpm php8.4-cli php8.4-curl php8.4-mysql php8.4-sqlite3 php8.4-gd \
-  php8.4-dev php8.4-mbstring php8.4-dom php8.4-memcached php8.4-igbinary \
-  php8.4-opcache php8.4-bcmath php8.4-xml php8.4-zip \
+  php8.5-fpm php8.5-cli php8.5-curl php8.5-mysql php8.5-sqlite3 php8.5-gd \
+  php8.5-dev php8.5-mbstring php8.5-memcached php8.5-igbinary \
+  php8.5-bcmath php8.5-xml php8.5-zip \
   php-pear build-essential checkinstall
 
-sed -i "s/^memory_limit = .*/memory_limit = ${php_memory_limit}/" /etc/php/8.4/fpm/php.ini
-sed -i "s/^upload_max_filesize = .*/upload_max_filesize = ${php_upload_max_filesize}/" /etc/php/8.4/fpm/php.ini
-sed -i "s/^post_max_size = .*/post_max_size = ${php_post_max_size}/" /etc/php/8.4/fpm/php.ini
-sed -i "s/^;\?opcache.enable=.*/opcache.enable=1/" /etc/php/8.4/fpm/php.ini
-sed -i "s/^;\?opcache.memory_consumption=.*/opcache.memory_consumption=128/" /etc/php/8.4/fpm/php.ini
-sed -i "s/^;\?opcache.interned_strings_buffer=.*/opcache.interned_strings_buffer=16/" /etc/php/8.4/fpm/php.ini
-sed -i "s/^;\?opcache.max_accelerated_files=.*/opcache.max_accelerated_files=16228/" /etc/php/8.4/fpm/php.ini
-sed -i "s/^;\?opcache.validate_timestamps=.*/opcache.validate_timestamps=0/" /etc/php/8.4/fpm/php.ini
+sed -i "s/^memory_limit = .*/memory_limit = ${php_memory_limit}/" /etc/php/8.5/fpm/php.ini
+sed -i "s/^upload_max_filesize = .*/upload_max_filesize = ${php_upload_max_filesize}/" /etc/php/8.5/fpm/php.ini
+sed -i "s/^post_max_size = .*/post_max_size = ${php_post_max_size}/" /etc/php/8.5/fpm/php.ini
+sed -i "s/^;\?opcache.enable=.*/opcache.enable=1/" /etc/php/8.5/fpm/php.ini
+sed -i "s/^;\?opcache.memory_consumption=.*/opcache.memory_consumption=128/" /etc/php/8.5/fpm/php.ini
+sed -i "s/^;\?opcache.interned_strings_buffer=.*/opcache.interned_strings_buffer=16/" /etc/php/8.5/fpm/php.ini
+sed -i "s/^;\?opcache.max_accelerated_files=.*/opcache.max_accelerated_files=16228/" /etc/php/8.5/fpm/php.ini
+sed -i "s/^;\?opcache.validate_timestamps=.*/opcache.validate_timestamps=0/" /etc/php/8.5/fpm/php.ini
 
-echo "${php_fpm_www_conf_b64}" | base64 -d > /etc/php/8.4/fpm/pool.d/www.conf
+echo "${php_fpm_www_conf_b64}" | base64 -d > /etc/php/8.5/fpm/pool.d/www.conf
 
-cat > /etc/php/8.4/mods-available/memcached.ini <<'EOF'
-; priority=25
-extension=memcached.so
-memcached.serializer=igbinary
-EOF
-ln -sf /etc/php/8.4/mods-available/memcached.ini /etc/php/8.4/fpm/conf.d/25-memcached.ini
-ln -sf /etc/php/8.4/mods-available/memcached.ini /etc/php/8.4/cli/conf.d/25-memcached.ini
+# php8.5-memcached/php8.5-igbinary already auto-enable themselves (symlinked
+# into fpm/conf.d and cli/conf.d by the package's postinst), and memcached
+# defaults its serializer to igbinary automatically when the extension is
+# present, so no manual mods-available wiring is needed here.
 
-systemctl restart php8.4-fpm
-systemctl enable php8.4-fpm
+systemctl restart php8.5-fpm
+systemctl enable php8.5-fpm
 
 ### Memcached ###
 
@@ -113,15 +116,24 @@ apt-get install -y mysql-server
 systemctl start mysql
 systemctl enable mysql
 
+for i in $(seq 1 30); do
+  mysqladmin ping --silent && break
+  sleep 1
+done
+
 mysql -e "CREATE DATABASE IF NOT EXISTS \`${league_frontend_db_name}\` CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;"
 mysql -e "CREATE USER IF NOT EXISTS '${league_frontend_db_user}'@'localhost' IDENTIFIED BY '${league_frontend_db_password}';"
 mysql -e "GRANT ALL PRIVILEGES ON \`${league_frontend_db_name}\`.* TO '${league_frontend_db_user}'@'localhost';"
 mysql -e "FLUSH PRIVILEGES;"
 
 ### Composer ###
+# HOME isn't set in the user_data execution environment, and the Composer
+# installer treats that as fatal, so it must be set explicitly here.
 
+export HOME=/root
+cd /root
 curl -sS https://getcomposer.org/installer | php
-mv composer.phar /usr/local/bin/composer
+mv /root/composer.phar /usr/local/bin/composer
 chmod 755 /usr/local/bin/composer
 
 ### league-frontend app scaffolding ###
