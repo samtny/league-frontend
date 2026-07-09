@@ -1,0 +1,4 @@
+# Copy to terraform.tfvars (gitignored) and fill in real values, or supply
+# via TF_VAR_league_frontend_db_password in the environment instead.
+
+league_frontend_db_password = "changeme"
