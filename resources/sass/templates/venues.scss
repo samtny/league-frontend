@@ -1,0 +1,17 @@
+.game {
+    text-align: center;
+}
+
+.game-name {
+    display: inline-block;
+    position: relative;
+}
+
+.game-links {
+    position: absolute;
+    top: calc(50% - 1px);
+    left: 100%;
+    margin-left: 0.5rem;
+    transform: translateY(-50%);
+    white-space: nowrap;
+}

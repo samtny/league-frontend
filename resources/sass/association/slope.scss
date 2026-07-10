@@ -3,11 +3,16 @@ $dark-background: rgb(0, 0, 0);
 $dark-outline: rgb(24, 35, 60);
 $dark-font-secondary: rgb(145, 161, 180);
 $dark-font-primary: rgb(231, 224, 212);
+$dark-font-muted: rgb(81, 78, 74); // half of $dark-font-primary, 30% darker
 
 // Overrides base/typography.scss
 html, body {
     background-color: $dark-background;
     color: $dark-font-primary;
+}
+
+.text-muted {
+    color: $dark-font-muted;
 }
 
 // Overrides base/buttons.scss

@@ -27,6 +27,17 @@ class VenuesDirectoryTest extends TestCase
         $response->assertDontSee('Hidden Hideout');
     }
 
+    public function test_page_attributes_game_data_to_pinball_map()
+    {
+        $association = Association::factory()->create(['subdomain' => 'venues-attribution']);
+
+        $response = $this->get('http://venues-attribution.pinballleague.org/venues');
+
+        $response->assertStatus(200);
+        $response->assertSee('Game data courtesy of');
+        $response->assertSee('href="https://pinballmap.com" target="_blank" rel="noopener noreferrer"', false);
+    }
+
     public function test_venue_with_pinballmap_id_shows_games_from_the_api()
     {
         Http::fake([
@@ -44,6 +55,37 @@ class VenuesDirectoryTest extends TestCase
         $response->assertStatus(200);
         $response->assertSee('Godzilla (Pro)');
         $response->assertSee('JAWS (Premium)');
+    }
+
+    public function test_game_reference_links_reflect_whichever_ids_are_present()
+    {
+        Http::fake([
+            'pinballmap.com/*' => Http::response(['machines' => [
+                ['id' => 1, 'name' => 'Godzilla (Pro)', 'ipdb_id' => 6841, 'opdb_id' => 'GweeP-MW95j'],
+                ['id' => 2, 'name' => 'Dungeons & Dragons (Pro)', 'ipdb_id' => null, 'opdb_id' => 'GK1Ej-MwNZr'],
+                ['id' => 3, 'name' => 'Mystery Machine', 'ipdb_id' => null, 'opdb_id' => null],
+            ]]),
+        ]);
+
+        $association = Association::factory()->create(['subdomain' => 'venues-refs']);
+        Venue::create(['name' => 'Arcade Five', 'association_id' => $association->id, 'active' => true, 'pinballmap_id' => '874']);
+
+        $response = $this->get('http://venues-refs.pinballleague.org/venues');
+
+        $response->assertStatus(200);
+        $response->assertSee('https://www.ipdb.org/machine.cgi?id=6841', false);
+        $response->assertSee('https://app.matchplay.events/opdb/entries/GweeP-MW95j/pintips', false);
+        $response->assertSee('https://app.matchplay.events/opdb/entries/GK1Ej-MwNZr/pintips', false);
+        $response->assertDontSee('https://www.ipdb.org/machine.cgi?id=null', false);
+
+        $html = $response->getContent();
+        $this->assertStringContainsString('target="_blank" rel="noopener noreferrer"', $html);
+
+        // Mystery Machine has neither id, so it gets no reference links div at all.
+        $mysteryPos = strpos($html, 'Mystery Machine');
+        $this->assertNotFalse($mysteryPos);
+        $nextChunk = substr($html, $mysteryPos, 80);
+        $this->assertStringNotContainsString('game-links', $nextChunk);
     }
 
     public function test_venue_without_pinballmap_id_shows_empty_state_and_makes_no_request()

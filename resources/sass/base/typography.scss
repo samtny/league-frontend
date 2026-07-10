@@ -21,3 +21,13 @@ h1 {
 strong {
     font-weight: 600;
 }
+
+.text-muted {
+    color: $color-gray-chateau;
+    // 2pt smaller than the 12pt (16px) browser default baseline.
+    font-size: 10pt;
+}
+
+.text-muted a {
+    color: inherit;
+}
