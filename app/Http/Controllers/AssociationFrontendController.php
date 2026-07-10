@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Schedule;
+use App\Services\PinballMapClient;
 
 class AssociationFrontendController extends AssociationAwareController
 {
@@ -81,6 +82,23 @@ class AssociationFrontendController extends AssociationAwareController
         return view('association.roster', [
             'association' => $this->association,
             'teams' => $this->association->teams->where('active', true),
+        ]);
+    }
+
+    public function venues(PinballMapClient $pinballMap)
+    {
+        $venues = $this->association->venues()
+            ->where('active', true)
+            ->orderBy('name')
+            ->get();
+
+        $venues->each(function ($venue) use ($pinballMap) {
+            $venue->games = $pinballMap->machinesForLocation($venue->pinballmap_id);
+        });
+
+        return view('association.venues-directory', [
+            'association' => $this->association,
+            'venues' => $venues,
         ]);
     }
 }

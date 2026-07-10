@@ -12,7 +12,7 @@
                     <a href="{{ route('association.schedule') }}">Schedule</a>
                 </li>
                 <li>
-                    <a href="{{ route('association.roster') }}">Roster</a>
+                    <a href="{{ route('about') }}">About</a>
                 </li>
 
             </ul>

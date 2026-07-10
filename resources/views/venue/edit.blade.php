@@ -24,6 +24,20 @@
                 @enderror
             </div>
 
+            <div class="mb-3">
+                <label for="pinballmap_id">Pinball Map ID</label>
+                <input id="pinballmap_id" type="text" class="form-control @error('pinballmap_id') is-invalid @enderror" name="pinballmap_id" value="{{ old('pinballmap_id', $venue->pinballmap_id) }}">
+                @error('pinballmap_id')
+                    <div class="alert alert-danger">{{ $message }}</div>
+                @enderror
+                <small class="form-text text-muted">Find this by searching your venue at pinballmap.com &mdash; it's the numeric ID in the URL.</small>
+            </div>
+
+            <div class="mb-3 form-check">
+                <input id="active" type="checkbox" class="form-check-input" name="active" value="1" {{ old('active', $venue->active) ? 'checked' : '' }}>
+                <label for="active" class="form-check-label">Active</label>
+            </div>
+
             <div class="form-actions">
                 <div class="mb-3">
                     <input class="btn btn-primary" id="submit" type="submit" value="Update"/>

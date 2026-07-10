@@ -45,6 +45,7 @@ class FrontendSmokeTest extends TestCase
             '/schedule',
             '/schedule/'.$schedule->id.'/full',
             '/roster',
+            '/venues',
             '/contact',
             '/contact/thanks',
             '/submit',

@@ -26,12 +26,15 @@ class VenuesController extends Controller
         if (Bouncer::can('create', Venue::class)) {
             $validatedData = $request->validate([
                 'name' => 'required|max:255',
+                'pinballmap_id' => 'nullable|string|max:255',
             ]);
 
             $venue = new Venue;
 
             $venue->name = $request->name;
             $venue->association_id = $association->id;
+            $venue->pinballmap_id = $request->pinballmap_id;
+            $venue->active = $request->boolean('active');
 
             $venue->save();
 
@@ -55,9 +58,12 @@ class VenuesController extends Controller
         if (Bouncer::can('update', Venue::class)) {
             $validatedData = $request->validate([
                 'name' => 'required|max:255',
+                'pinballmap_id' => 'nullable|string|max:255',
             ]);
 
             $venue->name = $request->name;
+            $venue->pinballmap_id = $request->pinballmap_id;
+            $venue->active = $request->boolean('active');
 
             $venue->save();
 

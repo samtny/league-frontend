@@ -32,6 +32,7 @@ Route::domain('{subdomain}.pinballleague.org')->middleware('subdomain')->group(f
     Route::get('/schedule', 'AssociationFrontendController@schedule')->name('association.schedule');
     Route::get('/schedule/{schedule}/full', 'AssociationFrontendController@scheduleFull')->name('association.schedule.full');
     Route::get('/roster', 'AssociationFrontendController@roster')->name('association.roster');
+    Route::get('/venues', 'AssociationFrontendController@venues')->name('association.venues.directory');
     Route::get('/rules', 'AssociationFrontendController@rules')->name('association.rules');
     Route::get('/css/association.css', 'AssociationFrontendController@css')->name('association.css');
 

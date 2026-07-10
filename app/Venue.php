@@ -9,7 +9,9 @@ class Venue extends Model
 {
     use SoftDeletes;
 
-    protected $fillable = ['name', 'address', 'association_id'];
+    protected $fillable = ['name', 'address', 'association_id', 'pinballmap_id', 'active'];
+
+    protected $casts = ['active' => 'boolean'];
 
     public function association()
     {
