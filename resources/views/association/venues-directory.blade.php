@@ -50,7 +50,7 @@
     </div>
     <?php endif; ?>
     <div class="row">
-        <div class="attribution text-muted">
+        <div class="attribution">
             Game data courtesy of <a href="https://pinballmap.com" target="_blank" rel="noopener noreferrer">Pinball Map</a>
         </div>
     </div>

@@ -89,7 +89,13 @@ sed -i "s/^;\?opcache.enable=.*/opcache.enable=1/" /etc/php/8.5/fpm/php.ini
 sed -i "s/^;\?opcache.memory_consumption=.*/opcache.memory_consumption=128/" /etc/php/8.5/fpm/php.ini
 sed -i "s/^;\?opcache.interned_strings_buffer=.*/opcache.interned_strings_buffer=16/" /etc/php/8.5/fpm/php.ini
 sed -i "s/^;\?opcache.max_accelerated_files=.*/opcache.max_accelerated_files=16228/" /etc/php/8.5/fpm/php.ini
-sed -i "s/^;\?opcache.validate_timestamps=.*/opcache.validate_timestamps=0/" /etc/php/8.5/fpm/php.ini
+# Deploys ship code via rsync (preserves source mtimes) with no restart step,
+# so validate_timestamps=0 silently freezes prod on old bytecode until
+# something happens to restart php-fpm. Leave timestamp validation on so
+# deploys take effect on their own; the stat() cost at this traffic level is
+# immaterial next to that footgun.
+sed -i "s/^;\?opcache.validate_timestamps=.*/opcache.validate_timestamps=1/" /etc/php/8.5/fpm/php.ini
+sed -i "s/^;\?opcache.revalidate_freq=.*/opcache.revalidate_freq=2/" /etc/php/8.5/fpm/php.ini
 
 echo "${php_fpm_www_conf_b64}" | base64 -d > /etc/php/8.5/fpm/pool.d/www.conf
 

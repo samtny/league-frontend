@@ -20,7 +20,7 @@
                 @else
                     @can('view-admin-pages')
                         <li>
-                            <a href="{{ route('admin') }}">Admin</a>
+                            <a href="{{ route('association.view', ['association' => $association]) }}">Admin</a>
                         </li>
                     @else
                         <li>

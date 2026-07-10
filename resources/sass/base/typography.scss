@@ -31,3 +31,12 @@ strong {
 .text-muted a {
     color: inherit;
 }
+
+.attribution {
+    // Same size as .text-muted, without its muted color.
+    font-size: 10pt;
+}
+
+.attribution a {
+    color: inherit;
+}
