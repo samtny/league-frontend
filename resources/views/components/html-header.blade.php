@@ -32,7 +32,15 @@
 
         <!-- Styles -->
         @vite('resources/sass/frontend.scss')
-        <link href="{{ route('association.css') }}" rel="stylesheet">
+        <?php
+            $associationCssPath = (isset($association) && !empty($association->subdomain))
+                ? public_path('css/association/'.$association->subdomain.'.css')
+                : null;
+            $associationCssVersion = ($associationCssPath && file_exists($associationCssPath))
+                ? filemtime($associationCssPath)
+                : 0;
+        ?>
+        <link href="{{ route('association.css') }}?v={{ $associationCssVersion }}" rel="stylesheet">
     </head>
     <body>
         @if (config('app.env') == 'production')

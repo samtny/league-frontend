@@ -40,7 +40,7 @@ class AssociationFrontendController extends AssociationAwareController
 
         $response = \Response::make($content);
         $response->header('Content-Type', 'text/css');
-        $response->header('Cache-Control', 'public, max-age=300, must-revalidate');
+        $response->header('Cache-Control', 'public, max-age=31536000, immutable');
 
         return $response;
     }
