@@ -25,5 +25,6 @@ This app runs on the Laravel framework: https://laravel.com.
 1. touch database/database.sqlite
 1. php artisan migrate
 1. php artisan db:seed
+1. php artisan key:generate
 1. php artisan storage:link
 1. php artisan serve
