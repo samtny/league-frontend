@@ -54,8 +54,8 @@ else
   ${php} -d allow_url_fopen=On /usr/local/bin/composer install
 fi
 
-# Idempotent: logs "already exists" and continues (exit 0) if the link is
-# already in place, so it's safe to run on every deploy.
-${php} artisan storage:link
+if [ ! -L "public/storage" ]; then
+  ${php} artisan storage:link
+fi
 
 exit 0
