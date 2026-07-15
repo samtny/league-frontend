@@ -60,3 +60,9 @@ form.scores input[type="text"] {
     color: $dark-font-primary;
     border-color: $dark-outline;
 }
+
+// Overrides templates/venues.scss
+.game-name a {
+    color: $dark-font-primary;
+    text-decoration: none;
+}
