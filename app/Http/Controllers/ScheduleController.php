@@ -70,13 +70,7 @@ class ScheduleController extends Controller
 
         $division = Division::where(['id' => $division_id])->first();
 
-        if (! empty($division)) {
-            $schedule->name = $division->name;
-            $schedule->sequence = $division->sequence;
-        } else {
-            $schedule->name = $schedule->start_date;
-            $schedule->sequence = null;
-        }
+        $schedule->sequence = ! empty($division) ? $division->sequence : null;
 
         $schedule->save();
 

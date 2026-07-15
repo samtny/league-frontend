@@ -38,6 +38,7 @@ class TeamsController extends Controller
             $team->name = $request->name;
             $team->association_id = $association->id;
             $team->venue_id = ! empty($request->venue_id) ? $request->venue_id : null;
+            $team->active = $request->boolean('active');
 
             $team->save();
 

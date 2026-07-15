@@ -37,6 +37,11 @@
                 </select>
             </div>
 
+            <div class="mb-3 form-check">
+                <input id="active" type="checkbox" class="form-check-input" name="active" value="1" {{ old('active', true) ? 'checked' : '' }}>
+                <label for="active" class="form-check-label">Active</label>
+            </div>
+
             <div class="form-actions">
                 <div class="mb-3">
                     <input class="btn btn-primary" id="submit" type="submit" value="Submit"/>

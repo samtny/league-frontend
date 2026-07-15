@@ -18,7 +18,7 @@
 
             <div class="mb-3">
                 <label for="name">Name</label>
-                <input id="name" type="text" class="form-control @error('name') is-invalid @enderror" name="name" value="{{ old('name') }}">
+                <input id="name" type="text" class="form-control @error('name') is-invalid @enderror" name="name" value="{{ old('name') }}" required>
                 @error('name')
                     <div class="alert alert-danger">{{ $message }}</div>
                 @enderror
@@ -48,26 +48,40 @@
             <div class="mb-3">
                 <legend>Match Weekday</legend>
                 <fieldset>
-                    <label for="weekday_sunday">Sunday</label>
-                    <input type="radio" id="weekday_sunday" name="weekday" value="sun">
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" id="weekday_sunday" name="weekday" value="sun">
+                        <label class="form-check-label" for="weekday_sunday">Sunday</label>
+                    </div>
 
-                    <label for="weekday_monday">Monday</label>
-                    <input type="radio" id="weekday_monday" name="weekday" value="mon">
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" id="weekday_monday" name="weekday" value="mon">
+                        <label class="form-check-label" for="weekday_monday">Monday</label>
+                    </div>
 
-                    <label for="weekday_tuesday">Tuesday</label>
-                    <input type="radio" id="weekday_tuesday" name="weekday" value="tue">
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" id="weekday_tuesday" name="weekday" value="tue">
+                        <label class="form-check-label" for="weekday_tuesday">Tuesday</label>
+                    </div>
 
-                    <label for="weekday_wednesday">Wednesday</label>
-                    <input type="radio" id="weekday_wednesday" name="weekday" value="wed">
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" id="weekday_wednesday" name="weekday" value="wed">
+                        <label class="form-check-label" for="weekday_wednesday">Wednesday</label>
+                    </div>
 
-                    <label for="weekday_thursday">Thursday</label>
-                    <input type="radio" id="weekday_thursday" name="weekday" value="thu">
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" id="weekday_thursday" name="weekday" value="thu">
+                        <label class="form-check-label" for="weekday_thursday">Thursday</label>
+                    </div>
 
-                    <label for="weekday_friday">Friday</label>
-                    <input type="radio" id="weekday_friday" name="weekday" value="fri">
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" id="weekday_friday" name="weekday" value="fri">
+                        <label class="form-check-label" for="weekday_friday">Friday</label>
+                    </div>
 
-                    <label for="weekday_saturday">Saturday</label>
-                    <input type="radio" id="weekday_saturday" name="weekday" value="sat">
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" id="weekday_saturday" name="weekday" value="sat">
+                        <label class="form-check-label" for="weekday_saturday">Saturday</label>
+                    </div>
                 </fieldset>
             </div>
 
