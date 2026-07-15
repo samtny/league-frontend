@@ -69,6 +69,16 @@ class Association extends Model
         return $this->hasMany('App\Venue');
     }
 
+    public function activeVenues()
+    {
+        return $this->venues()->where('active', 1);
+    }
+
+    public function inactiveVenues()
+    {
+        return $this->venues()->where('active', 0);
+    }
+
     public function series()
     {
         return $this->hasMany('App\Series');

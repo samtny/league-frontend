@@ -12,7 +12,13 @@
     <div class="rosters">
         <?php foreach ($teams->sortBy('name') as $team): ?>
             <div class="roster">
-                <h2 class="roster-title"><?php echo $team->name; ?></h2>
+                <h2 class="roster-title">
+                    <?php if ($team->homeVenue && $team->homeVenue->name !== $team->name): ?>
+                        <?php echo $team->name; ?> <span class="text-light">@ <?php echo $team->homeVenue->name; ?></span>
+                    <?php else: ?>
+                        <?php echo $team->name; ?>
+                    <?php endif; ?>
+                </h2>
 
                 <?php
                     $roleOrder = ['Captain' => 0, 'Player' => 1, 'Reserve' => 2];

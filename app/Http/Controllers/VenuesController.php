@@ -14,6 +14,11 @@ class VenuesController extends Controller
         return view('association.venues', ['association' => $association]);
     }
 
+    public function inactive(Association $association)
+    {
+        return view('association.venues_inactive', ['association' => $association]);
+    }
+
     public function create(Association $association)
     {
         return view('venue.create', [

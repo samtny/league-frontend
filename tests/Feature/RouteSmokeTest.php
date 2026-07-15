@@ -101,6 +101,7 @@ class RouteSmokeTest extends TestCase
             ['association.divisions', ['association' => $association]],
             ['association.teams', ['association' => $association]],
             ['association.venues', ['association' => $association]],
+            ['association.venues.inactive', ['association' => $association]],
             ['association.series', ['association' => $association]],
             ['association.users', ['association' => $association]],
             ['association.create', []],

@@ -81,7 +81,7 @@ class AssociationFrontendController extends AssociationAwareController
     {
         return view('association.roster', [
             'association' => $this->association,
-            'teams' => $this->association->teams->where('active', true),
+            'teams' => $this->association->teams->where('active', true)->load('homeVenue'),
         ]);
     }
 

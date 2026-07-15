@@ -28,7 +28,7 @@ class Team extends Model
 
     public function homeVenue()
     {
-        return $this->hasOne('App\Venue');
+        return $this->belongsTo('App\Venue', 'venue_id');
     }
 
     public function roster()

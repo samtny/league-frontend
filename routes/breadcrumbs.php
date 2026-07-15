@@ -125,6 +125,11 @@ Breadcrumbs::for('association.venues', function ($trail, $association) {
     $trail->push('Venues', route('association.venues', $association));
 });
 
+Breadcrumbs::for('association.venues.inactive', function ($trail, $association) {
+    $trail->parent('association.venues', $association);
+    $trail->push('Inactive Venues', route('association.venues.inactive', $association));
+});
+
 Breadcrumbs::for('venue.create', function ($trail, $association) {
     $trail->parent('association.venues', $association);
     $trail->push('Create Venue', route('venue.create', ['association' => $association]));

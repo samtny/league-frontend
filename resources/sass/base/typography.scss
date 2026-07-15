@@ -28,6 +28,11 @@ strong {
     font-size: 10pt;
 }
 
+.text-light {
+    // Nunito 200 is already loaded (see html-header font link).
+    font-weight: 200;
+}
+
 .text-muted a {
     color: inherit;
 }
