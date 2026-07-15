@@ -4,7 +4,7 @@
         <nav class="footer-menu">
             <ul>
                 <li>
-                    <a href="{{ route('association.venues.directory') }}">Venues</a>
+                    <a href="{{ route('association.venues.directory') }}">{{ $association->venues_label_override ?: 'Venues' }}</a>
                 </li>
                 <li>
                     <a href="{{ route('association.roster') }}">Roster</a>

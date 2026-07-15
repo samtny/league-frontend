@@ -78,6 +78,15 @@
             </div>
             @endif
 
+            <div class="mb-3">
+                <label for="venues_label_override">Venues Label Override</label>
+                <input id="venues_label_override" type="text" class="form-control @error('venues_label_override') is-invalid @enderror" name="venues_label_override" value="{{ old('venues_label_override', $association->venues_label_override) }}">
+                @error('venues_label_override')
+                    <div class="alert alert-danger">{{ $message }}</div>
+                @enderror
+                <small class="form-text text-muted">E.g. "Bars", "Locations", etc</small>
+            </div>
+
             <?php if (!empty($association->subdomain)): ?>
             <div class="mb-3">
                 <label for="favicon">Favicon</label>

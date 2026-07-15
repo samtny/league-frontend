@@ -1,11 +1,11 @@
 @extends('layouts.full', ['name' => 'venues'])
 
-@section('title', __(':association Venues', ['association' => $association->name]))
+@section('title', __(':association :label', ['association' => $association->name, 'label' => $association->venues_label_override ?: 'Venues']))
 
 @section('content')
     @component('components/page-title')
         @slot('title')
-            Venues - <?php echo $association->name; ?>
+            <?php echo ($association->venues_label_override ?: 'Venues') . ' - ' . $association->name; ?>
         @endslot
     @endcomponent
     <?php if (!$venues->isEmpty()): ?>

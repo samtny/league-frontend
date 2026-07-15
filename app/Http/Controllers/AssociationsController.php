@@ -95,6 +95,8 @@ class AssociationsController extends Controller
 
         $association->about = \Purifier::clean($request->about, 'about');
 
+        $association->venues_label_override = $request->venues_label_override;
+
         $association->save();
 
         // Session::flash('message', 'Successfully updated nerd!');

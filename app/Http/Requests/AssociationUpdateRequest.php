@@ -30,6 +30,7 @@ class AssociationUpdateRequest extends FormRequest
             'favicon' => 'nullable|file|mimes:zip|max:2048',
             'about' => 'nullable|string',
             'favicon_metadata' => 'nullable|string',
+            'venues_label_override' => 'nullable|string|max:255',
         ];
     }
 }
