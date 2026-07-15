@@ -45,54 +45,45 @@
                 <input id="end_date" class="form-control" type="date" name="end_date" value="<?php echo $schedule->end_date != null ? date('Y-m-d', strtotime($schedule->end_date)) : null ?>">
             </div>
 
+            <?php $weekday_value = old('weekday', $schedule->weekday); ?>
             <div class="mb-3">
                 <legend>Match Weekday</legend>
                 <fieldset>
                     <div class="form-check">
-                        <input class="form-check-input" type="radio" id="weekday_sunday" name="weekday" value="sun" <?php echo old('weekday_sunday', 0) ? ' checked' : ''; ?>>
+                        <input class="form-check-input" type="radio" id="weekday_sunday" name="weekday" value="sun" <?php echo $weekday_value === 'sun' ? ' checked' : ''; ?>>
                         <label class="form-check-label" for="weekday_sunday">Sunday</label>
                     </div>
 
                     <div class="form-check">
-                        <input class="form-check-input" type="radio" id="weekday_monday" name="weekday" value="mon" <?php echo old('weekday_monday', 1) ? ' checked' : ''; ?>>
+                        <input class="form-check-input" type="radio" id="weekday_monday" name="weekday" value="mon" <?php echo $weekday_value === 'mon' ? ' checked' : ''; ?>>
                         <label class="form-check-label" for="weekday_monday">Monday</label>
                     </div>
 
                     <div class="form-check">
-                        <input class="form-check-input" type="radio" id="weekday_tuesday" name="weekday" value="tue" <?php echo old('weekday_tuesday', 0) ? ' checked' : ''; ?>>
+                        <input class="form-check-input" type="radio" id="weekday_tuesday" name="weekday" value="tue" <?php echo $weekday_value === 'tue' ? ' checked' : ''; ?>>
                         <label class="form-check-label" for="weekday_tuesday">Tuesday</label>
                     </div>
 
                     <div class="form-check">
-                        <input class="form-check-input" type="radio" id="weekday_wednesday" name="weekday" value="wed" <?php echo old('weekday_wednesday', 0) ? ' checked' : ''; ?>>
+                        <input class="form-check-input" type="radio" id="weekday_wednesday" name="weekday" value="wed" <?php echo $weekday_value === 'wed' ? ' checked' : ''; ?>>
                         <label class="form-check-label" for="weekday_wednesday">Wednesday</label>
                     </div>
 
                     <div class="form-check">
-                        <input class="form-check-input" type="radio" id="weekday_thursday" name="weekday" value="thu" <?php echo old('weekday_thursday', 0) ? ' checked' : ''; ?>>
+                        <input class="form-check-input" type="radio" id="weekday_thursday" name="weekday" value="thu" <?php echo $weekday_value === 'thu' ? ' checked' : ''; ?>>
                         <label class="form-check-label" for="weekday_thursday">Thursday</label>
                     </div>
 
                     <div class="form-check">
-                        <input class="form-check-input" type="radio" id="weekday_friday" name="weekday" value="fri" <?php echo old('weekday_friday', 0) ? ' checked' : ''; ?>>
+                        <input class="form-check-input" type="radio" id="weekday_friday" name="weekday" value="fri" <?php echo $weekday_value === 'fri' ? ' checked' : ''; ?>>
                         <label class="form-check-label" for="weekday_friday">Friday</label>
                     </div>
 
                     <div class="form-check">
-                        <input class="form-check-input" type="radio" id="weekday_saturday" name="weekday" value="sat" <?php echo old('weekday_saturday', 0) ? ' checked' : ''; ?>>
+                        <input class="form-check-input" type="radio" id="weekday_saturday" name="weekday" value="sat" <?php echo $weekday_value === 'sat' ? ' checked' : ''; ?>>
                         <label class="form-check-label" for="weekday_saturday">Saturday</label>
                     </div>
                 </fieldset>
-            </div>
-
-            <div class="mb-3">
-                <label for="generate">Re-Generate Schedule</label>
-                <select class="form-control" id="generate" name="generate">
-                    <option value="" <?php echo old('generate', '') === '' ? ' selected' : ''; ?>>-- No Selection --</option>
-                    <option value="manual" <?php echo old('generate') === 'manual' ? ' selected' : ''; ?>>Manual Assignment (Empty Rounds)</option>
-                    <option value="random" <?php echo old('generate') === 'random' ? ' selected' : ''; ?>>Automatic Random Assignment</option>
-                </select>
-                <small class="form-text text-muted">WARNING: Selecting an assignment method will ERASE the current schedule and re-generate it.</small>
             </div>
 
             <div class="mb-3">

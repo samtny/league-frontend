@@ -97,6 +97,9 @@ Route::prefix('admin')->middleware('admin')->group(function () {
         Route::get('{association}/schedule/{schedule}/rounds', 'ScheduleController@rounds')->name('schedule.rounds');
         Route::get('{association}/schedule/{schedule}/delete-confirm', 'ScheduleController@deleteConfirm')->name('schedule.delete-confirm');
         Route::post('{association}/schedule/{schedule}/delete', 'ScheduleController@destroy')->name('schedule.delete');
+        Route::get('{association}/schedule/{schedule}/generate-rounds', 'ScheduleController@generateRounds')->name('schedule.generate-rounds');
+        Route::post('{association}/schedule/{schedule}/generate-rounds/delete', 'ScheduleController@generateRoundsDelete')->name('schedule.generate-rounds.delete');
+        Route::post('{association}/schedule/{schedule}/generate-rounds', 'ScheduleController@generateRoundsStore')->name('schedule.generate-rounds.store');
         Route::get('{association}/schedule/{schedule}/round/create', 'RoundsController@create')->name('round.create');
         Route::post('{association}/schedule/{schedule}/round', 'RoundsController@store')->name('round.store');
         Route::get('{association}/schedule/{schedule}/round/{round}/edit', 'RoundsController@edit')->name('round.edit');

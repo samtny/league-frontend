@@ -84,6 +84,7 @@ class ScheduleController extends Controller
         $schedule->division_id = $division_id;
         $schedule->start_date = $start_date;
         $schedule->end_date = $end_date;
+        $schedule->weekday = $weekday;
 
         $division = Division::where(['id' => $division_id])->first();
 
@@ -106,33 +107,110 @@ class ScheduleController extends Controller
             'name' => 'required|max:255',
         ]);
 
-        $name = $request->name;
-        $division_id = $request->division_id;
-        $start_date = $request->start_date;
-        $end_date = $request->end_date;
-        $weekday = $request->weekday;
-        $generate = $request->generate;
-
-        $schedule->name = $name;
-        $schedule->division_id = $division_id;
-        $schedule->start_date = $start_date;
-        $schedule->end_date = $end_date;
+        $schedule->name = $request->name;
+        $schedule->division_id = $request->division_id;
+        $schedule->start_date = $request->start_date;
+        $schedule->end_date = $request->end_date;
+        $schedule->weekday = $request->weekday;
         $schedule->archived = $request->archived;
 
         $schedule->save();
-
-        if ($generate === 'manual') {
-            $this->truncateRounds($schedule);
-            $this->createRoundsManual($start_date, $end_date, $weekday, $schedule);
-        } elseif ($generate === 'random') {
-            $this->truncateRounds($schedule);
-            $this->createRoundsRandom($start_date, $end_date, $weekday, $schedule);
-        }
 
         $request->session()->flash('message', __('Successfully updated schedule'));
 
         return redirect()->route('schedule.view', ['association' => $association, 'schedule' => $schedule]);
 
+    }
+
+    /**
+     * Entry point for the Generate Rounds wizard. If the schedule is missing
+     * a field round generation depends on (start/end date, weekday), that's
+     * caught here before any destructive step is even offered - createRounds*
+     * fails silently (e.g. strtolower(null) never matches a weekday) rather
+     * than throwing, so without this check a user could delete their
+     * existing rounds and end up with none at all.  If rounds already exist,
+     * the user must confirm deleting them first; otherwise they go straight
+     * to choosing an assignment method.
+     */
+    public function generateRounds(Association $association, Schedule $schedule)
+    {
+        $missingFields = $this->scheduleGenerationErrors($schedule);
+
+        if (! empty($missingFields)) {
+            return view('schedule.generate-rounds-invalid', [
+                'association' => $association,
+                'schedule' => $schedule,
+                'missingFields' => $missingFields,
+            ]);
+        }
+
+        if ($schedule->rounds->isNotEmpty()) {
+            return view('schedule.generate-rounds-confirm', [
+                'association' => $association,
+                'schedule' => $schedule,
+            ]);
+        }
+
+        return view('schedule.generate-rounds-select', [
+            'association' => $association,
+            'schedule' => $schedule,
+        ]);
+    }
+
+    public function generateRoundsDelete(Association $association, Schedule $schedule)
+    {
+        if (! empty($this->scheduleGenerationErrors($schedule))) {
+            return redirect()->route('schedule.generate-rounds', ['association' => $association, 'schedule' => $schedule]);
+        }
+
+        $this->truncateRounds($schedule);
+
+        return redirect()->route('schedule.generate-rounds', ['association' => $association, 'schedule' => $schedule]);
+    }
+
+    public function generateRoundsStore(Association $association, Schedule $schedule, Request $request)
+    {
+        $request->validate([
+            'generate' => 'required|in:manual,random',
+        ]);
+
+        if (! empty($this->scheduleGenerationErrors($schedule))) {
+            return redirect()->route('schedule.generate-rounds', ['association' => $association, 'schedule' => $schedule]);
+        }
+
+        $this->truncateRounds($schedule);
+
+        if ($request->generate === 'manual') {
+            $this->createRoundsManual($schedule->start_date, $schedule->end_date, $schedule->weekday, $schedule);
+        } else {
+            $this->createRoundsRandom($schedule->start_date, $schedule->end_date, $schedule->weekday, $schedule);
+        }
+
+        return redirect()->route('schedule.view', ['association' => $association, 'schedule' => $schedule]);
+    }
+
+    /**
+     * Fields round generation reads directly off the Schedule model (not
+     * re-collected in the wizard). Returns the human-readable labels of
+     * whichever are missing, empty if the schedule is ready to generate.
+     */
+    private function scheduleGenerationErrors(Schedule $schedule): array
+    {
+        $missing = [];
+
+        if (empty($schedule->start_date)) {
+            $missing[] = 'Start Date';
+        }
+
+        if (empty($schedule->end_date)) {
+            $missing[] = 'End Date';
+        }
+
+        if (empty($schedule->weekday)) {
+            $missing[] = 'Match Weekday';
+        }
+
+        return $missing;
     }
 
     private function createRoundsManual($start_date, $end_date, $weekday, $schedule)

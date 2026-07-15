@@ -9,7 +9,7 @@ class Schedule extends Model
 {
     use SoftDeletes;
 
-    protected $fillable = ['name', 'association_id', 'series_id', 'division_id', 'start_date', 'end_date', 'sequence', 'archived' => 0];
+    protected $fillable = ['name', 'association_id', 'series_id', 'division_id', 'start_date', 'end_date', 'weekday', 'sequence', 'archived' => 0];
 
     /**
      * Schedule is soft-deleted, but Round is not - a soft delete alone never
