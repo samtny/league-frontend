@@ -11,6 +11,22 @@ class Schedule extends Model
 
     protected $fillable = ['name', 'association_id', 'series_id', 'division_id', 'start_date', 'end_date', 'sequence', 'archived' => 0];
 
+    /**
+     * Schedule is soft-deleted, but Round is not - a soft delete alone never
+     * fires the DB's ON DELETE CASCADE (matches -> round_id -> rounds, plus
+     * results/result_submissions -> match_id) because no row is physically
+     * removed. Hard-deleting the rounds here bridges that gap and lets the
+     * existing FK cascades take care of matches/results/result_submissions.
+     */
+    protected static function booted()
+    {
+        static::deleting(function (Schedule $schedule) {
+            if (! $schedule->isForceDeleting()) {
+                $schedule->rounds->each->delete();
+            }
+        });
+    }
+
     public function association()
     {
         return $this->belongsTo('App\Association');

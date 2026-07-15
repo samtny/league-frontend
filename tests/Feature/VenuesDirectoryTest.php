@@ -73,19 +73,20 @@ class VenuesDirectoryTest extends TestCase
         $response = $this->get('http://venues-refs.pinballleague.org/venues');
 
         $response->assertStatus(200);
-        $response->assertSee('https://www.ipdb.org/machine.cgi?id=6841', false);
+        // The view only ever links via opdb_id (Matchplay); ipdb_id is not
+        // currently used to build a link, even when present alongside opdb_id.
         $response->assertSee('https://app.matchplay.events/opdb/entries/GweeP-MW95j/pintips', false);
         $response->assertSee('https://app.matchplay.events/opdb/entries/GK1Ej-MwNZr/pintips', false);
-        $response->assertDontSee('https://www.ipdb.org/machine.cgi?id=null', false);
+        $response->assertDontSee('https://www.ipdb.org/machine.cgi?id=6841', false);
 
         $html = $response->getContent();
         $this->assertStringContainsString('target="_blank" rel="noopener noreferrer"', $html);
 
-        // Mystery Machine has neither id, so it gets no reference links div at all.
+        // Mystery Machine has neither id, so it renders as plain text with no link.
         $mysteryPos = strpos($html, 'Mystery Machine');
         $this->assertNotFalse($mysteryPos);
-        $nextChunk = substr($html, $mysteryPos, 80);
-        $this->assertStringNotContainsString('game-links', $nextChunk);
+        $precedingChunk = substr($html, max(0, $mysteryPos - 80), 80);
+        $this->assertStringNotContainsString('<a href', $precedingChunk);
     }
 
     public function test_venue_without_pinballmap_id_shows_empty_state_and_makes_no_request()

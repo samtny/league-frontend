@@ -46,6 +46,23 @@ class ScheduleController extends Controller
         ]);
     }
 
+    public function deleteConfirm(Association $association, Schedule $schedule)
+    {
+        return view('schedule.delete-confirm', [
+            'association' => $association,
+            'schedule' => $schedule,
+        ]);
+    }
+
+    public function destroy(Association $association, Schedule $schedule)
+    {
+        $series = $schedule->series;
+
+        $schedule->delete();
+
+        return redirect()->route('series.schedules', ['association' => $association, 'series' => $series]);
+    }
+
     public function store(Association $association, Series $series, Request $request)
     {
         $validatedData = $request->validate([
@@ -74,8 +91,10 @@ class ScheduleController extends Controller
 
         $schedule->save();
 
-        if ($generate) {
-            $this->generateRounds($start_date, $end_date, $weekday, $schedule);
+        if ($generate === 'manual') {
+            $this->createRoundsManual($start_date, $end_date, $weekday, $schedule);
+        } elseif ($generate === 'random') {
+            $this->createRoundsRandom($start_date, $end_date, $weekday, $schedule);
         }
 
         return redirect()->route('series.schedules', ['association' => $association, 'series' => $series]);
@@ -102,9 +121,12 @@ class ScheduleController extends Controller
 
         $schedule->save();
 
-        if ($generate) {
+        if ($generate === 'manual') {
             $this->truncateRounds($schedule);
-            $this->generateRounds($start_date, $end_date, $weekday, $schedule);
+            $this->createRoundsManual($start_date, $end_date, $weekday, $schedule);
+        } elseif ($generate === 'random') {
+            $this->truncateRounds($schedule);
+            $this->createRoundsRandom($start_date, $end_date, $weekday, $schedule);
         }
 
         $request->session()->flash('message', __('Successfully updated schedule'));
@@ -113,7 +135,7 @@ class ScheduleController extends Controller
 
     }
 
-    private function generateRounds($start_date, $end_date, $weekday, $schedule)
+    private function createRoundsManual($start_date, $end_date, $weekday, $schedule)
     {
         $start_datetime = new \DateTime($start_date);
         $end_datetime = new \DateTime($end_date);
@@ -145,6 +167,11 @@ class ScheduleController extends Controller
 
             $start_datetime->add(new \DateInterval('P1D'));
         }
+    }
+
+    private function createRoundsRandom($start_date, $end_date, $weekday, $schedule)
+    {
+        // TODO: automatic random assignment not yet implemented.
     }
 
     private function truncateRounds(Schedule $schedule)

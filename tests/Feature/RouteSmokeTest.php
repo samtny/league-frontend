@@ -93,6 +93,7 @@ class RouteSmokeTest extends TestCase
             ['schedule.view', ['association' => $association, 'schedule' => $schedule]],
             ['schedule.edit', ['association' => $association, 'schedule' => $schedule]],
             ['schedule.rounds', ['association' => $association, 'schedule' => $schedule]],
+            ['schedule.delete-confirm', ['association' => $association, 'schedule' => $schedule]],
             ['round.create', ['association' => $association, 'schedule' => $schedule]],
             ['round.edit', ['association' => $association, 'schedule' => $schedule, 'round' => $round]],
             ['round.delete-confirm', ['association' => $association, 'schedule' => $schedule, 'round' => $round]],

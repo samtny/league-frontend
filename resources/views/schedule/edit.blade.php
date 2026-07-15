@@ -86,13 +86,13 @@
             </div>
 
             <div class="mb-3">
-                <div class="form-check">
-                    <input class="form-check-input" name="generate" type="checkbox" value="1" id="generate" <?php echo old('generate', 0) ? ' checked' : ''; ?>>
-                    <label class="form-check-label" for="generate">
-                        Re-Generate Schedule
-                    </label>
-                    <small class="form-text text-muted">WARNING: This will ERASE the current schedule and re-generate it if checked.</small>
-                </div>
+                <label for="generate">Re-Generate Schedule</label>
+                <select class="form-control" id="generate" name="generate">
+                    <option value="" <?php echo old('generate', '') === '' ? ' selected' : ''; ?>>-- No Selection --</option>
+                    <option value="manual" <?php echo old('generate') === 'manual' ? ' selected' : ''; ?>>Manual Assignment (Empty Rounds)</option>
+                    <option value="random" <?php echo old('generate') === 'random' ? ' selected' : ''; ?>>Automatic Random Assignment</option>
+                </select>
+                <small class="form-text text-muted">WARNING: Selecting an assignment method will ERASE the current schedule and re-generate it.</small>
             </div>
 
             <div class="mb-3">
@@ -108,6 +108,9 @@
             <div class="form-actions">
                 <div class="mb-3">
                     <input id="submit" class="btn btn-primary" type="submit" value="Update"/>
+                </div>
+                <div class="mb-3">
+                    <a class="btn btn-warning" href="{{ route('schedule.delete-confirm', ['association' => $association, 'schedule' => $schedule]) }}">Delete Schedule</a>
                 </div>
             </div>
 
