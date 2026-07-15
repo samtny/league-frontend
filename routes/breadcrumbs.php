@@ -85,6 +85,11 @@ Breadcrumbs::for('association.teams', function ($trail, $association) {
     $trail->push('Teams', route('association.teams', $association));
 });
 
+Breadcrumbs::for('association.teams.inactive', function ($trail, $association) {
+    $trail->parent('association.teams', $association);
+    $trail->push('Inactive Teams', route('association.teams.inactive', $association));
+});
+
 Breadcrumbs::for('team.create', function ($trail, $association) {
     $trail->parent('association.teams', $association);
     $trail->push('Create Team', route('team.create', ['association' => $association]));

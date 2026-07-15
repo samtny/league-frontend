@@ -12,9 +12,10 @@
     </div>
     <div class="teams row mb-3">
         <div class="col">
-            <?php if (!$association->teams->isEmpty()): ?>
+            <h2 class="text-muted">Active</h2>
+            <?php if (!$association->activeTeams->isEmpty()): ?>
                 <div class="list-group">
-                <?php foreach ($association->teams->sortBy('name') as $item): ?>
+                <?php foreach ($association->activeTeams->sortBy('name') as $item): ?>
                     <a class="list-group-item list-group-item-action" href="{{ route('team.edit', ['association' => $association, 'team' => $item]) }}">
                         <?php echo ('<div class="team">' . $item->name . '</div>'); ?>
                     </a>
@@ -23,6 +24,14 @@
             <?php else: ?>
                 <div class="message">
                     No teams for this association.
+                </div>
+            <?php endif; ?>
+            <?php if (!$association->inactiveTeams->isEmpty()): ?>
+                <h2 class="text-muted mt-3">Inactive</h2>
+                <div class="list-group">
+                    <a class="list-group-item list-group-item-action" href="{{ route('association.teams.inactive', ['association' => $association]) }}">
+                        View
+                    </a>
                 </div>
             <?php endif; ?>
         </div>

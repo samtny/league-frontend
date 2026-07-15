@@ -14,6 +14,11 @@ class TeamsController extends Controller
         return view('association.teams', ['association' => $association]);
     }
 
+    public function inactive(Association $association)
+    {
+        return view('association.teams_inactive', ['association' => $association]);
+    }
+
     public function create(Association $association)
     {
         return view('team.create', [

@@ -108,6 +108,7 @@ Route::prefix('admin')->middleware('admin')->group(function () {
         Route::get('{association}/edit', 'AssociationsController@edit')->name('association.edit');
         Route::get('{association}/divisions', 'DivisionsController@index')->name('association.divisions');
         Route::get('{association}/teams', 'TeamsController@index')->name('association.teams');
+        Route::get('{association}/teams/inactive', 'TeamsController@inactive')->name('association.teams.inactive');
         Route::get('{association}/venues', 'VenuesController@index')->name('association.venues');
         Route::get('{association}/venues/inactive', 'VenuesController@inactive')->name('association.venues.inactive');
         Route::get('{association}/series', 'SeriesController@index')->name('association.series');
