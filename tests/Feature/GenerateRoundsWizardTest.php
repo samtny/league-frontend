@@ -110,7 +110,7 @@ class GenerateRoundsWizardTest extends TestCase
         $this->assertSame(4, Round::where('schedule_id', $schedule->id)->count());
     }
 
-    public function test_selecting_random_assignment_is_a_noop_but_still_clears_old_rounds()
+    public function test_selecting_automatic_assignment_clears_old_rounds_and_goes_to_review()
     {
         ['association' => $association, 'schedule' => $schedule] = $this->buildFixture('wizard-e');
 
@@ -126,7 +126,9 @@ class GenerateRoundsWizardTest extends TestCase
             'generate' => 'random',
         ]);
 
-        $response->assertRedirect(route('schedule.view', ['association' => $association, 'schedule' => $schedule]));
+        // Nothing is persisted until the review screen's Accept is submitted,
+        // but any pre-existing rounds are cleared immediately regardless.
+        $response->assertRedirect(route('schedule.generate-rounds.review', ['association' => $association, 'schedule' => $schedule]));
         $this->assertSame(0, Round::where('schedule_id', $schedule->id)->count());
     }
 

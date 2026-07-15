@@ -8,7 +8,16 @@ use App\PLMatch;
 use App\Round;
 use App\Schedule;
 use App\Series;
+use App\Services\ScheduleGeneration\GenerationConfig;
+use App\Services\ScheduleGeneration\GenerationReport;
+use App\Services\ScheduleGeneration\GenerationResult;
+use App\Services\ScheduleGeneration\RoundDatePlanner;
+use App\Services\ScheduleGeneration\ScheduleCandidate;
+use App\Services\ScheduleGeneration\ScheduleGenerator;
+use App\Services\ScheduleGeneration\TeamInput;
+use App\Services\ScheduleGeneration\VenueInput;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class ScheduleController extends Controller
 {
@@ -182,11 +191,74 @@ class ScheduleController extends Controller
 
         if ($request->generate === 'manual') {
             $this->createRoundsManual($schedule->start_date, $schedule->end_date, $schedule->weekday, $schedule);
-        } else {
-            $this->createRoundsRandom($schedule->start_date, $schedule->end_date, $schedule->weekday, $schedule);
+
+            return redirect()->route('schedule.view', ['association' => $association, 'schedule' => $schedule]);
         }
 
+        $this->stashGeneratedCandidate($schedule, $this->generateAutomaticCandidate($schedule));
+
+        return redirect()->route('schedule.generate-rounds.review', ['association' => $association, 'schedule' => $schedule]);
+    }
+
+    /**
+     * Shows the best candidate found by automatic generation, held in the
+     * session since generateRoundsStore() - nothing is persisted to
+     * rounds/matches until the admin explicitly accepts it.
+     */
+    public function generateRoundsReview(Association $association, Schedule $schedule)
+    {
+        $candidateData = session($this->sessionKey($schedule, 'candidate'));
+        $reportData = session($this->sessionKey($schedule, 'report'));
+
+        if ($candidateData === null || $reportData === null) {
+            return redirect()->route('schedule.generate-rounds', ['association' => $association, 'schedule' => $schedule]);
+        }
+
+        return view('schedule.generate-rounds-review', [
+            'association' => $association,
+            'schedule' => $schedule,
+            'candidate' => ScheduleCandidate::fromArray($candidateData),
+            'report' => GenerationReport::fromArray($reportData),
+            'teamNames' => $schedule->association->teams->pluck('name', 'id'),
+        ]);
+    }
+
+    /**
+     * Commits exactly the candidate the admin reviewed: re-reads it from the
+     * session rather than re-running generation, so what gets persisted is
+     * guaranteed to match what was shown on the review screen.
+     */
+    public function generateRoundsAccept(Association $association, Schedule $schedule, Request $request)
+    {
+        $candidateData = session($this->sessionKey($schedule, 'candidate'));
+
+        if ($candidateData === null) {
+            return redirect()->route('schedule.generate-rounds', ['association' => $association, 'schedule' => $schedule]);
+        }
+
+        $candidate = ScheduleCandidate::fromArray($candidateData);
+
+        DB::transaction(function () use ($schedule, $candidate) {
+            $this->truncateRounds($schedule);
+            $this->persistCandidate($schedule, $candidate);
+        });
+
+        session()->forget([$this->sessionKey($schedule, 'candidate'), $this->sessionKey($schedule, 'report')]);
+
+        $request->session()->flash('message', __('Successfully generated rounds'));
+
         return redirect()->route('schedule.view', ['association' => $association, 'schedule' => $schedule]);
+    }
+
+    public function generateRoundsRetry(Association $association, Schedule $schedule)
+    {
+        if (! empty($this->scheduleGenerationErrors($schedule))) {
+            return redirect()->route('schedule.generate-rounds', ['association' => $association, 'schedule' => $schedule]);
+        }
+
+        $this->stashGeneratedCandidate($schedule, $this->generateAutomaticCandidate($schedule));
+
+        return redirect()->route('schedule.generate-rounds.review', ['association' => $association, 'schedule' => $schedule]);
     }
 
     /**
@@ -215,41 +287,105 @@ class ScheduleController extends Controller
 
     private function createRoundsManual($start_date, $end_date, $weekday, $schedule)
     {
-        $start_datetime = new \DateTime($start_date);
-        $end_datetime = new \DateTime($end_date);
-
-        $days_interval = $start_datetime->diff($end_datetime);
-
-        $days = $days_interval->format('%a');
-
         $round_number = 1;
 
-        for ($i = 0; $i <= $days; $i += 1) {
-            if (strtolower($start_datetime->format('D')) == strtolower($weekday)) {
-                $round = new Round;
+        foreach ((new RoundDatePlanner)->datesFor($start_date, $end_date, $weekday) as $date) {
+            $round = new Round;
 
-                $round->schedule_id = $schedule->id;
-                $round->division_id = $schedule->division_id;
-                $round->series_id = $schedule->series_id;
+            $round->schedule_id = $schedule->id;
+            $round->division_id = $schedule->division_id;
+            $round->series_id = $schedule->series_id;
 
-                $round->start_date = $start_datetime;
-                $round->end_date = $start_datetime;
-                $round->name = 'Round '.$round_number;
+            $round->start_date = $date;
+            $round->end_date = $date;
+            $round->name = 'Round '.$round_number;
 
-                $round->save();
+            $round->save();
 
-                $round_number += 1;
+            $round_number += 1;
 
-                $round->createMatches();
-            }
-
-            $start_datetime->add(new \DateInterval('P1D'));
+            $round->createMatches();
         }
     }
 
     private function createRoundsRandom($start_date, $end_date, $weekday, $schedule)
     {
         // TODO: automatic random assignment not yet implemented.
+    }
+
+    /**
+     * Runs the constraint-aware generator (see App\Services\ScheduleGeneration)
+     * against this schedule's active teams/venues and its own persisted
+     * date range/weekday - the same inputs createRoundsManual reads.
+     */
+    private function generateAutomaticCandidate(Schedule $schedule): GenerationResult
+    {
+        $association = $schedule->association;
+
+        $activeTeams = $association->activeTeams->map(fn ($team) => TeamInput::fromModel($team))->all();
+        $activeVenues = $association->activeVenues->map(fn ($venue) => VenueInput::fromModel($venue))->all();
+        $roundDates = (new RoundDatePlanner)->datesFor($schedule->start_date, $schedule->end_date, $schedule->weekday);
+
+        return app(ScheduleGenerator::class)->generate($roundDates, $activeTeams, $activeVenues, GenerationConfig::fromConfig());
+    }
+
+    private function stashGeneratedCandidate(Schedule $schedule, GenerationResult $result): void
+    {
+        session([
+            $this->sessionKey($schedule, 'candidate') => $result->candidate->toArray(),
+            $this->sessionKey($schedule, 'report') => $result->report->toArray(),
+        ]);
+    }
+
+    private function sessionKey(Schedule $schedule, string $suffix): string
+    {
+        return "schedule_generation.{$schedule->id}.{$suffix}";
+    }
+
+    /**
+     * Persists exactly the rounds/matches described by a generated
+     * candidate. Bypasses Round::createMatches() (which creates one empty
+     * match per active venue) because the candidate already knows which
+     * venues are used each round and who's playing.
+     */
+    private function persistCandidate(Schedule $schedule, ScheduleCandidate $candidate): void
+    {
+        $roundNumber = 1;
+
+        foreach ($candidate->rounds as $roundCandidate) {
+            $round = new Round;
+
+            $round->schedule_id = $schedule->id;
+            $round->division_id = $schedule->division_id;
+            $round->series_id = $schedule->series_id;
+
+            $round->start_date = $roundCandidate->date;
+            $round->end_date = $roundCandidate->date;
+            $round->name = 'Round '.$roundNumber;
+
+            $round->save();
+
+            $roundNumber += 1;
+
+            foreach ($roundCandidate->matches as $matchCandidate) {
+                $match = new PLMatch;
+
+                $match->name = $matchCandidate->venueName.' – '.$roundCandidate->date->format('m-d-Y');
+                $match->association_id = $schedule->association_id;
+                $match->series_id = $schedule->series_id;
+                $match->division_id = $schedule->division_id;
+                $match->schedule_id = $schedule->id;
+                $match->round_id = $round->id;
+                $match->venue_id = $matchCandidate->venueId;
+                $match->sequence = 1;
+                $match->start_date = $roundCandidate->date;
+                $match->end_date = $roundCandidate->date;
+                $match->home_team_id = $matchCandidate->homeTeamId;
+                $match->away_team_id = $matchCandidate->awayTeamId;
+
+                $match->save();
+            }
+        }
     }
 
     private function truncateRounds(Schedule $schedule)

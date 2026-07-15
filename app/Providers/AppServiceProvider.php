@@ -2,6 +2,8 @@
 
 namespace App\Providers;
 
+use App\Services\ScheduleGeneration\MtRng;
+use App\Services\ScheduleGeneration\Rng;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\ServiceProvider;
 
@@ -14,7 +16,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register()
     {
-        //
+        $this->app->bind(Rng::class, MtRng::class);
     }
 
     /**

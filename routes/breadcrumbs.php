@@ -235,6 +235,11 @@ Breadcrumbs::for('schedule.generate-rounds', function ($trail, $schedule) {
     $trail->push(__('Generate Rounds'), route('schedule.generate-rounds', ['association' => $schedule->association, 'schedule' => $schedule]));
 });
 
+Breadcrumbs::for('schedule.generate-rounds.review', function ($trail, $schedule) {
+    $trail->parent('schedule.generate-rounds', $schedule);
+    $trail->push(__('Review'), route('schedule.generate-rounds.review', ['association' => $schedule->association, 'schedule' => $schedule]));
+});
+
 Breadcrumbs::for('round.view', function ($trail, $schedule, $round) {
     $trail->parent('schedule.rounds', $schedule);
     $trail->push(! empty($round->start_date) ? Carbon::parse($round->start_date)->format('m-d-Y') : '<empty>');

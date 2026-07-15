@@ -49,7 +49,7 @@ class Round extends Model
         $schedule = $this->schedule;
         $association = $schedule->association;
 
-        foreach ($association->venues as $venue) {
+        foreach ($association->activeVenues as $venue) {
             $match = new PLMatch;
 
             $match->name = $venue->name.' – '.$this->start_date->format('m-d-Y');

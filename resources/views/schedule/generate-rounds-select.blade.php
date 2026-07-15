@@ -24,7 +24,8 @@
 
                     <div class="form-check">
                         <input class="form-check-input" type="radio" id="generate_random" name="generate" value="random" <?php echo old('generate') === 'random' ? ' checked' : ''; ?>>
-                        <label class="form-check-label" for="generate_random">Automatic Random Assignment</label>
+                        <label class="form-check-label" for="generate_random">Automatic</label>
+                        <small class="form-text text-muted d-block">Generates rounds and assigns Home/Away teams so every active team plays an equal number of matches, then shows a review screen before anything is saved.</small>
                     </div>
                 </fieldset>
                 @error('generate')
