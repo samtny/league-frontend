@@ -253,3 +253,231 @@ Concretely: store under schedule-scoped session keys to avoid cross-schedule col
 - /Users/sthompson/Documents/league-frontend/routes/web.php
 - /Users/sthompson/Documents/league-frontend/resources/views/schedule/generate-rounds-select.blade.php
 - /Users/sthompson/Documents/league-frontend/app/Services/ScheduleGeneration/ScheduleGenerator.php (new)
+
+---
+
+# Optimal Round-Robin Construction for the Exclusive-Home-Venue Case (post-plateau enhancement)
+
+## Status
+
+**Implemented (Phases 1-2).** Builds directly on the "Known remaining limit" disclosed at the end of the S5 / recency-fix section above: the greedy, per-round-independent `RoundBuilder::assignVenuesAndSides()` plateaus at score 15.0 on association 2 / schedule 6 (4 teams, 4 distinct owned venues, 7 rounds) regardless of attempt budget, because it never sees the whole-schedule home/away *pattern* that classical round-robin theory proves is achievable. This phase adds a deterministic **classical round-robin + Home-Away-Pattern (HAP) construction** that produces a strong *seed* candidate for the one case where the textbook theory strictly applies (every active team owns a distinct venue), then hands that seed to the **existing** `ScheduleScorer` and **existing** randomized-restart loop as a "seed + polish" floor. It changes nothing about the greedy path for any other input.
+
+`RoundRobinConstructor::isEligible()`/`construct()` and the `ScheduleGenerator::generate()` seed step (§4 below) are built and fully unit-tested (`RoundRobinConstructorTest`, plus 3 new `ScheduleGeneratorTest` cases). §8's primary risk - the exact HA orientation formula - was **not** taken from a primary source; it was derived and verified computationally (Python DP brute force, then reproduced in the shipped PHP) against every even N from 4 to 100, confirmed to hit the N-2 minimum-breaks bound exactly every time, with ≤1 home/away imbalance per team and O(N) rounds × O(N) per-round work (no exponential blowup - "trivial at league scale" holds). The rule that works: round 0 alternates by slot parity; every later round predicts "flip everyone's previous role"; wherever that's structurally infeasible for a match (forced by the pairing, not a choice - happens at roughly every other round), one of the two teams repeats its previous role instead, chosen by "whichever team hasn't already spent its one break, else the higher slot." See `RoundRobinConstructor.php` for the fully-commented implementation.
+
+**Phase 3 (real-data verification) result, replacing the "≈10 expected" estimate honestly rather than leaving it uncorrected:** re-ran the actual association 2 / schedule 6 input (4 teams, 4 distinct owned venues, 7 rounds) through `ScheduleGenerator` directly. The seed itself is hard-valid but scores **20.0** (4 consecutive-same-venue soft violations, S1 = 4 × 5.0), *worse* than the 15.0 greedy plateau - so seed+polish correctly discards it and the final generated schedule still scores exactly **15.0**, identical to before this enhancement. No regression (the guarantee held), but no improvement either, for this specific shape.
+
+Root cause, found via the same computational verification used to derive the HA formula (see `/private/tmp/.../scratchpad/full_sim.py`-style experiments, not hand-derivation): a **single** round-robin cycle (7 rounds ÷ (N-1=3) = 2 full cycles + a 1-round leftover) genuinely does hit the N-2=2 minimum for *each* cycle in isolation. But stitching cycles together (mirroring alternate passes for long-run home/away balance, per §1c) forces an *additional*, seemingly unavoidable break at every pass-to-pass seam: tested both possible flip choices at the boundary for N=4, and *both* produce exactly one new consecutive-same-venue violation (the choice is symmetric - there's no lever here for N=4 specifically). A "continuous" construction that never resets to a fresh per-pass starting pattern (letting the flip-and-resolve algorithm run uninterrupted across all rounds, pass boundaries included) was also tried and tested computationally: it produces the *same* total break count as mirroring, but with materially worse long-run home/away balance (imbalance grows with round count instead of staying ≤1) - so it's strictly worse, not an escape hatch. For this specific 4-team/7-round shape that's 4 pass-like seam events (2 internal-cycle + 2 boundary) × 1 forced break each = 4 consecutive-venue violations, landing at 20.0, just above the 15.0 floor.
+
+This is exactly the class of problem plan.md's own §8 flagged as out of scope to chase ("the exact double-RR break optimum is a known but larger figure... low risk because seed+polish guarantees no regression regardless") and is being disclosed here rather than pursued further, consistent with how the S5/recency-fix section above handled its own remaining limit. **Where the construction does deliver real, verified improvement:** any exclusive-home-venue schedule whose round count fits within a single cycle (`R <= N-1`) reaches the true N-2 minimum-breaks bound exactly (`RoundRobinConstructorTest::test_even_team_count_single_cycle_achieves_the_theoretical_minimum_breaks`), and even multi-cycle schedules keep the unconditional "never worse than greedy-only" guarantee that was the feature's core, non-negotiable correctness promise. Revisit the multi-pass seam cost only if a concrete future case shows it mattering in practice - de Werra's double-RR-specific constructions (distinct from the single-RR result already implemented here) would be the next thing to look up if so.
+
+**Follow-up finding, single-cycle schedules at realistic league sizes (not just N=4):** the 4-team plateau case turns out to be a poor advertisement for this feature precisely *because* it's small - greedy's randomized-restart search has so little to search that it stumbles onto a near-optimal answer within budget by luck alone. Measured greedy-only (500 attempts) vs. the construction seed on single-cycle schedules (`R = N-1`) at increasing team counts, same budget both ways:
+
+| teams | greedy-only score | construction seed score |
+|---|---|---|
+| 6 | 5.0 | 10.0 (greedy wins here) |
+| 8 | 16.0 | 15.0 |
+| 10 | 35.0 | 20.0 |
+| 12 | 60.0 | 25.0 |
+
+Greedy's per-round-independent search degrades sharply as the search space grows combinatorially with team count; the construction's score grows only linearly (~`5*(N-2)`, i.e. purely from the unavoidable minimum-breaks bound) because it isn't searching at all - it's a closed-form answer. By 8 teams the construction has already overtaken greedy, and the gap widens fast: more than double the penalty left on the table by greedy at 12 teams. The full `ScheduleGenerator` (seed+polish) captures this end to end - confirmed by running it directly, not just scoring the raw seed - landing on 15.0/20.0/25.0 respectively for n=8/10/12 (matching the seed, since polish couldn't beat it). **So the real, honest value proposition is realistically-sized leagues with exclusive home venues (roughly 8+ teams), not the small 4-team example that originally motivated the investigation** - that example just happens to be small enough for greedy's luck to hold up. Worth calling out explicitly to whoever reviews this so the plateau case isn't mistaken for the feature's ceiling.
+
+### S1 reweighted to penalize repeat offenders, not just incident count
+
+Product observation: the flat, linear S1 penalty (`weightVenue` per consecutive-same-venue incident, summed) treats "team A hit twice" identically to "team A hit once, team B hit once" - same total, same score. That's a worse proxy for what actually looks bad to a real admin: the *same team* being stuck at one venue repeatedly reads as a scheduling failure in a way that two different teams each having one isolated repeat doesn't.
+
+This went through three iterations before landing on the current, correct behavior - documented here in full because two of the three were real bugs caught after the fact, not just refinements, and the failure modes are worth remembering:
+
+1. **First attempt (wrong):** aggregate incidents per team, then charge only `max(0, count - 1) * weightVenue` - i.e. tolerate one incident per team entirely, both for scoring *and* for whether a message was generated (a team's first incident produced no message at all, since the summary-message loop only ran when `over > 0`).
+2. **Bug found on real production data ("S1 tolerance regression"):** a real generated-and-accepted schedule (association 2 / schedule 6) had Rullo's Team playing at their own venue in both of the last two rounds (2026-08-18 and 2026-08-25) - a real, visible repeat, plainly readable in the round-by-round table - yet the review screen showed `score: 0` and an *empty* violations panel, so nothing on the page indicated it. Root cause: step 1 conflated *scoring severity* (should this cost points) with *message visibility* (should this be reported at all) - tolerating something for score is not the same as hiding it from the admin. Fixed by restoring one message per occurrence, generated unconditionally at the point each incident is detected, independent of whatever the score formula does with it. `array_filter($softViolationsByCriterion)` is what drives whether the review screen's warning panel renders at all, so an empty-by-tolerance list reads as "nothing wrong" - any future scoring change here must not let "tolerated for score" also mean "absent from the message list." (S4/S5 have this identical message-only-past-threshold shape and weren't touched, since nobody has hit a problem there yet, but the same regression could exist - worth a look if it ever comes up.)
+3. **Second product correction (this one):** even after fixing visibility, the *score* was still fully forgiving a team's first incident (charging nothing for `count == 1`). Confirmed this doesn't match the actual ask: a single incident is still a real break and should still cost something on its own; the repeat-offense pattern should cost *additional* points on top of the per-occurrence cost, not replace it. Final formula, per team: `weightVenue * count + weightVenue * max(0, count - 1)` - every occurrence costs `weightVenue` (unchanged from the original design), and a team hit more than once pays a further `weightVenue` per occurrence beyond the first. Two different teams each hit once: `2 * weightVenue` (same as always). One team hit twice: `3 * weightVenue` (worse than the distributed case, which was the entire point). Also confirmed the per-team `count` already treated "twice in a row" (a 3-round streak) and "twice, far apart" (e.g. rounds 1-2 and separately rounds 6-7) identically before this correction was needed - the counting logic increments once per detected repeat regardless of when in the season it happens, so no change was needed there.
+
+**Verified findings, rerun end to end against the final formula:**
+
+- **Single-cycle schedules (`R = N-1`), greedy-only (500 attempts) vs. the construction, same budget both ways:**
+
+  | teams | greedy-only | construction (seed alone) | full generator |
+  |---|---|---|---|
+  | 4 | 5.0 | 5.0 | 5.0 |
+  | 5 | 0.0 | 0.0 | 0.0 |
+  | 6 | 5.0 | 10.0 | 5.0 (polish rescues the worse seed) |
+  | 7 | 5.0 | 0.0 | 0.0 |
+  | 8 | 20.0 | 15.0 | 15.0 |
+  | 10 | 42.0 | 20.0 | 20.0 |
+  | 12 | 74.0 | 25.0 | 25.0 |
+  | 16 | 166.0 | 35.0 | 35.0 |
+
+  The construction's score grows only linearly with team count (every occurrence still costs its base `weightVenue`, but the construction never pays a repeat surcharge in a single cycle - true regardless of formula, since no team there ever has more than one incident). Greedy's degrades much faster since its search has no whole-schedule visibility. The n=6 row is worth calling out: this is exactly why "seed + polish" is the shipped design and not "seed alone" - the seed can lose to greedy at small N (structural luck, not a flaw), and the unchanged restart loop transparently picks whichever is actually better.
+- **The flagship association-2/schedule-6 case (multi-cycle-plus-leftover) is back to "no regression, no improvement" for this specific shape** - the same honest conclusion from the very first Phase-3 verification, before any S1 change. Re-run against the live database rows: the seed alone now scores **30.0** (worse than greedy's observed 15.0 plateau, since every one of its unavoidable seam incidents now carries its own real cost again, not just the excess), so the full generator correctly falls back to greedy's 15.0 - identical to the pre-enhancement baseline. The earlier claim in this file that this case "flipped to a perfect tie" was true only under the intermediate (step-1/step-2) threshold-only formula and is no longer accurate now that occurrence-based base costs are restored; corrected here rather than left standing.
+
+Net effect of the full S1 rework: the scoring now matches the actual product intent (every break counts, repeat offenders cost more on top), message visibility is unconditional (nothing is ever hidden by tolerance), and the construction's real value proposition is exactly what it was before this detour - single-cycle schedules at realistic team counts (roughly 8+), with an unconditional no-regression guarantee everywhere else, including the flagship shape that doesn't happen to benefit.
+
+## Design decisions carried in from product (do not re-litigate)
+
+- **Seed + polish, not replacement.** The construction yields a starting `ScheduleCandidate`; it is validated by the unchanged `ScheduleScorer`, and the unchanged restart loop runs afterward and may only *improve* on it. Because the loop keeps the lowest-scoring hard-valid candidate seen, seeding it guarantees the shipped result is **never worse than today's** and expected to be better. This is the strongest honest correctness claim and it falls out of the existing loop structure for free.
+- **v1 scope boundary — exclusive ownership only.** The construction runs only when **every active team has a non-null `homeVenueId`, all of those ids are distinct (no sharing), and each resolves to an active venue.** Any team with `homeVenueId === null`, any two teams sharing a venue, or a team pointing at a missing/inactive venue → the constructor declines and generation is byte-for-byte today's greedy behavior. The shared-venue and missing-venue cases have **no textbook answer** and are explicitly out of scope; revisit later if real demand appears.
+
+---
+
+## 1. The construction algorithm (hand this to the implementer verbatim, then verify against a primary source)
+
+### 1a. Pairing schedule — the circle (polygon) method
+
+Let `n = count($activeTeams)`. Define the *construction size* `N`:
+- `n` even → `N = n`.
+- `n` odd → `N = n + 1`, with a synthetic **phantom** team occupying slot `N-1`; whoever the phantom is paired with in a round takes that round's **bye**. This is exactly the bye mechanism the codebase already models via `RoundCandidate::$byeTeamIds`.
+
+Assign the real teams to slots `0 … n-1` (slot order is a free choice; use input order for determinism). `N` is even; a single round-robin is `N-1` rounds.
+
+Circle method, verified for `N=4` below. Number slots `0 … N-1`; slot `N-1` is the **fixed** slot. Let `m = N-1`. For round `k = 0 … N-2`:
+- **Fixed-slot game:** slot `N-1` plays the slot `t` with `2·t ≡ k (mod m)` (unique because `m` is odd, so 2 is invertible mod m).
+- **Rotating games:** slots `i, j ∈ {0 … N-2}` with `i + j ≡ k (mod m)` and `i ≠ j` are paired.
+
+Worked example, `N=4` (`m=3`):
+
+| Round k | fixed-slot game | rotating game |
+|---|---|---|
+| 0 | 3 vs 0 (2·0≡0) | 1 vs 2 (1+2≡0) |
+| 1 | 3 vs 2 (2·2≡1) | 0 vs 1 (0+1≡1) |
+| 2 | 3 vs 1 (2·1≡2) | 0 vs 2 (0+2≡2) |
+
+Every slot meets every other exactly once across the 3 rounds — a valid single round-robin. (An equivalent, more implementer-friendly formulation is the standard "fix one team, rotate the rest around a 2×(N/2) grid, pair top-to-bottom by column." Either is fine; whichever is chosen must be gated by the break-count test in §6.)
+
+### 1b. Canonical home/away pattern achieving the `N-2` minimum-breaks bound
+
+A **break** = a team playing two consecutive rounds with the same home/away status. de Werra (1980/1981, *Scheduling in sports*) proves the minimum total breaks over a single round-robin is `N-2`, achieved by a canonical orientation of the circle-method schedule in which:
+- the **fixed** team strictly alternates H,A,H,A,… (0 breaks), and
+- exactly two teams are break-free and the remaining `N-2` teams carry one break each.
+
+Orientation for `N=4` (rounds 0,1,2), reusing the pairing above, **computationally verified** (brute-forced both ways of resolving the one free choice below — see verification note): achieves exactly `N-2 = 2` breaks:
+
+| Team | R0 | R1 | R2 | breaks |
+|---|---|---|---|---|
+| 3 (fixed) | H | A | H | 0 |
+| 0 | A | H | A | 0 |
+| 1 | H | A | A | 1 (A,A in R1-R2) |
+| 2 | A | H | H | 1 (H,H in R1-R2) |
+
+Derivation and a real gotcha for the implementer: fix team 3's pattern to alternate `H,A,H` (0 breaks). Its opponent each round is then forced to the opposite role (R0: 3 vs 0 → 0=A; R1: 3 vs 2 → 2=H; R2: 3 vs 1 → 1=A). Then fix team 0 to also alternate, starting from its forced R0=A → `A,H,A` (0 breaks), which forces *its* opponents too (R1: 0 vs 1 → 1=A; R2: 0 vs 2 → 2=H). At this point teams 1 and 2 already have two of their three roles forced (team 1: R1=A, R2=A; team 2: R1=H, R2=H) — both already sitting on a repeated pair, so both will end up with exactly 1 break regardless. The **only remaining free choice** is R0 for teams 1 and 2 (constrained only to be opposite each other, since they play one another that round) — and this choice is **not arbitrary**: setting team 1=H/team 2=A (completing team 1 as `H,A,A` and team 2 as `A,H,H`) gives the optimal 2 total breaks; the other way round (team 1=A/team 2=H, giving `A,A,A` and `H,H,H`) gives **4** breaks — double the minimum, verified by direct computation. The rule the implementer should follow generally: once a team's role is forced in two consecutive rounds by *other* teams' alternating patterns, complete its own free earlier round(s) to keep its own sequence as alternating as possible, not to satisfy the pairwise-opposite constraint alone (which both choices satisfy equally — only one of them is break-minimal).
+
+**Critical distinction for this codebase — home-breaks vs away-breaks.** In the in-scope case a team's "home" game is always at its own owned venue and every "away" game is at a *different* opponent's venue. Therefore:
+- A **home-break** (two consecutive home games) = two consecutive rounds at the **same** venue = a scorer **S1** event.
+- An **away-break** (two consecutive away games) = two consecutive rounds at **two different** venues = **not** an S1 event.
+
+So S1 penalizes only the home-breaks. The construction drives *total* breaks to `N-2` and distributes them so roughly half are home-breaks; this is why it beats greedy on S1 specifically, and it means the implementer should report/verify **home-break count** as the S1-relevant figure (in addition to total breaks for theoretical correctness). This distinction should be stated in the code comments.
+
+**Implementer instruction / residual uncertainty (see §8):** the *pairing* construction above is standard and hand-verified. The exact closed-form HA orientation rule for general `N` is the one piece to pin down against a primary source (de Werra 1981; or Miyashiro/Iwasaki/Matsui 2003, *Characterizing feasible pattern sets with a minimum number of breaks*) before coding. The `N-2` break-count unit test in §6 is the ground-truth gate: if the coded orientation does not produce exactly `N-2` breaks for even `N`, the formula is wrong, independent of what this plan says.
+
+### 1c. Double round-robin and multiple cycles
+
+To cover more than one cycle, generate successive **passes**, each a full `N-1`-round canonical single round-robin, and **alternate the orientation each pass** (pass 0 = canonical; pass 1 = all home/away flipped; pass 2 = canonical; …). Flipping H/A on odd passes is the standard mirrored double round-robin and it (a) balances each team's cumulative home/away (helps S4/S5), and (b) moves the home-break from one team to its partner so home-breaks don't concentrate on the same team across passes. The mirrored double round-robin yields on the order of `2(N-2)` breaks; the exact double-RR optimum is a known but larger figure — do not assert a precise constant in code, let the §6 tests measure it.
+
+### 1d. Mapping the abstract schedule onto codebase types
+
+For each constructed round → build a `RoundCandidate($date, $matches, $byeTeamIds)`:
+- **Bye:** for odd `n`, the real team paired with the phantom this round → append its id to `$byeTeamIds`, emit no match.
+- **Match:** the home team hosts at its own venue. Build `new MatchCandidate(venueId: $homeTeam->homeVenueId, venueName: $venueLookup[$homeTeam->homeVenueId], homeTeamId: $homeTeam->id, awayTeamId: $awayTeam->id)`. Because venues are distinct in-scope, the away team's venue never equals the match venue → **H4 is structurally satisfied**, matching how `RoundBuilder` already guarantees it.
+- Collect rounds into `new ScheduleCandidate($rounds)`.
+
+`$venueLookup` is `homeVenueId → VenueInput` built once from `$activeVenues`.
+
+---
+
+## 2. Handling arbitrary round counts
+
+Let `R = count($roundDates)` and `C = N-1` (one cycle). Generate passes lazily and concatenate their rounds until there are at least `R`, then **truncate to exactly `R`**. Two boundary cases:
+
+- **Fewer rounds than one cycle (`R < C`, partial single RR):** take the **first `R` rounds of pass 0**. The canonical schedule's breaks are spread across the full `C` rounds, so a length-`R` prefix has *no more* breaks than the full cycle and remains a valid partial round-robin (all opponents distinct, no repeats). No special truncation logic needed beyond "take the prefix."
+- **Leftover beyond whole cycles (`R = q·C + s`, `0 < s < C`):** emit `q` full alternated passes, then the **first `s` rounds of the next (alternated) pass**. Our real target is exactly this: `n=4 → C=3`, `R=7 = 2·3 + 1` → two full passes + one leftover round.
+
+**Why construct the leftover rather than greedy-fill it:** the alternative (fall back to `RoundBuilder` for just the trailing round) reintroduces the exact greedy weakness at the most visible boundary and can pick a venue that manufactures an extra home-break at the seam. Taking the canonical prefix keeps the leftover break-optimal *and* preserves the structural H4/S5 guarantees. The seam between the last full pass and the leftover prefix is the only place H1 (no back-to-back opponent) or an extra break could sneak in; this is caught by running the whole thing through `ScheduleScorer` (§4) — if the seam produces any hard violation, the constructor's output is simply not adopted and generation falls back to the greedy loop.
+
+---
+
+## 3. Eligibility predicate
+
+`RoundRobinConstructor::isEligible(array $activeTeams, array $activeVenues): bool` returns true iff **all** of:
+1. `count($activeTeams) >= 3` (2 teams always face each other every round → violates H1; let the existing degenerate path handle it).
+2. Every `TeamInput::$homeVenueId !== null`.
+3. All `homeVenueId` values are pairwise distinct (no sharing).
+4. Every `homeVenueId` is the id of a venue present in `$activeVenues`.
+
+Notes:
+- No upper bound on `n` is needed; the construction is `O(n²)` in rounds×matches, trivial at league scale.
+- The venue-capacity deviation (#3 in the problem statement) **cannot bite in-scope**: distinct owned venues imply `count($activeVenues) >= n`, while a round needs only `n/2` venues (one per home team). So byes only ever arise from the odd-`n` phantom, never from venue starvation.
+- Because of seed+polish, a permissive edge here is self-correcting (a non-hard-valid seed is discarded), but keep the predicate strict for clarity.
+
+---
+
+## 4. Wiring into the existing architecture
+
+New class **`App\Services\ScheduleGeneration\RoundRobinConstructor`** — plain PHP, **no `Rng`** (fully deterministic; reproducibility for free). Public surface:
+
+```
+public function isEligible(array $activeTeams, array $activeVenues): bool
+public function construct(array $roundDates, array $activeTeams, array $activeVenues): ?ScheduleCandidate  // null if ineligible
+```
+
+**`ScheduleGenerator::generate()` changes** (after the three existing degenerate guards, before the `while` loop):
+
+1. `$seed = (new RoundRobinConstructor())->construct($roundDates, $activeTeams, $activeVenues);`
+   - Instantiate internally (like `new RoundBuilder($this->rng)`), so the existing 2-arg constructor and every current call site / test (`new ScheduleGenerator($rng, $scorer)`, controller `app(ScheduleGenerator::class)`) are untouched.
+2. If `$seed !== null`, score it with the **unchanged** `$this->scorer->score(...)`:
+   - If hard-valid and `score <= 0.0` → return it immediately (identical short-circuit to today's perfect-attempt path).
+   - If hard-valid and `score > 0.0` → set `$best = $seed`, `$bestReport = $report`, then **fall through into the existing loop**, which can only replace `$best` with a strictly lower-scoring candidate. This is the "polish."
+   - If not hard-valid (unexpected seam issue) → discard it; behavior is exactly today's.
+3. The existing loop, `$best === null` fallback, and all degenerate handling are otherwise **unchanged**.
+
+The constructor has zero knowledge of HTTP/Eloquent/session; the controller (`generateAutomaticCandidate`) and persistence path are untouched — the seed flows out as an ordinary `ScheduleCandidate`.
+
+---
+
+## 5. Interaction with the other constraints (in-scope)
+
+- **H1 (no back-to-back opponent):** within a single RR each pair meets once → impossible to repeat inside a pass. The only exposure is a pass/leftover seam; the scorer re-check catches it and the generator falls back if it ever fires. Confirmed safe by construction + safety net.
+- **H4 (never away at own venue):** structurally guaranteed — home team always hosts at its own distinct venue (§1d).
+- **S1 (consecutive same venue):** the whole point — minimized via the `N-2` break bound; only *home*-breaks cost S1 (§1b), and mirroring keeps them from stacking on one team.
+- **S2 (equal matches played):** a full pass gives every team exactly `N-2` real games (for odd `n`, the phantom-paired team byes once per pass; byes rotate evenly by the circle rotation). Across `q` full passes everyone is equal; a length-`s` leftover adds at most one game to some teams → spread `≤ 1`, same as today. Confirmed near-zero by construction.
+- **S3 (opponent-repeat recency):** a pair meets at most once per pass, so the gap between rematches is `≥ N-1 = n-1 ≥ ceil(n/2) = idealGap` for `n ≥ 2` → S3 penalty is 0. Confirmed by construction.
+- **S4 (home/away label balance) & S5 (home-venue balance):** in-scope, "home label" ⟺ "at own venue," so S4 and S5 measure the same thing. The canonical pattern gives near-balance and alternating-pass mirroring flips it, driving both toward 0 (±1 residual on odd totals). This is the metric that was elevated in the 15.0 case.
+- **Byes (odd `n`):** phantom pairings map straight onto `byeTeamIds`; circle rotation rotates the phantom's partner, giving the even bye distribution the existing tests already assert.
+
+---
+
+## 6. Testing strategy
+
+Unit tests on `RoundRobinConstructor` (deterministic, no RNG needed):
+- **Even single RR, `n ∈ {4,6,8}`, `R = N-1`:** assert (a) valid RR — every pair meets exactly once, no back-to-back repeat; (b) **total breaks == `N-2`** (the theoretical-minimum gate — this is what catches a wrong HA formula); (c) every match is at the home team's owned venue (H4); (d) home/away counts balanced to ±1.
+- **Odd single RR, `n = 5`:** phantom path — assert byes rotate evenly (`max−min ≤ 1`), schedule hard-valid, balanced, low score.
+- **Double RR, `n = 4`, `R = 6`:** assert mirrored orientation, home/away balanced per team, and record the total break count (assert it matches the mirrored figure the primary source predicts, whatever the §1c number resolves to).
+- **Arbitrary R, partial cycle (`n=4, R=2`)** and **leftover (`n=4, R=7`)**: hard-valid, opponents distinct across the seam.
+- **Ineligibility → `construct()` returns null:** shared venue (two teams same `homeVenueId`), a null `homeVenueId`, a `homeVenueId` not in `$activeVenues`, and `n=2`.
+
+Integration / benchmark:
+- **Association-2/schedule-6 shape via `ScheduleGenerator` (4 teams, 4 distinct owned venues, 7 rounds, `SeededRng`):** assert `hardConstraintsSatisfied`, `!degenerate`, and **`score < 15.0`** (strictly better than the recorded greedy plateau). *Expected value with reasoning:* two mirrored passes over 6 rounds contribute ≈2 home-breaks (S1 ≈ 10) with S3≈0 and S4/S5≈0, plus at most one seam/leftover home-break, so I expect the result in the ≈10 range rather than 15; pin the exact number once observed and assert `<= 15.0` as the guaranteed floor (seed+polish makes "no worse than today" a hard guarantee, so this assertion can never regress even if the estimate is off).
+- **Non-regression:** an existing greedy-path input (a team with `homeVenueId === null`, or two sharing a venue — the existing `test_two_teams_sharing_a_home_venue_still_produce_a_valid_schedule`) must produce **identical** output to today (constructor declines, greedy path unchanged).
+
+---
+
+## 7. Phased rollout (independently reviewable)
+
+- **Phase 1 — pure construction + math proof, no wiring.** `RoundRobinConstructor` (`isEligible` + `construct`), circle-method pairing, canonical HA, phantom byes, mirrored passes, arbitrary-`R` truncation, type mapping. Full unit suite asserting the `N-2` bound, valid RR, H4, balance, and eligibility declines. Ships nothing user-visible; provable in isolation.
+- **Phase 2 — seed into `ScheduleGenerator`.** The `generate()` changes in §4 (seed → score → short-circuit-or-polish-or-discard). Add the association-2/schedule-6 benchmark test and the non-regression test. After this phase the feature is live end-to-end (no controller/route/view changes — the seed flows through the existing candidate/session/review/accept machinery untouched).
+- **Phase 3 — verification against real data.** Re-run the actual association 2 / schedule 6 input through the HTTP flow, confirm the review screen shows the improved score and the constructed pattern, and record the observed score in `plan.md` to replace the "≈10 expected" estimate with the real number.
+
+---
+
+## 8. Open questions / risks
+
+- **Exact HA orientation formula (primary risk, partially de-risked).** The `N=4` case in §1b was computationally brute-forced (not just hand-derived) after an initial hand-derivation turned out to be self-contradictory (two teams in the same head-to-head match were both marked with the same H/A status, which is impossible) — the corrected table above is verified consistent and break-minimal. That brute-force also surfaced a real trap: the "free" role choice for the two non-fixed, non-alternating teams is constrained only to be mutually opposite, and *both* ways of resolving it satisfy that constraint, but one gives 2 breaks and the other gives 4 — so "satisfies the pairing constraint" is not sufficient, the implementer must pick the alternating-completion option. This trap likely recurs at every level of the construction for larger `N` (more teams whose roles get forced late), so **the general closed-form rule for arbitrary even `N` is still unconfirmed** and must be verified against a primary source (de Werra 1981; or Miyashiro/Iwasaki/Matsui 2003) or brute-forced the same way for at least `N=6` before coding — do not assume the `N=4` pattern generalizes by simple extrapolation. The Phase-1 "total breaks == `N-2`" test remains the ground-truth gate regardless.
+- **Exact double-RR break optimum.** `2(N-2)` is the task's stated approximation; the true mirrored double-RR figure is larger and known. Don't hardcode a constant — measure in tests. Low risk because seed+polish guarantees no regression regardless.
+- **Benchmark expectation is an estimate.** The ≈10 predicted score for schedule 6 is reasoning, not measurement; Phase 3 replaces it with the observed value. The hard guarantee is only `<= 15.0`.
+- **Seam between passes/leftover.** Sole in-scope place H1 or an extra break can appear; mitigated entirely by the existing scorer re-check + fallback, but worth an explicit seam-focused assertion in Phase 1.
+- **Determinism vs. the polish loop.** The constructor is deterministic (no `Rng`); the polish loop remains seeded. Confirm the seeded end-to-end test stays reproducible with the seed injected as `best` before the loop runs.
+- **Out of scope, stated plainly:** shared-venue and missing-venue teams have no textbook construction and are deliberately left on the greedy path; `n=2`; and any cross-schedule venue contention (already out of scope for the whole feature).
+
+### Critical Files for Implementation (this section)
+- /Users/sthompson/Documents/league-frontend/app/Services/ScheduleGeneration/RoundRobinConstructor.php (new)
+- /Users/sthompson/Documents/league-frontend/app/Services/ScheduleGeneration/ScheduleGenerator.php
+- /Users/sthompson/Documents/league-frontend/app/Services/ScheduleGeneration/ScheduleScorer.php
+- /Users/sthompson/Documents/league-frontend/app/Services/ScheduleGeneration/MatchCandidate.php
+- /Users/sthompson/Documents/league-frontend/tests/Unit/ScheduleGeneration/RoundRobinConstructorTest.php (new)

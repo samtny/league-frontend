@@ -38,11 +38,11 @@ final class ScheduleScorer
         $homeCountByTeam = array_fill_keys(array_keys($activeTeamIds), 0);
         $awayCountByTeam = array_fill_keys(array_keys($activeTeamIds), 0);
         $homeVenueAppearancesByTeam = array_fill_keys(array_keys($activeTeamIds), 0);
+        $venueStreakCountByTeam = array_fill_keys(array_keys($activeTeamIds), 0);
 
-        $venueStreakPenalty = 0.0;
         $repeatPenalty = 0.0;
-        $venueMessages = [];
         $repeatMessages = [];
+        $venueMessages = [];
 
         $activeTeamCount = count($activeTeams);
         $idealGap = $activeTeamCount > 0 ? (int) ceil($activeTeamCount / 2) : 0;
@@ -85,7 +85,12 @@ final class ScheduleScorer
 
                 foreach ([$home, $away] as $teamId) {
                     if (($lastVenueByTeam[$teamId] ?? null) === $match->venueId) {
-                        $venueStreakPenalty += $config->weightVenue;
+                        // Every occurrence is reported here (visibility -
+                        // nothing is silently hidden from the review
+                        // screen just because it happens to be the first
+                        // one for this team), independent of whether it
+                        // ends up costing score points below.
+                        $venueStreakCountByTeam[$teamId] = ($venueStreakCountByTeam[$teamId] ?? 0) + 1;
                         $venueMessages[] = "{$teamLabel($teamId)} played consecutive rounds at the same venue ({$match->venueName}) around round {$roundNumber}.";
                     }
                 }
@@ -119,6 +124,31 @@ final class ScheduleScorer
                 }
 
                 unset($lastOpponentByTeam[$teamId], $lastVenueByTeam[$teamId]);
+            }
+        }
+
+        // Every consecutive-same-venue occurrence costs weightVenue, same as
+        // before - a single incident is still a real break and always
+        // scores as one (every occurrence is also reported above in
+        // $venueMessages regardless of team). On top of that, a team hit
+        // more than once pays an *additional* weightVenue per excess
+        // occurrence: two different teams each hit once costs 2x
+        // weightVenue total (same as always), but one team hit twice costs
+        // 3x weightVenue (2 for the occurrences themselves, +1 repeat-
+        // offense surcharge) - a real repeat-offense pattern a greedy,
+        // whole-schedule-blind search has no mechanism to avoid (see
+        // plan.md). "Twice" means anywhere in the schedule, not
+        // necessarily back-to-back streaks of 3+: rounds 1-2 then
+        // separately rounds 6-7 both count as 2 occurrences for that team,
+        // same as three rounds running would.
+        $venueStreakPenalty = 0.0;
+
+        foreach (array_keys($activeTeamIds) as $teamId) {
+            $count = $venueStreakCountByTeam[$teamId] ?? 0;
+
+            if ($count > 0) {
+                $venueStreakPenalty += $config->weightVenue * $count;
+                $venueStreakPenalty += $config->weightVenue * max(0, $count - 1);
             }
         }
 

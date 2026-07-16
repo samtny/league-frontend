@@ -1,7 +1,7 @@
 <?php
 
 return [
-    'max_attempts' => env('SCHEDULE_GENERATION_MAX_ATTEMPTS', 500),
+    'max_attempts' => env('SCHEDULE_GENERATION_MAX_ATTEMPTS', 10000),
     'time_budget_ms' => env('SCHEDULE_GENERATION_TIME_BUDGET_MS', 1500),
 
     'weights' => [

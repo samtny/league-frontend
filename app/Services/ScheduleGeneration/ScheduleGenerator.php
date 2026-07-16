@@ -57,6 +57,30 @@ final class ScheduleGenerator
         $best = null;
         $bestReport = null;
 
+        // For the exclusive-home-venue case (every active team owns a
+        // distinct active venue), a deterministic classical round-robin
+        // construction can seed the search with a schedule already close to
+        // (often exactly at) the theoretical minimum-breaks bound - the
+        // greedy per-round loop below has no visibility into that
+        // whole-schedule pattern and plateaus short of it (see plan.md).
+        // Seed + polish: score it like any other candidate and only keep it
+        // if it's hard-valid, so the loop below can only ever do as well or
+        // better, never worse than today's greedy-only behavior.
+        $seed = (new RoundRobinConstructor())->construct($roundDates, $activeTeams, $activeVenues);
+
+        if ($seed !== null) {
+            $seedReport = $this->scorer->score($seed, $activeTeams, $activeVenues, $config);
+
+            if ($seedReport->hardConstraintsSatisfied) {
+                $best = $seed;
+                $bestReport = $seedReport;
+
+                if ($bestReport->score <= 0.0) {
+                    return new GenerationResult($best, $bestReport, $attempts, $this->elapsedMs($startedAt));
+                }
+            }
+        }
+
         while ($attempts < $config->maxAttempts && $this->elapsedMs($startedAt) < $config->timeBudgetMs) {
             $attempts++;
 

@@ -160,8 +160,16 @@ class ScheduleScorerTest extends TestCase
         $this->assertFalse($report->hardConstraintsSatisfied);
     }
 
-    public function test_consecutive_same_venue_is_a_soft_penalty()
+    public function test_two_different_teams_each_hitting_a_consecutive_same_venue_once_scores_the_base_penalty_for_each()
     {
+        // Every consecutive-same-venue occurrence is a real break and
+        // always costs weightVenue, no matter which team or how many other
+        // teams also have one - two different teams each hit once is
+        // 2x weightVenue, the same as it would be added up individually.
+        // What's NOT charged here is any *extra* repeat-offense surcharge,
+        // since neither team was hit twice - see
+        // test_the_same_team_hitting_consecutive_same_venue_twice_costs_more_than_two_isolated_incidents
+        // below for the case that does add a surcharge.
         $teams = $this->teams(1, 2, 3, 4);
         $venues = $this->venues(10, 20);
         $config = new GenerationConfig(weightVenue: 5.0, weightEquality: 0.0, weightRepeat: 0.0, weightHomeAway: 0.0);
@@ -180,11 +188,63 @@ class ScheduleScorerTest extends TestCase
         $report = (new ScheduleScorer)->score($candidate, $teams, $venues, $config);
 
         $this->assertTrue($report->hardConstraintsSatisfied);
-        // With only 2 venues, team 1 stays at venue 10 both rounds and team 4 stays at
-        // venue 20 both rounds -> two streak penalties of weightVenue each.
+        // Team 1 (1 occurrence) + team 4 (1 occurrence) = 2 x weightVenue,
+        // no repeat-offense surcharge since neither team was hit twice.
         $this->assertSame(10.0, $report->score);
         $this->assertArrayHasKey('consecutive_venue', $report->softViolationsByCriterion);
         $this->assertCount(2, $report->softViolationsByCriterion['consecutive_venue']);
+        $messages = implode(' ', $report->softViolationsByCriterion['consecutive_venue']);
+        $this->assertStringContainsString('Team 1', $messages);
+        $this->assertStringContainsString('Team 4', $messages);
+    }
+
+    public function test_the_same_team_hitting_consecutive_same_venue_twice_costs_more_than_two_isolated_incidents()
+    {
+        $teams = $this->teams(1, 2, 3, 4);
+        $venues = $this->venues(10, 20, 30);
+        $config = new GenerationConfig(weightVenue: 5.0, weightEquality: 0.0, weightRepeat: 0.0, weightHomeAway: 0.0);
+
+        // Team 1 is at venue 10 for rounds 1-2 (incident #1), then at venue
+        // 20 for rounds 3-4 (incident #2) - two separate repeat-offense
+        // events for the same team, not a single 3-round streak, which
+        // must count identically (see ScheduleScorer for why). Every other
+        // team's venue sequence alternates cleanly except team 4, which has
+        // exactly one isolated incident.
+        $candidate = new ScheduleCandidate([
+            new RoundCandidate($this->date('2026-07-06'), [
+                new MatchCandidate(10, 'Venue 10', 1, 2),
+                new MatchCandidate(30, 'Venue 30', 3, 4),
+            ], []),
+            new RoundCandidate($this->date('2026-07-13'), [
+                new MatchCandidate(10, 'Venue 10', 1, 3),
+                new MatchCandidate(20, 'Venue 20', 2, 4),
+            ], []),
+            new RoundCandidate($this->date('2026-07-20'), [
+                new MatchCandidate(20, 'Venue 20', 1, 4),
+                new MatchCandidate(30, 'Venue 30', 2, 3),
+            ], []),
+            new RoundCandidate($this->date('2026-07-27'), [
+                new MatchCandidate(20, 'Venue 20', 1, 2),
+                new MatchCandidate(10, 'Venue 10', 3, 4),
+            ], []),
+        ]);
+
+        $report = (new ScheduleScorer)->score($candidate, $teams, $venues, $config);
+
+        $this->assertTrue($report->hardConstraintsSatisfied);
+        // Team 1: 2 occurrences -> base 2 x weightVenue + repeat-offense
+        // surcharge of 1 x weightVenue = 3 x weightVenue = 15.0.
+        // Team 4: 1 occurrence -> base 1 x weightVenue = 5.0, no surcharge.
+        // Total = 20.0 - strictly more than two teams each hit once would
+        // cost (10.0), which is the whole point of the surcharge: the same
+        // team being hit twice is treated as worse than the incident count
+        // spread across different teams.
+        $this->assertSame(20.0, $report->score);
+        $this->assertArrayHasKey('consecutive_venue', $report->softViolationsByCriterion);
+        $this->assertCount(3, $report->softViolationsByCriterion['consecutive_venue']);
+        $messages = implode(' ', $report->softViolationsByCriterion['consecutive_venue']);
+        $this->assertSame(2, substr_count($messages, 'Team 1 played'), 'team 1 should be reported for both of its incidents');
+        $this->assertSame(1, substr_count($messages, 'Team 4 played'), 'team 4 should be reported for its one tolerated incident');
     }
 
     public function test_unequal_matches_played_is_a_soft_penalty()
@@ -320,9 +380,13 @@ class ScheduleScorerTest extends TestCase
         $venues = $this->venues(10, 20);
         $config = new GenerationConfig(weightVenue: 5.0, weightEquality: 0.0, weightRepeat: 0.0, weightHomeAway: 0.0, weightHomeVenueBalance: 0.0);
 
+        // Three rounds at the same venue is two incidents for each team
+        // (round1-2, then round2-3) - over the one-incident tolerance, so
+        // this actually produces a consecutive_venue message to check names on.
         $candidate = new ScheduleCandidate([
             new RoundCandidate($this->date('2026-07-06'), [new MatchCandidate(10, 'Venue 10', 1, 2)], []),
             new RoundCandidate($this->date('2026-07-13'), [new MatchCandidate(10, 'Venue 10', 2, 1)], []),
+            new RoundCandidate($this->date('2026-07-20'), [new MatchCandidate(10, 'Venue 10', 1, 2)], []),
         ]);
 
         $report = (new ScheduleScorer)->score($candidate, $teams, $venues, $config);

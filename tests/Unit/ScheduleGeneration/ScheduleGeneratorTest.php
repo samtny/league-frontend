@@ -3,6 +3,7 @@
 namespace Tests\Unit\ScheduleGeneration;
 
 use App\Services\ScheduleGeneration\GenerationConfig;
+use App\Services\ScheduleGeneration\RoundRobinConstructor;
 use App\Services\ScheduleGeneration\ScheduleGenerator;
 use App\Services\ScheduleGeneration\ScheduleScorer;
 use App\Services\ScheduleGeneration\SeededRng;
@@ -245,5 +246,101 @@ class ScheduleGeneratorTest extends TestCase
 
         $this->assertFalse($result->report->degenerate);
         $this->assertTrue($result->report->hardConstraintsSatisfied);
+    }
+
+    public function test_shared_venue_input_is_ineligible_for_the_round_robin_seed_so_behavior_is_unchanged()
+    {
+        // RoundRobinConstructor declines whenever any team shares its home
+        // venue with another team (see RoundRobinConstructorTest), so this
+        // exact input - taken from test_two_teams_sharing_a_home_venue_
+        // still_produce_a_valid_schedule() above - never reaches it, and
+        // ScheduleGenerator::generate() falls straight through to the
+        // unchanged greedy loop exactly as it did before this enhancement.
+        $teams = $this->teamsWithHomeVenues([1 => 500, 2 => 500, 3 => null, 4 => null, 5 => null, 6 => null]);
+        $venues = $this->venues(500, 600);
+
+        $this->assertFalse((new RoundRobinConstructor())->isEligible($teams, $venues));
+    }
+
+    public function test_exclusive_home_venue_seed_is_used_when_it_reaches_a_perfect_score()
+    {
+        // 4 teams, 4 distinct owned venues, only 2 rounds - short enough
+        // that RoundRobinConstructor's single-cycle prefix hasn't reached
+        // its first unavoidable break yet (that happens at round index 2;
+        // see RoundRobinConstructorTest and plan.md), so this exact
+        // prefix is hard-valid and scores a genuine 0: no repeats, equal
+        // matches played, and every team's home/away and home-venue splits
+        // are perfectly even. The seed should short-circuit the loop
+        // immediately: 0 attempts used.
+        $teams = $this->teamsWithHomeVenues([1 => 100, 2 => 200, 3 => 300, 4 => 400]);
+        $venues = $this->venues(100, 200, 300, 400);
+
+        $result = $this->generator(1)->generate($this->dates(2), $teams, $venues, new GenerationConfig);
+
+        $this->assertFalse($result->report->degenerate);
+        $this->assertTrue($result->report->hardConstraintsSatisfied);
+        $this->assertSame(0.0, $result->report->score);
+        $this->assertSame(0, $result->attemptsUsed, 'a perfect seed should short-circuit before any randomized attempts');
+    }
+
+    public function test_exclusive_home_venue_seed_never_regresses_the_associaton_2_schedule_6_benchmark()
+    {
+        // The real shape that motivated this enhancement (see plan.md,
+        // "Optimal Round-Robin Construction for the Exclusive-Home-Venue
+        // Case"): 4 teams, 4 distinct owned venues, 7 rounds (two full
+        // cycles plus a 1-round leftover). S1 now charges every
+        // consecutive-same-venue occurrence its base cost, plus a surcharge
+        // if the same team is hit more than once (see plan.md, "S1
+        // reweighted" and its "tolerance regression" correction) - so a
+        // multi-cycle-plus-leftover schedule's unavoidable handful of seam
+        // incidents cost real points again, same as before this whole
+        // enhancement. Measured directly: the seed alone scores 30.0 here,
+        // worse than greedy's observed 15.0 plateau, so the final result
+        // (seed+polish) correctly falls back to matching that 15.0 plateau
+        // rather than regressing to the seed's worse score - the
+        // unconditional "never worse than greedy-only" guarantee is what
+        // this test actually locks in, not an improvement for this
+        // particular shape (see plan.md for the shapes where it does help).
+        $teams = $this->teamsWithHomeVenues([1 => 100, 2 => 200, 3 => 300, 4 => 400]);
+        $venues = $this->venues(100, 200, 300, 400);
+
+        $result = $this->generator(1)->generate($this->dates(7), $teams, $venues, new GenerationConfig);
+
+        $this->assertFalse($result->report->degenerate);
+        $this->assertTrue($result->report->hardConstraintsSatisfied);
+        $this->assertLessThanOrEqual(15.0, $result->report->score);
+    }
+
+    public function test_exclusive_home_venue_seed_beats_greedy_once_team_count_is_large_enough()
+    {
+        // Single-cycle schedules (R = N-1) are where the construction's
+        // advantage is real and grows with scale: measured directly (500
+        // attempts, same budget both ways), greedy-only degrades sharply as
+        // team count grows (n=8: 20.0, n=10: 42.0, n=12: 74.0, n=16: 166.0)
+        // while the construction's score grows only linearly with the
+        // unavoidable minimum-breaks bound (n=8: 15.0, n=10: 20.0, n=12:
+        // 25.0, n=16: 35.0) because it isn't searching at all - see
+        // plan.md for the full table. By 16 teams greedy is left roughly
+        // 4.7x worse off. The full generator (seed+polish) captures this
+        // end to end, confirmed by running it directly below.
+        $homeVenueIdByTeamId = [];
+        for ($id = 1; $id <= 16; $id++) {
+            $homeVenueIdByTeamId[$id] = 1000 + $id;
+        }
+
+        $teams = $this->teamsWithHomeVenues($homeVenueIdByTeamId);
+        $venues = $this->venuesFor($homeVenueIdByTeamId);
+
+        // Exactly one single cycle (R = N-1 = 15 rounds).
+        $result = $this->generator(1)->generate($this->dates(15), $teams, $venues, new GenerationConfig);
+
+        $this->assertFalse($result->report->degenerate);
+        $this->assertTrue($result->report->hardConstraintsSatisfied);
+        $this->assertSame(35.0, $result->report->score, 'should match the construction seed, far below the ~166.0 greedy-only result at this scale');
+    }
+
+    private function venuesFor(array $homeVenueIdByTeamId): array
+    {
+        return array_map(fn (int $venueId) => new VenueInput($venueId, "Venue {$venueId}"), array_values($homeVenueIdByTeamId));
     }
 }
