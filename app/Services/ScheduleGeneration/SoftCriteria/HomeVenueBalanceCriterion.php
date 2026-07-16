@@ -77,6 +77,11 @@ final class HomeVenueBalanceCriterion implements SoftCriterion
         return $config->weightHomeVenueBalance * $this->totalOver;
     }
 
+    public function weight(GenerationConfig $config): float
+    {
+        return $config->weightHomeVenueBalance;
+    }
+
     public function messages(): array
     {
         return $this->messages;

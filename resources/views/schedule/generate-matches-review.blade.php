@@ -36,7 +36,7 @@
                     <strong>Soft criteria scores:</strong>
                     <ul class="mb-0">
                         @foreach ($report->softCriteriaScores as $criterion)
-                            <li>{{ $criterion['label'] }}: {{ $criterion['score'] }}</li>
+                            <li>{{ $criterion['label'] }} (instance score {{ $criterion['weight'] }}): {{ $criterion['score'] }}</li>
                         @endforeach
                     </ul>
                 </div>

@@ -12,6 +12,7 @@ final class GenerationConfig
         public readonly float $weightRepeat = 3.0,
         public readonly float $weightHomeAway = 2.0,
         public readonly float $weightHomeVenueBalance = 6.0,
+        public readonly float $weightHomeAwayBreak = 8.0,
     ) {
     }
 
@@ -25,6 +26,7 @@ final class GenerationConfig
             weightRepeat: (float) config('schedule_generation.weights.repeat', 3.0),
             weightHomeAway: (float) config('schedule_generation.weights.home_away', 2.0),
             weightHomeVenueBalance: (float) config('schedule_generation.weights.home_venue_balance', 6.0),
+            weightHomeAwayBreak: (float) config('schedule_generation.weights.home_away_break', 8.0),
         );
     }
 }

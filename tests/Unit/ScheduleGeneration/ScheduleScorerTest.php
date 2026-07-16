@@ -172,7 +172,7 @@ class ScheduleScorerTest extends TestCase
         // below for the case that does add a surcharge.
         $teams = $this->teams(1, 2, 3, 4);
         $venues = $this->venues(10, 20);
-        $config = new GenerationConfig(weightVenue: 5.0, weightEquality: 0.0, weightRepeat: 0.0, weightHomeAway: 0.0);
+        $config = new GenerationConfig(weightVenue: 5.0, weightEquality: 0.0, weightRepeat: 0.0, weightHomeAway: 0.0, weightHomeAwayBreak: 0.0);
 
         $candidate = new ScheduleCandidate([
             new RoundCandidate($this->date('2026-07-06'), [
@@ -202,7 +202,7 @@ class ScheduleScorerTest extends TestCase
     {
         $teams = $this->teams(1, 2, 3, 4);
         $venues = $this->venues(10, 20, 30);
-        $config = new GenerationConfig(weightVenue: 5.0, weightEquality: 0.0, weightRepeat: 0.0, weightHomeAway: 0.0);
+        $config = new GenerationConfig(weightVenue: 5.0, weightEquality: 0.0, weightRepeat: 0.0, weightHomeAway: 0.0, weightHomeAwayBreak: 0.0);
 
         // Team 1 is at venue 10 for rounds 1-2 (incident #1), then at venue
         // 20 for rounds 3-4 (incident #2) - two separate repeat-offense
@@ -281,7 +281,7 @@ class ScheduleScorerTest extends TestCase
     {
         $teams = $this->teams(1, 2);
         $venues = $this->venues(10);
-        $config = new GenerationConfig(weightVenue: 0.0, weightEquality: 0.0, weightRepeat: 0.0, weightHomeAway: 2.0);
+        $config = new GenerationConfig(weightVenue: 0.0, weightEquality: 0.0, weightRepeat: 0.0, weightHomeAway: 2.0, weightHomeAwayBreak: 0.0);
 
         // Team 1 is home 3 times in a row (diff of 3, over by 2 once |diff|-1 = 2).
         $candidate = new ScheduleCandidate([
@@ -327,7 +327,7 @@ class ScheduleScorerTest extends TestCase
     {
         $teams = $this->teamsWithHomeVenues([1 => 100, 2 => null, 3 => null, 4 => null]);
         $venues = $this->venues(100, 300);
-        $config = new GenerationConfig(weightVenue: 0.0, weightEquality: 0.0, weightRepeat: 0.0, weightHomeAway: 0.0, weightHomeVenueBalance: 6.0);
+        $config = new GenerationConfig(weightVenue: 0.0, weightEquality: 0.0, weightRepeat: 0.0, weightHomeAway: 0.0, weightHomeVenueBalance: 6.0, weightHomeAwayBreak: 0.0);
 
         // Team 1 has a home venue (100) but is always sent away to a neutral
         // venue (300) instead, across 4 rounds with varying opponents. Teams
@@ -396,5 +396,80 @@ class ScheduleScorerTest extends TestCase
         $this->assertStringContainsString("Rullo's Team", $messages);
         $this->assertStringNotContainsString('#1', $messages);
         $this->assertStringNotContainsString('#2', $messages);
+    }
+
+    public function test_playing_the_same_home_away_role_in_consecutive_rounds_is_a_soft_penalty_in_both_directions()
+    {
+        $teams = $this->teams(1, 2, 3, 4);
+        $venues = $this->venues(10, 20);
+        $config = new GenerationConfig(weightVenue: 0.0, weightEquality: 0.0, weightRepeat: 0.0, weightHomeAway: 0.0, weightHomeVenueBalance: 0.0, weightHomeAwayBreak: 5.0);
+
+        // Team 1 is home in both rounds (a home/home break) and team 4 is
+        // away in both rounds (an away/away break) - teams 2 and 3 properly
+        // alternate role between the two rounds, so only these two breaks
+        // should be counted, one per direction.
+        $candidate = new ScheduleCandidate([
+            new RoundCandidate($this->date('2026-07-06'), [
+                new MatchCandidate(10, 'Venue 10', 1, 2),
+                new MatchCandidate(20, 'Venue 20', 3, 4),
+            ], []),
+            new RoundCandidate($this->date('2026-07-13'), [
+                new MatchCandidate(10, 'Venue 10', 1, 3),
+                new MatchCandidate(20, 'Venue 20', 2, 4),
+            ], []),
+        ]);
+
+        $report = (new ScheduleScorer)->score($candidate, $teams, $venues, $config);
+
+        $this->assertSame(10.0, $report->score);
+        $this->assertArrayHasKey('home_away_break', $report->softViolationsByCriterion);
+        $this->assertCount(2, $report->softViolationsByCriterion['home_away_break']);
+        $messages = implode(' ', $report->softViolationsByCriterion['home_away_break']);
+        $this->assertStringContainsString('Team 1 played home in consecutive rounds', $messages);
+        $this->assertStringContainsString('Team 4 played away in consecutive rounds', $messages);
+    }
+
+    public function test_a_bye_resets_the_home_away_role_streak()
+    {
+        $teams = $this->teams(1, 2, 3, 4);
+        $venues = $this->venues(10);
+        $config = new GenerationConfig(weightVenue: 0.0, weightEquality: 0.0, weightRepeat: 0.0, weightHomeAway: 0.0, weightHomeVenueBalance: 0.0, weightHomeAwayBreak: 4.0);
+
+        // Team 1 is home in rounds 1 and 3, but byes round 2 in between -
+        // that bye should reset team 1's (and team 2's) "last role" the same
+        // way it resets last-opponent/last-venue elsewhere, so this must not
+        // count as a repeat.
+        $candidate = new ScheduleCandidate([
+            new RoundCandidate($this->date('2026-07-06'), [new MatchCandidate(10, 'Venue 10', 1, 2)], [3, 4]),
+            new RoundCandidate($this->date('2026-07-13'), [new MatchCandidate(10, 'Venue 10', 3, 4)], [1, 2]),
+            new RoundCandidate($this->date('2026-07-20'), [new MatchCandidate(10, 'Venue 10', 1, 2)], [3, 4]),
+        ]);
+
+        $report = (new ScheduleScorer)->score($candidate, $teams, $venues, $config);
+
+        $this->assertSame(0.0, $report->score);
+        $this->assertArrayNotHasKey('home_away_break', $report->softViolationsByCriterion);
+    }
+
+    public function test_home_away_break_penalty_is_flat_with_no_repeat_offense_surcharge()
+    {
+        $teams = $this->teams(1, 2);
+        $venues = $this->venues(10);
+        $config = new GenerationConfig(weightVenue: 0.0, weightEquality: 0.0, weightRepeat: 0.0, weightHomeAway: 0.0, weightHomeVenueBalance: 0.0, weightHomeAwayBreak: 3.0);
+
+        // Team 1 is home for all 3 rounds (2 consecutive-round transitions:
+        // round1->2, round2->3), team 2 is away for all 3 - 4 break events
+        // total (2 per team). Unlike ConsecutiveVenueCriterion, this is a
+        // flat count with no escalating surcharge for repeat offenders.
+        $candidate = new ScheduleCandidate([
+            new RoundCandidate($this->date('2026-07-06'), [new MatchCandidate(10, 'Venue 10', 1, 2)], []),
+            new RoundCandidate($this->date('2026-07-13'), [new MatchCandidate(10, 'Venue 10', 1, 2)], []),
+            new RoundCandidate($this->date('2026-07-20'), [new MatchCandidate(10, 'Venue 10', 1, 2)], []),
+        ]);
+
+        $report = (new ScheduleScorer)->score($candidate, $teams, $venues, $config);
+
+        $this->assertSame(12.0, $report->score);
+        $this->assertCount(4, $report->softViolationsByCriterion['home_away_break']);
     }
 }

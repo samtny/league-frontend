@@ -7,7 +7,7 @@ final class GenerationReport
     /**
      * @param string[] $hardViolations
      * @param array<string, string[]> $softViolationsByCriterion
-     * @param array<int, array{key: string, label: string, score: float}> $softCriteriaScores every soft criterion's individual score, in fixed order, regardless of whether it has any violation messages
+     * @param array<int, array{key: string, label: string, score: float, weight: float}> $softCriteriaScores every soft criterion's individual score and per-instance weight, in fixed order, regardless of whether it has any violation messages
      */
     public function __construct(
         public readonly bool $hardConstraintsSatisfied,

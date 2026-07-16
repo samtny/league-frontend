@@ -11,6 +11,7 @@ use App\Services\ScheduleGeneration\HardConstraints\RepeatOpponentConsecutiveRou
 use App\Services\ScheduleGeneration\SoftCriteria\ConsecutiveVenueCriterion;
 use App\Services\ScheduleGeneration\SoftCriteria\EqualMatchesPlayedCriterion;
 use App\Services\ScheduleGeneration\SoftCriteria\HomeAwayBalanceCriterion;
+use App\Services\ScheduleGeneration\SoftCriteria\HomeAwayBreakCriterion;
 use App\Services\ScheduleGeneration\SoftCriteria\HomeVenueBalanceCriterion;
 use App\Services\ScheduleGeneration\SoftCriteria\OpponentRecencyCriterion;
 
@@ -46,6 +47,7 @@ final class ScheduleScorer
             new OpponentRecencyCriterion($context),
             new HomeAwayBalanceCriterion($context),
             new HomeVenueBalanceCriterion($context),
+            new HomeAwayBreakCriterion($context),
         ];
 
         foreach ($candidate->rounds as $roundIndex => $round) {
@@ -96,6 +98,7 @@ final class ScheduleScorer
                 'key' => $criterion->key(),
                 'label' => $criterion->label(),
                 'score' => $criterionScore,
+                'weight' => $criterion->weight($config),
             ];
 
             $messages = $criterion->messages();

@@ -87,6 +87,11 @@ final class ConsecutiveVenueCriterion implements SoftCriterion
         return $total;
     }
 
+    public function weight(GenerationConfig $config): float
+    {
+        return $config->weightVenue;
+    }
+
     public function messages(): array
     {
         return $this->messages;

@@ -291,9 +291,19 @@ class ScheduleGeneratorTest extends TestCase
         // RoundRobinConstructor's class docblock) seed: 4 teams, 4 distinct
         // owned venues, 7 rounds (two full cycles plus a 1-round leftover).
         // With the seed disabled this exercises greedy-only, which plateaus
-        // at 15.0 for this shape - this test just locks that plateau in as a
+        // at 63.0 for this shape - this test just locks that plateau in as a
         // regression guard, independent of whether the seed is ever
         // re-enabled (see plan.md for background on the scoring criteria).
+        // This plateau rose from 15.0 once HomeAwayBreakCriterion was added:
+        // the underlying candidate schedule is unchanged, but 6 consecutive
+        // home/away repeats that were previously invisible to scoring are
+        // now counted (48.0 of this total). With only 4 teams, pairTeams()'s
+        // opponent selection is close to deterministic (it always picks the
+        // single largest-gap candidate), so the randomized-restart search
+        // doesn't have much real diversity to search through for this shape
+        // - raising the criterion's weight doesn't change which candidate
+        // wins, only how much it costs. See RoundBuilder for where the
+        // pairing itself would need more diversity to actually reduce this.
         $teams = $this->teamsWithHomeVenues([1 => 100, 2 => 200, 3 => 300, 4 => 400]);
         $venues = $this->venues(100, 200, 300, 400);
 
@@ -301,7 +311,7 @@ class ScheduleGeneratorTest extends TestCase
 
         $this->assertFalse($result->report->degenerate);
         $this->assertTrue($result->report->hardConstraintsSatisfied);
-        $this->assertLessThanOrEqual(15.0, $result->report->score);
+        $this->assertLessThanOrEqual(63.0, $result->report->score);
     }
 
     public function test_exclusive_home_venue_seed_beats_greedy_once_team_count_is_large_enough()

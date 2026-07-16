@@ -31,6 +31,13 @@ interface SoftCriterion
     public function penalty(GenerationConfig $config): float;
 
     /**
+     * The configured penalty for a single instance of this criterion (e.g.
+     * one consecutive-venue occurrence, one point of match-count spread),
+     * independent of how many instances actually occurred.
+     */
+    public function weight(GenerationConfig $config): float;
+
+    /**
      * @return string[]
      */
     public function messages(): array;

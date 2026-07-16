@@ -66,6 +66,11 @@ final class OpponentRecencyCriterion implements SoftCriterion
         return $config->weightRepeat * $this->shortfallTotal;
     }
 
+    public function weight(GenerationConfig $config): float
+    {
+        return $config->weightRepeat;
+    }
+
     public function messages(): array
     {
         return $this->messages;

@@ -10,5 +10,6 @@ return [
         'repeat' => 3.0,
         'home_away' => 2.0,
         'home_venue_balance' => 6.0,
+        'home_away_break' => 8.0,
     ],
 ];

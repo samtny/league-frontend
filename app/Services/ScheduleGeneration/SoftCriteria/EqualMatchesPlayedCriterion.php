@@ -65,6 +65,11 @@ final class EqualMatchesPlayedCriterion implements SoftCriterion
         return $config->weightEquality * $this->spread;
     }
 
+    public function weight(GenerationConfig $config): float
+    {
+        return $config->weightEquality;
+    }
+
     public function messages(): array
     {
         return $this->messages;
