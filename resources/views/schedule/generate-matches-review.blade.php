@@ -45,15 +45,21 @@
     @endif
 
     @if (! empty($report->softViolationsByCriterion))
+        @php
+            // Every criterion's message starts with the team name(s) it's
+            // about (except equal_matches_played's, which is a global
+            // statement) - sorting the flattened list alphabetically is
+            // effectively sorting by team name without needing structured
+            // per-team data from the scorer.
+            $sortedMessages = collect($report->softViolationsByCriterion)->flatten()->sort(SORT_STRING | SORT_FLAG_CASE)->values();
+        @endphp
         <div class="row mb-3">
             <div class="col">
                 <div class="alert alert-warning">
                     <strong>Some preferences weren't fully met:</strong>
                     <ul class="mb-0">
-                        @foreach ($report->softViolationsByCriterion as $messages)
-                            @foreach ($messages as $message)
-                                <li>{{ $message }}</li>
-                            @endforeach
+                        @foreach ($sortedMessages as $message)
+                            <li>{{ $message }}</li>
                         @endforeach
                     </ul>
                 </div>

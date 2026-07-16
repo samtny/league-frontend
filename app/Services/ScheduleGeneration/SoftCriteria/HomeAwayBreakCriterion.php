@@ -14,6 +14,9 @@ use App\Services\ScheduleGeneration\ScoringContext;
  * home and away. A bye resets a team's "last role" the same way a bye
  * resets last-opponent/last-venue elsewhere, so a repeat either side of a
  * bye round doesn't count as consecutive.
+ *
+ * Weight is dynamic (1 / (2 * active team count)) rather than a fixed config
+ * value - experimental, ignores $config->weightHomeAwayBreak entirely.
  */
 final class HomeAwayBreakCriterion implements SoftCriterion
 {
@@ -71,12 +74,14 @@ final class HomeAwayBreakCriterion implements SoftCriterion
 
     public function penalty(GenerationConfig $config): float
     {
-        return $config->weightHomeAwayBreak * $this->breakCount;
+        return $this->weight($config) * $this->breakCount;
     }
 
     public function weight(GenerationConfig $config): float
     {
-        return $config->weightHomeAwayBreak;
+        $teamCount = count($this->context->activeTeams);
+
+        return $teamCount > 0 ? 1 / (2 * $teamCount) : 0.0;
     }
 
     public function messages(): array

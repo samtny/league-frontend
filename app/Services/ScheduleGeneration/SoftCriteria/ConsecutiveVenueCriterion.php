@@ -7,17 +7,20 @@ use App\Services\ScheduleGeneration\MatchCandidate;
 use App\Services\ScheduleGeneration\ScoringContext;
 
 /**
- * Every consecutive-same-venue occurrence costs weightVenue - a single
- * incident is still a real penalty and always scores as one (every
+ * Every consecutive-same-venue occurrence costs one instance of weight() - a
+ * single incident is still a real penalty and always scores as one (every
  * occurrence is reported in messages() regardless of team). On top of that,
- * a team hit more than once pays an *additional* weightVenue per excess
- * occurrence: two different teams each hit once costs 2x weightVenue total
- * (same as always), but one team hit twice costs 3x weightVenue (2 for the
+ * a team hit more than once pays an *additional* instance per excess
+ * occurrence: two different teams each hit once costs 2x weight() total
+ * (same as always), but one team hit twice costs 3x weight() (2 for the
  * occurrences themselves, +1 repeat-offense surcharge) - a real repeat-
  * offense pattern a greedy, whole-schedule-blind search has no mechanism to
  * avoid. "Twice" means anywhere in the schedule, not necessarily back-to-
  * back streaks of 3+: rounds 1-2 then separately rounds 6-7 both count as 2
  * occurrences for that team, same as three rounds running would.
+ *
+ * Weight is dynamic (1 / active team count) rather than a fixed config
+ * value - experimental, ignores $config->weightVenue entirely.
  */
 final class ConsecutiveVenueCriterion implements SoftCriterion
 {
@@ -75,12 +78,13 @@ final class ConsecutiveVenueCriterion implements SoftCriterion
 
     public function penalty(GenerationConfig $config): float
     {
+        $weight = $this->weight($config);
         $total = 0.0;
 
         foreach ($this->venueStreakCountByTeam as $count) {
             if ($count > 0) {
-                $total += $config->weightVenue * $count;
-                $total += $config->weightVenue * max(0, $count - 1);
+                $total += $weight * $count;
+                $total += $weight * max(0, $count - 1);
             }
         }
 
@@ -89,7 +93,9 @@ final class ConsecutiveVenueCriterion implements SoftCriterion
 
     public function weight(GenerationConfig $config): float
     {
-        return $config->weightVenue;
+        $teamCount = count($this->context->activeTeams);
+
+        return $teamCount > 0 ? 1 / $teamCount : 0.0;
     }
 
     public function messages(): array
