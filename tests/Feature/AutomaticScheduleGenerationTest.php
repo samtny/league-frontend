@@ -128,8 +128,9 @@ class AutomaticScheduleGenerationTest extends TestCase
             $this->assertNotSame($inactiveVenue->id, $match->venue_id);
         }
 
-        // No back-to-back opponent repeats and no team double-booked per round.
-        $lastOpponent = [];
+        // No team double-booked per round. (Repeating the same opponent in
+        // consecutive rounds is a soft criterion, not a hard constraint, so
+        // it's no longer asserted here - see ScheduleScorerTest for that.)
         foreach ($rounds as $round) {
             $roundMatches = $matches->where('round_id', $round->id)->whereNotNull('home_team_id');
             $seen = [];
@@ -139,17 +140,7 @@ class AutomaticScheduleGenerationTest extends TestCase
                     $this->assertArrayNotHasKey($teamId, $seen, "team {$teamId} double-booked in round {$round->id}");
                     $seen[$teamId] = true;
                 }
-
-                $this->assertNotSame($lastOpponent[$match->home_team_id] ?? null, $match->away_team_id);
-                $this->assertNotSame($lastOpponent[$match->away_team_id] ?? null, $match->home_team_id);
             }
-
-            $newLastOpponent = [];
-            foreach ($roundMatches as $match) {
-                $newLastOpponent[$match->home_team_id] = $match->away_team_id;
-                $newLastOpponent[$match->away_team_id] = $match->home_team_id;
-            }
-            $lastOpponent = $newLastOpponent;
         }
 
         // Matches played spread across active teams should be minimal (equal or off by one).

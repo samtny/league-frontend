@@ -82,12 +82,7 @@ final class ScheduleGenerator
         while ($attempts < $config->maxAttempts && $this->elapsedMs($startedAt) < $config->timeBudgetMs) {
             $attempts++;
 
-            try {
-                $candidate = $this->attempt($roundDates, $activeTeams, $activeVenues, true);
-            } catch (UnableToBuildRoundException) {
-                continue;
-            }
-
+            $candidate = $this->attempt($roundDates, $activeTeams, $activeVenues);
             $report = $this->scorer->score($candidate, $activeTeams, $activeVenues, $config);
 
             if (! $report->hardConstraintsSatisfied) {
@@ -105,14 +100,15 @@ final class ScheduleGenerator
         }
 
         if ($best === null) {
-            // Every strict attempt either failed to complete or never satisfied
-            // the hard constraints within budget. Run one relaxed attempt
-            // (opponent-repeat rejection off) purely so there's a concrete
-            // schedule to show the admin, honestly flagged as degenerate.
-            $fallback = $this->attempt($roundDates, $activeTeams, $activeVenues, false);
+            // Every attempt within budget failed to satisfy the hard
+            // constraints (in practice RoundBuilder's own construction can't
+            // violate any of the remaining ones, so this shouldn't happen -
+            // but it keeps a concrete, honestly-flagged-degenerate schedule
+            // available if it ever does). Run one more attempt purely so
+            // there's something to show the admin.
+            $fallback = $this->attempt($roundDates, $activeTeams, $activeVenues);
             $report = $this->scorer->score($fallback, $activeTeams, $activeVenues, $config);
-            $reason = "Could not find a schedule that avoids repeat opponents in back-to-back rounds within {$attempts} attempts. "
-                .'This usually means there are too few active teams for the number of rounds.';
+            $reason = "Could not find a schedule that satisfies all required constraints within {$attempts} attempts.";
 
             return new GenerationResult(
                 $fallback,
@@ -138,7 +134,7 @@ final class ScheduleGenerator
      * @param TeamInput[] $activeTeams
      * @param VenueInput[] $activeVenues
      */
-    private function attempt(array $roundDates, array $activeTeams, array $activeVenues, bool $enforceNoConsecutiveOpponent): ScheduleCandidate
+    private function attempt(array $roundDates, array $activeTeams, array $activeVenues): ScheduleCandidate
     {
         $builder = new RoundBuilder($this->rng);
 
@@ -147,7 +143,6 @@ final class ScheduleGenerator
         $homeCountByTeam = array_fill_keys($teamIds, 0);
         $awayCountByTeam = array_fill_keys($teamIds, 0);
         $homeVenueAppearancesByTeam = array_fill_keys($teamIds, 0);
-        $lastOpponentByTeam = [];
         $lastVenueByTeam = [];
         $lastMeetingRoundByPair = [];
 
@@ -159,14 +154,12 @@ final class ScheduleGenerator
                 $activeTeams,
                 $activeVenues,
                 $byeCountByTeam,
-                $lastOpponentByTeam,
                 $lastVenueByTeam,
                 $lastMeetingRoundByPair,
                 $homeCountByTeam,
                 $awayCountByTeam,
                 $homeVenueAppearancesByTeam,
                 $index,
-                $enforceNoConsecutiveOpponent,
             );
         }
 

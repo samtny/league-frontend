@@ -155,19 +155,20 @@ class ScheduleGeneratorTest extends TestCase
         $this->assertSame([], $result->candidate->rounds);
     }
 
-    public function test_exactly_two_teams_over_many_rounds_is_reported_as_degenerate()
+    public function test_exactly_two_teams_over_many_rounds_scores_heavily_on_repeat_opponent_but_is_not_degenerate()
     {
         // With only 2 active teams, they are forced to face each other every
-        // round they both play - the no-repeat-opponent hard constraint can
-        // never hold across consecutive played rounds, so this must be
-        // surfaced honestly rather than silently committing an invalid
-        // schedule.
+        // round they both play - repeating the same opponent in consecutive
+        // rounds is a soft criterion now, not a hard rejection, so this
+        // commits a valid (if heavily-penalized) schedule rather than being
+        // flagged degenerate.
         $config = new GenerationConfig(maxAttempts: 20, timeBudgetMs: 500);
 
         $result = $this->generator(9)->generate($this->dates(5), $this->teams(1, 2), $this->venues(10), $config);
 
-        $this->assertTrue($result->report->degenerate);
-        $this->assertFalse($result->report->hardConstraintsSatisfied);
+        $this->assertFalse($result->report->degenerate);
+        $this->assertTrue($result->report->hardConstraintsSatisfied);
+        $this->assertArrayHasKey('repeat_opponent_consecutive_rounds', $result->report->softViolationsByCriterion);
     }
 
     public function test_respects_the_max_attempts_budget()

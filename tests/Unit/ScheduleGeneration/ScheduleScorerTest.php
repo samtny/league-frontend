@@ -62,11 +62,17 @@ class ScheduleScorerTest extends TestCase
         $this->assertSame(0.0, $report->score);
     }
 
-    public function test_back_to_back_opponent_repeat_is_a_hard_violation()
+    public function test_back_to_back_opponent_repeat_is_a_soft_penalty()
     {
+        // No longer a hard constraint - RoundBuilder used to actively avoid
+        // this and ScheduleScorer used to reject the candidate outright; now
+        // it's just penalized like any other soft criterion.
         $teams = $this->teams(1, 2, 3, 4);
         $venues = $this->venues(10, 20);
+        $config = new GenerationConfig(weightVenue: 0.0, weightEquality: 0.0, weightRepeat: 0.0, weightHomeAway: 0.0, weightHomeVenueBalance: 0.0, weightHomeAwayBreak: 0.0, weightConsecutiveOpponentRepeat: 4.0);
 
+        // Both pairs repeat their round-1 matchup in round 2 (1v2 and 3v4
+        // each meet again immediately) - two occurrences total.
         $candidate = new ScheduleCandidate([
             new RoundCandidate($this->date('2026-07-06'), [
                 new MatchCandidate(10, 'Venue 10', 1, 2),
@@ -78,13 +84,14 @@ class ScheduleScorerTest extends TestCase
             ], []),
         ]);
 
-        $report = (new ScheduleScorer)->score($candidate, $teams, $venues, new GenerationConfig);
+        $report = (new ScheduleScorer)->score($candidate, $teams, $venues, $config);
 
-        $this->assertFalse($report->hardConstraintsSatisfied);
-        $this->assertNotEmpty(array_filter(
-            $report->hardViolations,
-            fn (string $v) => str_contains($v, 'consecutive rounds'),
-        ));
+        $this->assertTrue($report->hardConstraintsSatisfied);
+        $this->assertSame(8.0, $report->score);
+        $this->assertArrayHasKey('repeat_opponent_consecutive_rounds', $report->softViolationsByCriterion);
+        $this->assertCount(2, $report->softViolationsByCriterion['repeat_opponent_consecutive_rounds']);
+        $messages = implode(' ', $report->softViolationsByCriterion['repeat_opponent_consecutive_rounds']);
+        $this->assertStringContainsString('consecutive rounds', $messages);
     }
 
     public function test_inactive_team_assigned_is_a_hard_violation()
@@ -281,7 +288,7 @@ class ScheduleScorerTest extends TestCase
     {
         $teams = $this->teams(1, 2);
         $venues = $this->venues(10);
-        $config = new GenerationConfig(weightVenue: 0.0, weightEquality: 0.0, weightRepeat: 0.0, weightHomeAway: 2.0, weightHomeAwayBreak: 0.0);
+        $config = new GenerationConfig(weightVenue: 0.0, weightEquality: 0.0, weightRepeat: 0.0, weightHomeAway: 2.0, weightHomeAwayBreak: 0.0, weightConsecutiveOpponentRepeat: 0.0);
 
         // Team 1 is home 3 times in a row (diff of 3, over by 2 once |diff|-1 = 2).
         $candidate = new ScheduleCandidate([
@@ -455,7 +462,7 @@ class ScheduleScorerTest extends TestCase
     {
         $teams = $this->teams(1, 2);
         $venues = $this->venues(10);
-        $config = new GenerationConfig(weightVenue: 0.0, weightEquality: 0.0, weightRepeat: 0.0, weightHomeAway: 0.0, weightHomeVenueBalance: 0.0, weightHomeAwayBreak: 3.0);
+        $config = new GenerationConfig(weightVenue: 0.0, weightEquality: 0.0, weightRepeat: 0.0, weightHomeAway: 0.0, weightHomeVenueBalance: 0.0, weightHomeAwayBreak: 3.0, weightConsecutiveOpponentRepeat: 0.0);
 
         // Team 1 is home for all 3 rounds (2 consecutive-round transitions:
         // round1->2, round2->3), team 2 is away for all 3 - 4 break events

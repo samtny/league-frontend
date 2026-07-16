@@ -23,7 +23,7 @@
         <div class="row mb-3">
             <div class="col">
                 <div class="alert alert-success">
-                    All required constraints were satisfied (no repeated back-to-back opponents, and only active teams/venues were used).
+                    All required constraints were satisfied (only active teams and venues were used, with no scheduling conflicts).
                 </div>
             </div>
         </div>

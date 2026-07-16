@@ -22,7 +22,6 @@ class RoundBuilderTest extends TestCase
         $venues = [new VenueInput(100, 'Venue A'), new VenueInput(200, 'Venue B')];
 
         $byeCountByTeam = [1 => 0, 2 => 0];
-        $lastOpponentByTeam = [];
         $lastVenueByTeam = [1 => 100]; // team 1 played at their own venue last round.
         $lastMeetingRoundByPair = [];
         $homeCountByTeam = [1 => 0, 2 => 0];
@@ -34,14 +33,12 @@ class RoundBuilderTest extends TestCase
             [$teamA, $teamB],
             $venues,
             $byeCountByTeam,
-            $lastOpponentByTeam,
             $lastVenueByTeam,
             $lastMeetingRoundByPair,
             $homeCountByTeam,
             $awayCountByTeam,
             $homeVenueAppearancesByTeam,
             1,
-            true,
         );
 
         $this->assertCount(1, $round->matches);

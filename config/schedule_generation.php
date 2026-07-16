@@ -5,11 +5,12 @@ return [
     'time_budget_ms' => env('SCHEDULE_GENERATION_TIME_BUDGET_MS', 1500),
 
     'weights' => [
-        'venue' => 5.0,
-        'equality' => 8.0,
-        'repeat' => 3.0,
-        'home_away' => 2.0,
-        'home_venue_balance' => 6.0,
-        'home_away_break' => 8.0,
+        'venue' => 1.0,
+        'equality' => 1.0,
+        'repeat' => 1.0,
+        'home_away' => 1.0,
+        'home_venue_balance' => 1.0,
+        'home_away_break' => 1.0,
+        'consecutive_opponent_repeat' => 1.0,
     ],
 ];

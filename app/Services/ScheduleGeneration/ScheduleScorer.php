@@ -7,13 +7,13 @@ use App\Services\ScheduleGeneration\HardConstraints\ByeAndMatchConflictConstrain
 use App\Services\ScheduleGeneration\HardConstraints\DoubleBookedTeamConstraint;
 use App\Services\ScheduleGeneration\HardConstraints\InactiveTeamConstraint;
 use App\Services\ScheduleGeneration\HardConstraints\InactiveVenueConstraint;
-use App\Services\ScheduleGeneration\HardConstraints\RepeatOpponentConsecutiveRoundsConstraint;
 use App\Services\ScheduleGeneration\SoftCriteria\ConsecutiveVenueCriterion;
 use App\Services\ScheduleGeneration\SoftCriteria\EqualMatchesPlayedCriterion;
 use App\Services\ScheduleGeneration\SoftCriteria\HomeAwayBalanceCriterion;
 use App\Services\ScheduleGeneration\SoftCriteria\HomeAwayBreakCriterion;
 use App\Services\ScheduleGeneration\SoftCriteria\HomeVenueBalanceCriterion;
 use App\Services\ScheduleGeneration\SoftCriteria\OpponentRecencyCriterion;
+use App\Services\ScheduleGeneration\SoftCriteria\RepeatOpponentConsecutiveRoundsCriterion;
 
 /**
  * Pure, randomness-free scoring: replays a candidate round by round, feeding
@@ -36,7 +36,6 @@ final class ScheduleScorer
             new InactiveTeamConstraint($context),
             new DoubleBookedTeamConstraint($context),
             new InactiveVenueConstraint($context),
-            new RepeatOpponentConsecutiveRoundsConstraint($context),
             new AwayTeamAtOwnVenueConstraint($context),
             new ByeAndMatchConflictConstraint($context),
         ];
@@ -48,6 +47,7 @@ final class ScheduleScorer
             new HomeAwayBalanceCriterion($context),
             new HomeVenueBalanceCriterion($context),
             new HomeAwayBreakCriterion($context),
+            new RepeatOpponentConsecutiveRoundsCriterion($context),
         ];
 
         foreach ($candidate->rounds as $roundIndex => $round) {

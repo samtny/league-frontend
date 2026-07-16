@@ -19,28 +19,23 @@ final class RoundBuilder
      * @param TeamInput[] $activeTeams
      * @param VenueInput[] $activeVenues
      * @param array<int, int> $byeCountByTeam team id => byes taken so far (mutated)
-     * @param array<int, int|null> $lastOpponentByTeam team id => opponent in the immediately preceding round (mutated)
      * @param array<int, int|null> $lastVenueByTeam team id => venue played at in the immediately preceding round (mutated)
      * @param array<string, int> $lastMeetingRoundByPair pair key => round index of last meeting (mutated)
      * @param array<int, int> $homeCountByTeam (mutated)
      * @param array<int, int> $awayCountByTeam (mutated)
      * @param array<int, int> $homeVenueAppearancesByTeam team id => times played at their own home venue so far (mutated)
-     *
-     * @throws UnableToBuildRoundException
      */
     public function build(
         \DateTimeImmutable $date,
         array $activeTeams,
         array $activeVenues,
         array &$byeCountByTeam,
-        array &$lastOpponentByTeam,
         array &$lastVenueByTeam,
         array &$lastMeetingRoundByPair,
         array &$homeCountByTeam,
         array &$awayCountByTeam,
         array &$homeVenueAppearancesByTeam,
         int $roundIndex,
-        bool $enforceNoConsecutiveOpponent,
     ): RoundCandidate {
         $capacity = min(intdiv(count($activeTeams), 2), count($activeVenues));
         $byeSlots = count($activeTeams) - 2 * $capacity;
@@ -55,20 +50,17 @@ final class RoundBuilder
             $byeCountByTeam[$team->id]++;
         }
 
-        $pairs = $this->pairTeams($playingTeams, $lastOpponentByTeam, $lastMeetingRoundByPair, $roundIndex, $enforceNoConsecutiveOpponent);
+        $pairs = $this->pairTeams($playingTeams, $lastMeetingRoundByPair, $roundIndex);
 
         $matches = $this->assignVenuesAndSides($pairs, $activeVenues, $lastVenueByTeam, $homeCountByTeam, $awayCountByTeam, $homeVenueAppearancesByTeam);
 
         foreach ($matches as $match) {
-            $lastOpponentByTeam[$match->homeTeamId] = $match->awayTeamId;
-            $lastOpponentByTeam[$match->awayTeamId] = $match->homeTeamId;
             $lastVenueByTeam[$match->homeTeamId] = $match->venueId;
             $lastVenueByTeam[$match->awayTeamId] = $match->venueId;
             $lastMeetingRoundByPair[PairKey::for($match->homeTeamId, $match->awayTeamId)] = $roundIndex;
         }
 
         foreach ($byeTeams as $team) {
-            $lastOpponentByTeam[$team->id] = null;
             $lastVenueByTeam[$team->id] = null;
         }
 
@@ -77,18 +69,13 @@ final class RoundBuilder
 
     /**
      * @param TeamInput[] $playingTeams
-     * @param array<int, int|null> $lastOpponentByTeam
      * @param array<string, int> $lastMeetingRoundByPair
      * @return array<int, array{0: TeamInput, 1: TeamInput}>
-     *
-     * @throws UnableToBuildRoundException
      */
     private function pairTeams(
         array $playingTeams,
-        array $lastOpponentByTeam,
         array $lastMeetingRoundByPair,
         int $roundIndex,
-        bool $enforceNoConsecutiveOpponent,
     ): array {
         $remaining = $this->rng->shuffle($playingTeams);
         $pairs = [];
@@ -99,20 +86,10 @@ final class RoundBuilder
             $candidates = [];
 
             foreach ($remaining as $index => $other) {
-                if ($enforceNoConsecutiveOpponent && ($lastOpponentByTeam[$team->id] ?? null) === $other->id) {
-                    continue;
-                }
-
                 $lastMet = $lastMeetingRoundByPair[PairKey::for($team->id, $other->id)] ?? null;
                 $gap = OpponentGapCalculator::sinceLastMeeting($roundIndex, $lastMet) ?? PHP_INT_MAX;
 
                 $candidates[] = ['index' => $index, 'gap' => $gap];
-            }
-
-            if (empty($candidates)) {
-                throw new UnableToBuildRoundException(
-                    "No valid opponent for team #{$team->id} without repeating the immediately preceding matchup."
-                );
             }
 
             usort($candidates, fn (array $a, array $b) => $b['gap'] <=> $a['gap']);
