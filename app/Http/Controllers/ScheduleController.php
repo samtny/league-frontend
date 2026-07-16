@@ -78,22 +78,17 @@ class ScheduleController extends Controller
             'name' => 'required|max:255',
         ]);
 
-        $name = $request->name;
         $division_id = $request->division_id;
-        $start_date = $request->start_date;
-        $end_date = $request->end_date;
-        $weekday = $request->weekday;
-        $generate = $request->generate;
 
         $schedule = new Schedule;
 
-        $schedule->name = $name;
+        $schedule->name = $request->name;
         $schedule->association_id = $association->id;
         $schedule->series_id = $series->id;
         $schedule->division_id = $division_id;
-        $schedule->start_date = $start_date;
-        $schedule->end_date = $end_date;
-        $schedule->weekday = $weekday;
+        $schedule->start_date = $request->start_date;
+        $schedule->end_date = $request->end_date;
+        $schedule->weekday = $request->weekday;
 
         $division = Division::where(['id' => $division_id])->first();
 
@@ -101,120 +96,206 @@ class ScheduleController extends Controller
 
         $schedule->save();
 
-        if ($generate === 'manual') {
-            $this->createRoundsManual($start_date, $end_date, $weekday, $schedule);
-        } elseif ($generate === 'random') {
-            $this->createRoundsRandom($start_date, $end_date, $weekday, $schedule);
-        }
+        // Same as editing a schedule: if start/end/weekday are all present,
+        // Rounds are generated to match right away - no separate "Generate
+        // Schedule" step during creation.
+        $this->regenerateRounds($schedule);
 
         return redirect()->route('series.schedules', ['association' => $association, 'series' => $series]);
     }
 
     public function update(Association $association, Schedule $schedule, Request $request)
     {
-        $validatedData = $request->validate([
+        $request->validate([
             'name' => 'required|max:255',
         ]);
 
-        $schedule->name = $request->name;
-        $schedule->division_id = $request->division_id;
-        $schedule->start_date = $request->start_date;
-        $schedule->end_date = $request->end_date;
-        $schedule->weekday = $request->weekday;
-        $schedule->archived = $request->archived;
+        $pendingValues = [
+            'name' => $request->name,
+            'division_id' => $request->division_id,
+            'start_date' => $request->start_date,
+            'end_date' => $request->end_date,
+            'weekday' => $request->weekday,
+            'archived' => $request->archived,
+        ];
 
-        $schedule->save();
+        $needsRegeneration = $this->roundsNeedRegeneration($schedule, $pendingValues['start_date'], $pendingValues['end_date'], $pendingValues['weekday']);
+
+        if ($schedule->rounds->isNotEmpty() && $needsRegeneration) {
+            session([$this->sessionKey($schedule, 'update') => $pendingValues]);
+
+            return redirect()->route('schedule.update.confirm', ['association' => $association, 'schedule' => $schedule]);
+        }
+
+        $this->applyScheduleUpdate($schedule, $pendingValues);
+
+        if ($needsRegeneration) {
+            $this->regenerateRounds($schedule);
+        }
 
         $request->session()->flash('message', __('Successfully updated schedule'));
 
         return redirect()->route('schedule.view', ['association' => $association, 'schedule' => $schedule]);
-
     }
 
     /**
-     * Entry point for the Generate Rounds wizard. If the schedule is missing
-     * a field round generation depends on (start/end date, weekday), that's
-     * caught here before any destructive step is even offered - createRounds*
-     * fails silently (e.g. strtolower(null) never matches a weekday) rather
-     * than throwing, so without this check a user could delete their
-     * existing rounds and end up with none at all.  If rounds already exist,
-     * the user must confirm deleting them first; otherwise they go straight
-     * to choosing an assignment method.
+     * Shown instead of saving directly when Rounds already exist for this
+     * Schedule but don't match the submitted weekday/start/end date - saving
+     * as-is would leave them stale. The pending form values were stashed in
+     * the session by update() above.
      */
-    public function generateRounds(Association $association, Schedule $schedule)
+    public function updateConfirm(Association $association, Schedule $schedule)
+    {
+        if (session($this->sessionKey($schedule, 'update')) === null) {
+            return redirect()->route('schedule.edit', ['association' => $association, 'schedule' => $schedule]);
+        }
+
+        return view('schedule.update-confirm', [
+            'association' => $association,
+            'schedule' => $schedule,
+        ]);
+    }
+
+    /**
+     * Commits the pending edit stashed by update(): saves the Schedule, then
+     * deletes and regenerates the (empty) Rounds to match its new
+     * weekday/start/end date.
+     */
+    public function updateConfirmAccept(Association $association, Schedule $schedule, Request $request)
+    {
+        $pendingValues = session($this->sessionKey($schedule, 'update'));
+
+        if ($pendingValues === null) {
+            return redirect()->route('schedule.edit', ['association' => $association, 'schedule' => $schedule]);
+        }
+
+        $this->applyScheduleUpdate($schedule, $pendingValues);
+        $this->regenerateRounds($schedule);
+
+        session()->forget($this->sessionKey($schedule, 'update'));
+
+        $request->session()->flash('message', __('Successfully updated schedule and regenerated rounds'));
+
+        return redirect()->route('schedule.view', ['association' => $association, 'schedule' => $schedule]);
+    }
+
+    private function applyScheduleUpdate(Schedule $schedule, array $values): void
+    {
+        $schedule->name = $values['name'];
+        $schedule->division_id = $values['division_id'];
+        $schedule->start_date = $values['start_date'];
+        $schedule->end_date = $values['end_date'];
+        $schedule->weekday = $values['weekday'];
+        $schedule->archived = $values['archived'];
+
+        $schedule->save();
+    }
+
+    /**
+     * True when the round dates implied by the submitted weekday/start/end
+     * date don't match the dates of the Rounds that already exist for this
+     * schedule - i.e. leaving Rounds as-is would make them stale relative to
+     * the Schedule. Blank fields never trigger regeneration on their own,
+     * since there's nothing to generate from (mirrors scheduleGenerationErrors).
+     */
+    private function roundsNeedRegeneration(Schedule $schedule, $start_date, $end_date, $weekday): bool
+    {
+        if (empty($start_date) || empty($end_date) || empty($weekday)) {
+            return false;
+        }
+
+        $existingDates = $schedule->rounds->pluck('start_date')
+            ->map(fn ($date) => $date->format('Y-m-d'))
+            ->sort()->values()->all();
+
+        $expectedDates = collect((new RoundDatePlanner)->datesFor($start_date, $end_date, $weekday))
+            ->map(fn ($date) => $date->format('Y-m-d'))
+            ->sort()->values()->all();
+
+        return $existingDates !== $expectedDates;
+    }
+
+    /**
+     * Deletes and rebuilds this schedule's Rounds (and their empty
+     * placeholder Matches) from its own persisted weekday/start/end date.
+     * No-op past the truncate if those fields aren't all present.
+     */
+    private function regenerateRounds(Schedule $schedule): void
+    {
+        $this->truncateRounds($schedule);
+
+        if (empty($this->scheduleGenerationErrors($schedule))) {
+            $this->createRoundsManual($schedule->start_date, $schedule->end_date, $schedule->weekday, $schedule);
+        }
+    }
+
+    /**
+     * Entry point for the Generate Matches wizard. If the schedule is
+     * missing a field generation depends on (start/end date, weekday),
+     * that's caught here before either option is even offered -
+     * createRoundsManual/generateAutomaticCandidate fail silently (e.g.
+     * strtolower(null) never matches a weekday) rather than throwing.
+     * Otherwise always goes straight to the Clear/Automatic choice: Clear
+     * only nulls out home_team_id/away_team_id (see clearMatchAssignments()),
+     * so it doesn't need a separate destructive-action confirmation step.
+     */
+    public function generateMatches(Association $association, Schedule $schedule)
     {
         $missingFields = $this->scheduleGenerationErrors($schedule);
 
         if (! empty($missingFields)) {
-            return view('schedule.generate-rounds-invalid', [
+            return view('schedule.generate-matches-invalid', [
                 'association' => $association,
                 'schedule' => $schedule,
                 'missingFields' => $missingFields,
             ]);
         }
 
-        if ($schedule->rounds->isNotEmpty()) {
-            return view('schedule.generate-rounds-confirm', [
-                'association' => $association,
-                'schedule' => $schedule,
-            ]);
-        }
-
-        return view('schedule.generate-rounds-select', [
+        return view('schedule.generate-matches-select', [
             'association' => $association,
             'schedule' => $schedule,
         ]);
     }
 
-    public function generateRoundsDelete(Association $association, Schedule $schedule)
-    {
-        if (! empty($this->scheduleGenerationErrors($schedule))) {
-            return redirect()->route('schedule.generate-rounds', ['association' => $association, 'schedule' => $schedule]);
-        }
-
-        $this->truncateRounds($schedule);
-
-        return redirect()->route('schedule.generate-rounds', ['association' => $association, 'schedule' => $schedule]);
-    }
-
-    public function generateRoundsStore(Association $association, Schedule $schedule, Request $request)
+    public function generateMatchesStore(Association $association, Schedule $schedule, Request $request)
     {
         $request->validate([
-            'generate' => 'required|in:manual,random',
+            'generate' => 'required|in:clear,random',
         ]);
 
         if (! empty($this->scheduleGenerationErrors($schedule))) {
-            return redirect()->route('schedule.generate-rounds', ['association' => $association, 'schedule' => $schedule]);
+            return redirect()->route('schedule.generate-matches', ['association' => $association, 'schedule' => $schedule]);
         }
 
-        $this->truncateRounds($schedule);
+        if ($request->generate === 'clear') {
+            $this->clearMatchAssignments($schedule);
 
-        if ($request->generate === 'manual') {
-            $this->createRoundsManual($schedule->start_date, $schedule->end_date, $schedule->weekday, $schedule);
+            $request->session()->flash('message', __('Successfully cleared match assignments'));
 
             return redirect()->route('schedule.view', ['association' => $association, 'schedule' => $schedule]);
         }
 
+        $this->truncateRounds($schedule);
         $this->stashGeneratedCandidate($schedule, $this->generateAutomaticCandidate($schedule));
 
-        return redirect()->route('schedule.generate-rounds.review', ['association' => $association, 'schedule' => $schedule]);
+        return redirect()->route('schedule.generate-matches.review', ['association' => $association, 'schedule' => $schedule]);
     }
 
     /**
      * Shows the best candidate found by automatic generation, held in the
-     * session since generateRoundsStore() - nothing is persisted to
+     * session since generateMatchesStore() - nothing is persisted to
      * rounds/matches until the admin explicitly accepts it.
      */
-    public function generateRoundsReview(Association $association, Schedule $schedule)
+    public function generateMatchesReview(Association $association, Schedule $schedule)
     {
         $candidateData = session($this->sessionKey($schedule, 'candidate'));
         $reportData = session($this->sessionKey($schedule, 'report'));
 
         if ($candidateData === null || $reportData === null) {
-            return redirect()->route('schedule.generate-rounds', ['association' => $association, 'schedule' => $schedule]);
+            return redirect()->route('schedule.generate-matches', ['association' => $association, 'schedule' => $schedule]);
         }
 
-        return view('schedule.generate-rounds-review', [
+        return view('schedule.generate-matches-review', [
             'association' => $association,
             'schedule' => $schedule,
             'candidate' => ScheduleCandidate::fromArray($candidateData),
@@ -228,12 +309,12 @@ class ScheduleController extends Controller
      * session rather than re-running generation, so what gets persisted is
      * guaranteed to match what was shown on the review screen.
      */
-    public function generateRoundsAccept(Association $association, Schedule $schedule, Request $request)
+    public function generateMatchesAccept(Association $association, Schedule $schedule, Request $request)
     {
         $candidateData = session($this->sessionKey($schedule, 'candidate'));
 
         if ($candidateData === null) {
-            return redirect()->route('schedule.generate-rounds', ['association' => $association, 'schedule' => $schedule]);
+            return redirect()->route('schedule.generate-matches', ['association' => $association, 'schedule' => $schedule]);
         }
 
         $candidate = ScheduleCandidate::fromArray($candidateData);
@@ -250,15 +331,15 @@ class ScheduleController extends Controller
         return redirect()->route('schedule.view', ['association' => $association, 'schedule' => $schedule]);
     }
 
-    public function generateRoundsRetry(Association $association, Schedule $schedule)
+    public function generateMatchesRetry(Association $association, Schedule $schedule)
     {
         if (! empty($this->scheduleGenerationErrors($schedule))) {
-            return redirect()->route('schedule.generate-rounds', ['association' => $association, 'schedule' => $schedule]);
+            return redirect()->route('schedule.generate-matches', ['association' => $association, 'schedule' => $schedule]);
         }
 
         $this->stashGeneratedCandidate($schedule, $this->generateAutomaticCandidate($schedule));
 
-        return redirect()->route('schedule.generate-rounds.review', ['association' => $association, 'schedule' => $schedule]);
+        return redirect()->route('schedule.generate-matches.review', ['association' => $association, 'schedule' => $schedule]);
     }
 
     /**
@@ -306,11 +387,6 @@ class ScheduleController extends Controller
 
             $round->createMatches();
         }
-    }
-
-    private function createRoundsRandom($start_date, $end_date, $weekday, $schedule)
-    {
-        // TODO: automatic random assignment not yet implemented.
     }
 
     /**
@@ -386,6 +462,18 @@ class ScheduleController extends Controller
                 $match->save();
             }
         }
+    }
+
+    /**
+     * Clears Home/Away team assignments on this schedule's Matches without
+     * touching the Round/Match rows themselves.
+     */
+    private function clearMatchAssignments(Schedule $schedule): void
+    {
+        PLMatch::where('schedule_id', $schedule->id)->update([
+            'home_team_id' => null,
+            'away_team_id' => null,
+        ]);
     }
 
     private function truncateRounds(Schedule $schedule)

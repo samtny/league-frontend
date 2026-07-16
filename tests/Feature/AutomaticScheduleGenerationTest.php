@@ -56,14 +56,14 @@ class AutomaticScheduleGenerationTest extends TestCase
     {
         ['association' => $association, 'schedule' => $schedule] = $this->buildFixture();
 
-        $response = $this->post(route('schedule.generate-rounds.store', ['association' => $association, 'schedule' => $schedule]), [
+        $response = $this->post(route('schedule.generate-matches.store', ['association' => $association, 'schedule' => $schedule]), [
             'generate' => 'random',
         ]);
 
-        $response->assertRedirect(route('schedule.generate-rounds.review', ['association' => $association, 'schedule' => $schedule]));
+        $response->assertRedirect(route('schedule.generate-matches.review', ['association' => $association, 'schedule' => $schedule]));
         $this->assertSame(0, Round::where('schedule_id', $schedule->id)->count());
 
-        $review = $this->get(route('schedule.generate-rounds.review', ['association' => $association, 'schedule' => $schedule]));
+        $review = $this->get(route('schedule.generate-matches.review', ['association' => $association, 'schedule' => $schedule]));
         $review->assertStatus(200);
         $review->assertSee('Accept');
         $review->assertSee('Discard');
@@ -73,11 +73,11 @@ class AutomaticScheduleGenerationTest extends TestCase
     {
         ['association' => $association, 'schedule' => $schedule, 'inactiveVenue' => $inactiveVenue] = $this->buildFixture();
 
-        $this->post(route('schedule.generate-rounds.store', ['association' => $association, 'schedule' => $schedule]), [
+        $this->post(route('schedule.generate-matches.store', ['association' => $association, 'schedule' => $schedule]), [
             'generate' => 'random',
         ]);
 
-        $response = $this->post(route('schedule.generate-rounds.accept', ['association' => $association, 'schedule' => $schedule]));
+        $response = $this->post(route('schedule.generate-matches.accept', ['association' => $association, 'schedule' => $schedule]));
 
         $response->assertRedirect(route('schedule.view', ['association' => $association, 'schedule' => $schedule]));
 
@@ -137,13 +137,13 @@ class AutomaticScheduleGenerationTest extends TestCase
     {
         ['association' => $association, 'schedule' => $schedule] = $this->buildFixture();
 
-        $this->post(route('schedule.generate-rounds.store', ['association' => $association, 'schedule' => $schedule]), [
+        $this->post(route('schedule.generate-matches.store', ['association' => $association, 'schedule' => $schedule]), [
             'generate' => 'random',
         ]);
 
-        $response = $this->post(route('schedule.generate-rounds.retry', ['association' => $association, 'schedule' => $schedule]));
+        $response = $this->post(route('schedule.generate-matches.retry', ['association' => $association, 'schedule' => $schedule]));
 
-        $response->assertRedirect(route('schedule.generate-rounds.review', ['association' => $association, 'schedule' => $schedule]));
+        $response->assertRedirect(route('schedule.generate-matches.review', ['association' => $association, 'schedule' => $schedule]));
         $this->assertSame(0, Round::where('schedule_id', $schedule->id)->count());
         $this->assertNotNull(session("schedule_generation.{$schedule->id}.candidate"));
     }
@@ -152,9 +152,9 @@ class AutomaticScheduleGenerationTest extends TestCase
     {
         ['association' => $association, 'schedule' => $schedule] = $this->buildFixture();
 
-        $response = $this->get(route('schedule.generate-rounds.review', ['association' => $association, 'schedule' => $schedule]));
+        $response = $this->get(route('schedule.generate-matches.review', ['association' => $association, 'schedule' => $schedule]));
 
-        $response->assertRedirect(route('schedule.generate-rounds', ['association' => $association, 'schedule' => $schedule]));
+        $response->assertRedirect(route('schedule.generate-matches', ['association' => $association, 'schedule' => $schedule]));
     }
 
     public function test_a_team_is_never_persisted_as_away_at_their_own_home_venue()
@@ -167,10 +167,10 @@ class AutomaticScheduleGenerationTest extends TestCase
         $activeTeams[1]->update(['venue_id' => $activeVenues[0]->id]);
         $activeTeams[2]->update(['venue_id' => $activeVenues[1]->id]);
 
-        $this->post(route('schedule.generate-rounds.store', ['association' => $association, 'schedule' => $schedule]), [
+        $this->post(route('schedule.generate-matches.store', ['association' => $association, 'schedule' => $schedule]), [
             'generate' => 'random',
         ]);
-        $this->post(route('schedule.generate-rounds.accept', ['association' => $association, 'schedule' => $schedule]));
+        $this->post(route('schedule.generate-matches.accept', ['association' => $association, 'schedule' => $schedule]));
 
         $homeVenueIdByTeam = Team::where('association_id', $association->id)->pluck('venue_id', 'id');
 

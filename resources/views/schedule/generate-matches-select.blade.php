@@ -1,25 +1,26 @@
 @extends('layouts.admin')
 
-@section('title', 'Generate Rounds')
+@section('title', 'Generate Matches')
 
 @section('breadcrumb')
-    {{ Breadcrumbs::render('schedule.generate-rounds', $schedule) }}
+    {{ Breadcrumbs::render('schedule.generate-matches', $schedule) }}
 @endsection
 
 @section('content')
     <div class="row">
-        <h1 class="col">Generate Rounds</h1>
+        <h1 class="col">Generate Matches</h1>
     </div>
     <div class="form">
-        <form method="POST" action="{{ route('schedule.generate-rounds.store', ['association' => $association, 'schedule' => $schedule]) }}">
+        <form method="POST" action="{{ route('schedule.generate-matches.store', ['association' => $association, 'schedule' => $schedule]) }}">
             @csrf
 
             <div class="mb-3">
                 <legend>Assignment Method</legend>
                 <fieldset>
                     <div class="form-check">
-                        <input class="form-check-input" type="radio" id="generate_manual" name="generate" value="manual" <?php echo old('generate', 'manual') === 'manual' ? ' checked' : ''; ?>>
-                        <label class="form-check-label" for="generate_manual">Manual Assignment (Empty Rounds)</label>
+                        <input class="form-check-input" type="radio" id="generate_clear" name="generate" value="clear" <?php echo old('generate', 'clear') === 'clear' ? ' checked' : ''; ?>>
+                        <label class="form-check-label" for="generate_clear">Clear</label>
+                        <small class="form-text text-muted d-block">Clears any Home/Away teams already assigned on this schedule's Matches, leaving the Rounds/Matches themselves in place.</small>
                     </div>
 
                     <div class="form-check">
@@ -35,7 +36,7 @@
 
             <div class="form-actions">
                 <div class="mb-3">
-                    <input class="btn btn-primary" type="submit" value="Generate Rounds"/>
+                    <input class="btn btn-primary" type="submit" value="Apply"/>
                 </div>
                 <div class="mb-3">
                     <a class="btn btn-secondary" href="{{ route('schedule.view', ['association' => $association, 'schedule' => $schedule]) }}">Cancel</a>

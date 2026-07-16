@@ -1,9 +1,9 @@
 @extends('layouts.admin')
 
-@section('title', 'Generate Rounds - Review')
+@section('title', 'Generate Matches - Review')
 
 @section('breadcrumb')
-    {{ Breadcrumbs::render('schedule.generate-rounds.review', $schedule) }}
+    {{ Breadcrumbs::render('schedule.generate-matches.review', $schedule) }}
 @endsection
 
 @section('content')
@@ -90,14 +90,14 @@
     <div class="form-actions">
         @unless ($report->degenerate)
             <div class="mb-3">
-                <form method="POST" action="{{ route('schedule.generate-rounds.accept', ['association' => $association, 'schedule' => $schedule]) }}">
+                <form method="POST" action="{{ route('schedule.generate-matches.accept', ['association' => $association, 'schedule' => $schedule]) }}">
                     @csrf
                     <input class="btn btn-primary" type="submit" value="Accept"/>
                 </form>
             </div>
         @endunless
         <div class="mb-3">
-            <form method="POST" action="{{ route('schedule.generate-rounds.retry', ['association' => $association, 'schedule' => $schedule]) }}">
+            <form method="POST" action="{{ route('schedule.generate-matches.retry', ['association' => $association, 'schedule' => $schedule]) }}">
                 @csrf
                 <input class="btn btn-warning" type="submit" value="Discard &amp; Regenerate"/>
             </form>

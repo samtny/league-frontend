@@ -91,7 +91,7 @@ class RoundsController extends Controller
 
         $request->session()->flash('message', __('Successfully updated round'));
 
-        return redirect()->route('schedule.rounds', ['association' => $association, 'schedule' => $schedule]);
+        return redirect()->route('schedule.view', ['association' => $association, 'schedule' => $schedule]);
     }
 
     public function deleteConfirm(Association $association, Schedule $schedule, Round $round)

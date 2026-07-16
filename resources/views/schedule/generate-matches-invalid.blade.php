@@ -1,19 +1,19 @@
 @extends('layouts.admin')
 
-@section('title', 'Generate Rounds')
+@section('title', 'Generate Matches')
 
 @section('breadcrumb')
-    {{ Breadcrumbs::render('schedule.generate-rounds', $schedule) }}
+    {{ Breadcrumbs::render('schedule.generate-matches', $schedule) }}
 @endsection
 
 @section('content')
     <div class="row">
-        <h1 class="col">Generate Rounds</h1>
+        <h1 class="col">Generate Matches</h1>
     </div>
     <div class="row mb-3">
         <div class="col">
             <div class="alert alert-danger">
-                This Schedule is missing the following before rounds can be generated: {{ implode(', ', $missingFields) }}. Edit the Schedule to set {{ count($missingFields) > 1 ? 'these' : 'this' }} first.
+                This Schedule is missing the following before Matches can be generated: {{ implode(', ', $missingFields) }}. Edit the Schedule to set {{ count($missingFields) > 1 ? 'these' : 'this' }} first.
             </div>
         </div>
     </div>

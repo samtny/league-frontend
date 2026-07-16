@@ -85,16 +85,6 @@
                 </fieldset>
             </div>
 
-            <div class="mb-3">
-                <label for="generate">Generate Schedule</label>
-                <select class="form-control" id="generate" name="generate">
-                    <option value="" <?php echo old('generate', '') === '' ? ' selected' : ''; ?>>-- No Selection --</option>
-                    <option value="manual" <?php echo old('generate') === 'manual' ? ' selected' : ''; ?>>Manual Assignment (Empty Rounds)</option>
-                    <option value="random" <?php echo old('generate') === 'random' ? ' selected' : ''; ?>>Automatic Random Assignment</option>
-                </select>
-                <small class="form-text text-muted">This will generate a full schedule of rounds based on the selected assignment method.</small>
-            </div>
-
             <div class="form-actions">
                 <div class="mb-3">
                     <input class="btn btn-primary" id="submit" type="submit" value="Create"/>

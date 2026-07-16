@@ -28,7 +28,7 @@
                                 <th>Venue</th>
                                 <?php foreach ($schedule->rounds as $index => $round): ?>
                                 <th>
-                                    <?php echo ('<div class="round">' . $round->name . '</div>'); ?> — <?php echo date('Y-m-d', strtotime($round->start_date)); ?>
+                                    <?php echo ('<div class="round">' . $round->name . '</div>'); ?> - <?php echo date('Y-m-d', strtotime($round->start_date)); ?>
                                 </th>
                                 <?php endforeach; ?>
                             </tr>
