@@ -123,6 +123,7 @@ final class ScheduleGenerator
                     score: $report->score,
                     degenerate: true,
                     degenerateReason: $reason,
+                    softCriteriaScores: $report->softCriteriaScores,
                 ),
                 $attempts,
                 $this->elapsedMs($startedAt),

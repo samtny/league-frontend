@@ -1,6 +1,6 @@
 @extends('layouts.admin')
 
-@section('title', 'Generate Matches - Review')
+@section('title', 'Review Automatically Generated Matches')
 
 @section('breadcrumb')
     {{ Breadcrumbs::render('schedule.generate-matches.review', $schedule) }}
@@ -8,7 +8,7 @@
 
 @section('content')
     <div class="row">
-        <h1 class="col">Review Automatically Generated Rounds</h1>
+        <h1 class="col">Review Automatically Generated Matches</h1>
     </div>
 
     @if ($report->degenerate)
@@ -24,6 +24,21 @@
             <div class="col">
                 <div class="alert alert-success">
                     All required constraints were satisfied (no repeated back-to-back opponents, and only active teams/venues were used).
+                </div>
+            </div>
+        </div>
+    @endif
+
+    @if (! empty($report->softCriteriaScores))
+        <div class="row mb-3">
+            <div class="col">
+                <div class="alert alert-info">
+                    <strong>Soft criteria scores:</strong>
+                    <ul class="mb-0">
+                        @foreach ($report->softCriteriaScores as $criterion)
+                            <li>{{ $criterion['label'] }}: {{ $criterion['score'] }}</li>
+                        @endforeach
+                    </ul>
                 </div>
             </div>
         </div>

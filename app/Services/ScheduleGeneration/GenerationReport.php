@@ -7,6 +7,7 @@ final class GenerationReport
     /**
      * @param string[] $hardViolations
      * @param array<string, string[]> $softViolationsByCriterion
+     * @param array<int, array{key: string, label: string, score: float}> $softCriteriaScores every soft criterion's individual score, in fixed order, regardless of whether it has any violation messages
      */
     public function __construct(
         public readonly bool $hardConstraintsSatisfied,
@@ -15,6 +16,7 @@ final class GenerationReport
         public readonly float $score,
         public readonly bool $degenerate,
         public readonly ?string $degenerateReason = null,
+        public readonly array $softCriteriaScores = [],
     ) {
     }
 
@@ -27,6 +29,7 @@ final class GenerationReport
             'score' => $this->score,
             'degenerate' => $this->degenerate,
             'degenerate_reason' => $this->degenerateReason,
+            'soft_criteria_scores' => $this->softCriteriaScores,
         ];
     }
 
@@ -39,6 +42,7 @@ final class GenerationReport
             $data['score'],
             $data['degenerate'],
             $data['degenerate_reason'] ?? null,
+            $data['soft_criteria_scores'] ?? [],
         );
     }
 }

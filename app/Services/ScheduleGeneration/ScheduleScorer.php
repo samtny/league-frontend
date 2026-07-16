@@ -2,11 +2,24 @@
 
 namespace App\Services\ScheduleGeneration;
 
+use App\Services\ScheduleGeneration\HardConstraints\AwayTeamAtOwnVenueConstraint;
+use App\Services\ScheduleGeneration\HardConstraints\ByeAndMatchConflictConstraint;
+use App\Services\ScheduleGeneration\HardConstraints\DoubleBookedTeamConstraint;
+use App\Services\ScheduleGeneration\HardConstraints\InactiveTeamConstraint;
+use App\Services\ScheduleGeneration\HardConstraints\InactiveVenueConstraint;
+use App\Services\ScheduleGeneration\HardConstraints\RepeatOpponentConsecutiveRoundsConstraint;
+use App\Services\ScheduleGeneration\SoftCriteria\ConsecutiveVenueCriterion;
+use App\Services\ScheduleGeneration\SoftCriteria\EqualMatchesPlayedCriterion;
+use App\Services\ScheduleGeneration\SoftCriteria\HomeAwayBalanceCriterion;
+use App\Services\ScheduleGeneration\SoftCriteria\HomeVenueBalanceCriterion;
+use App\Services\ScheduleGeneration\SoftCriteria\OpponentRecencyCriterion;
+
 /**
- * Pure, randomness-free scoring: replays a candidate round by round and
- * re-derives the same state RoundBuilder carries internally, so it can be
- * used both to score generator output and to unit-test hand-built
- * candidates directly.
+ * Pure, randomness-free scoring: replays a candidate round by round, feeding
+ * every match and bye to a fixed set of hard constraints (any violation
+ * invalidates the candidate) and soft criteria (weighted penalties summed
+ * into a score), so it can be used both to score generator output and to
+ * unit-test hand-built candidates directly.
  */
 final class ScheduleScorer
 {
@@ -16,202 +29,89 @@ final class ScheduleScorer
      */
     public function score(ScheduleCandidate $candidate, array $activeTeams, array $activeVenues, GenerationConfig $config): GenerationReport
     {
-        $activeTeamIds = array_flip(array_map(fn (TeamInput $t) => $t->id, $activeTeams));
-        $activeVenueIds = array_flip(array_map(fn (VenueInput $v) => $v->id, $activeVenues));
-        $homeVenueIdByTeam = [];
-        $teamNameById = [];
-        foreach ($activeTeams as $team) {
-            $homeVenueIdByTeam[$team->id] = $team->homeVenueId;
-            $teamNameById[$team->id] = $team->name;
-        }
+        $context = ScoringContext::build($activeTeams, $activeVenues);
 
-        // Falls back to "#id" for a team not in the active roster (e.g. the
-        // inactive-team hard violation below, where no name is available).
-        $teamLabel = fn (int $teamId): string => $teamNameById[$teamId] ?? "#{$teamId}";
+        $hardConstraints = [
+            new InactiveTeamConstraint($context),
+            new DoubleBookedTeamConstraint($context),
+            new InactiveVenueConstraint($context),
+            new RepeatOpponentConsecutiveRoundsConstraint($context),
+            new AwayTeamAtOwnVenueConstraint($context),
+            new ByeAndMatchConflictConstraint($context),
+        ];
 
-        $hardViolations = [];
-
-        $lastOpponentByTeam = [];
-        $lastVenueByTeam = [];
-        $lastMeetingRoundByPair = [];
-        $matchesPlayedByTeam = array_fill_keys(array_keys($activeTeamIds), 0);
-        $homeCountByTeam = array_fill_keys(array_keys($activeTeamIds), 0);
-        $awayCountByTeam = array_fill_keys(array_keys($activeTeamIds), 0);
-        $homeVenueAppearancesByTeam = array_fill_keys(array_keys($activeTeamIds), 0);
-        $venueStreakCountByTeam = array_fill_keys(array_keys($activeTeamIds), 0);
-
-        $repeatPenalty = 0.0;
-        $repeatMessages = [];
-        $venueMessages = [];
-
-        $activeTeamCount = count($activeTeams);
-        $idealGap = $activeTeamCount > 0 ? (int) ceil($activeTeamCount / 2) : 0;
+        $softCriteria = [
+            new ConsecutiveVenueCriterion($context),
+            new EqualMatchesPlayedCriterion($context),
+            new OpponentRecencyCriterion($context),
+            new HomeAwayBalanceCriterion($context),
+            new HomeVenueBalanceCriterion($context),
+        ];
 
         foreach ($candidate->rounds as $roundIndex => $round) {
-            $roundNumber = $roundIndex + 1;
-            $seenThisRound = [];
+            foreach ($hardConstraints as $constraint) {
+                $constraint->startRound($roundIndex);
+            }
 
             foreach ($round->matches as $match) {
-                foreach ([$match->homeTeamId, $match->awayTeamId] as $teamId) {
-                    if (! isset($activeTeamIds[$teamId])) {
-                        $hardViolations[] = "Round {$roundNumber}: inactive or unknown team #{$teamId} was assigned a match.";
-                    }
-
-                    if (isset($seenThisRound[$teamId])) {
-                        $hardViolations[] = "Round {$roundNumber}: {$teamLabel($teamId)} was assigned to more than one match.";
-                    }
-
-                    $seenThisRound[$teamId] = true;
+                foreach ($hardConstraints as $constraint) {
+                    $constraint->observeMatch($roundIndex, $match);
                 }
 
-                if (! isset($activeVenueIds[$match->venueId])) {
-                    $hardViolations[] = "Round {$roundNumber}: inactive or unknown venue #{$match->venueId} was used.";
+                foreach ($softCriteria as $criterion) {
+                    $criterion->observeMatch($roundIndex, $match);
                 }
-
-                $home = $match->homeTeamId;
-                $away = $match->awayTeamId;
-
-                if (($lastOpponentByTeam[$home] ?? null) === $away || ($lastOpponentByTeam[$away] ?? null) === $home) {
-                    $hardViolations[] = "Round {$roundNumber}: {$teamLabel($home)} and {$teamLabel($away)} played each other in consecutive rounds.";
-                }
-
-                if (($homeVenueIdByTeam[$away] ?? null) === $match->venueId) {
-                    $hardViolations[] = "Round {$roundNumber}: {$teamLabel($away)} was assigned away for a match held at their own home venue.";
-                }
-
-                if (($homeVenueIdByTeam[$home] ?? null) === $match->venueId) {
-                    $homeVenueAppearancesByTeam[$home] = ($homeVenueAppearancesByTeam[$home] ?? 0) + 1;
-                }
-
-                foreach ([$home, $away] as $teamId) {
-                    if (($lastVenueByTeam[$teamId] ?? null) === $match->venueId) {
-                        // Every occurrence is reported here (visibility -
-                        // nothing is silently hidden from the review
-                        // screen just because it happens to be the first
-                        // one for this team), independent of whether it
-                        // ends up costing score points below.
-                        $venueStreakCountByTeam[$teamId] = ($venueStreakCountByTeam[$teamId] ?? 0) + 1;
-                        $venueMessages[] = "{$teamLabel($teamId)} played consecutive rounds at the same venue ({$match->venueName}) around round {$roundNumber}.";
-                    }
-                }
-
-                $pairKey = PairKey::for($home, $away);
-
-                if (isset($lastMeetingRoundByPair[$pairKey])) {
-                    $gap = $roundIndex - $lastMeetingRoundByPair[$pairKey];
-                    $shortfall = max(0, $idealGap - $gap);
-
-                    if ($shortfall > 0) {
-                        $repeatPenalty += $config->weightRepeat * $shortfall;
-                        $repeatMessages[] = "{$teamLabel($home)} and {$teamLabel($away)} rematched after only {$gap} round(s) (ideally {$idealGap}+).";
-                    }
-                }
-
-                $lastMeetingRoundByPair[$pairKey] = $roundIndex;
-                $lastOpponentByTeam[$home] = $away;
-                $lastOpponentByTeam[$away] = $home;
-                $lastVenueByTeam[$home] = $match->venueId;
-                $lastVenueByTeam[$away] = $match->venueId;
-                $matchesPlayedByTeam[$home] = ($matchesPlayedByTeam[$home] ?? 0) + 1;
-                $matchesPlayedByTeam[$away] = ($matchesPlayedByTeam[$away] ?? 0) + 1;
-                $homeCountByTeam[$home] = ($homeCountByTeam[$home] ?? 0) + 1;
-                $awayCountByTeam[$away] = ($awayCountByTeam[$away] ?? 0) + 1;
             }
 
             foreach ($round->byeTeamIds as $teamId) {
-                if (isset($seenThisRound[$teamId])) {
-                    $hardViolations[] = "Round {$roundNumber}: {$teamLabel($teamId)} was both byed and assigned a match.";
+                foreach ($hardConstraints as $constraint) {
+                    $constraint->observeBye($roundIndex, $teamId);
                 }
 
-                unset($lastOpponentByTeam[$teamId], $lastVenueByTeam[$teamId]);
+                foreach ($softCriteria as $criterion) {
+                    $criterion->observeBye($roundIndex, $teamId);
+                }
             }
         }
 
-        // Every consecutive-same-venue occurrence costs weightVenue, same as
-        // before - a single incident is still a real break and always
-        // scores as one (every occurrence is also reported above in
-        // $venueMessages regardless of team). On top of that, a team hit
-        // more than once pays an *additional* weightVenue per excess
-        // occurrence: two different teams each hit once costs 2x
-        // weightVenue total (same as always), but one team hit twice costs
-        // 3x weightVenue (2 for the occurrences themselves, +1 repeat-
-        // offense surcharge) - a real repeat-offense pattern a greedy,
-        // whole-schedule-blind search has no mechanism to avoid (see
-        // plan.md). "Twice" means anywhere in the schedule, not
-        // necessarily back-to-back streaks of 3+: rounds 1-2 then
-        // separately rounds 6-7 both count as 2 occurrences for that team,
-        // same as three rounds running would.
-        $venueStreakPenalty = 0.0;
-
-        foreach (array_keys($activeTeamIds) as $teamId) {
-            $count = $venueStreakCountByTeam[$teamId] ?? 0;
-
-            if ($count > 0) {
-                $venueStreakPenalty += $config->weightVenue * $count;
-                $venueStreakPenalty += $config->weightVenue * max(0, $count - 1);
-            }
+        foreach ($softCriteria as $criterion) {
+            $criterion->finalize();
         }
 
-        $equalityPenalty = 0.0;
-        $equalityMessages = [];
+        $hardViolations = [];
 
-        if (! empty($matchesPlayedByTeam)) {
-            $min = min($matchesPlayedByTeam);
-            $max = max($matchesPlayedByTeam);
-
-            if ($max - $min > 0) {
-                $equalityPenalty = $config->weightEquality * ($max - $min);
-                $equalityMessages[] = "Matches played ranges from {$min} to {$max} across active teams.";
-            }
+        foreach ($hardConstraints as $constraint) {
+            array_push($hardViolations, ...$constraint->violations());
         }
 
-        $homeAwayPenalty = 0.0;
-        $homeAwayMessages = [];
+        $score = 0.0;
+        $softViolationsByCriterion = [];
+        $softCriteriaScores = [];
 
-        foreach (array_keys($activeTeamIds) as $teamId) {
-            $diff = abs(($homeCountByTeam[$teamId] ?? 0) - ($awayCountByTeam[$teamId] ?? 0));
-            $over = max(0, $diff - 1);
+        foreach ($softCriteria as $criterion) {
+            $criterionScore = $criterion->penalty($config);
+            $score += $criterionScore;
 
-            if ($over > 0) {
-                $homeAwayPenalty += $config->weightHomeAway * $over;
-                $homeAwayMessages[] = "{$teamLabel($teamId)} has a home/away imbalance of {$diff}.";
+            $softCriteriaScores[] = [
+                'key' => $criterion->key(),
+                'label' => $criterion->label(),
+                'score' => $criterionScore,
+            ];
+
+            $messages = $criterion->messages();
+
+            if (! empty($messages)) {
+                $softViolationsByCriterion[$criterion->key()] = $messages;
             }
         }
-
-        $homeVenuePenalty = 0.0;
-        $homeVenueMessages = [];
-
-        foreach ($activeTeams as $team) {
-            if ($team->homeVenueId === null) {
-                continue;
-            }
-
-            $homeAppearances = $homeVenueAppearancesByTeam[$team->id] ?? 0;
-            $otherAppearances = ($matchesPlayedByTeam[$team->id] ?? 0) - $homeAppearances;
-            $diff = abs($homeAppearances - $otherAppearances);
-            $over = max(0, $diff - 1);
-
-            if ($over > 0) {
-                $homeVenuePenalty += $config->weightHomeVenueBalance * $over;
-                $played = $matchesPlayedByTeam[$team->id] ?? 0;
-                $homeVenueMessages[] = "{$team->name} played at their own home venue {$homeAppearances} of {$played} matches (expected roughly half).";
-            }
-        }
-
-        $softViolationsByCriterion = array_filter([
-            'consecutive_venue' => $venueMessages,
-            'equal_matches_played' => $equalityMessages,
-            'opponent_recency' => $repeatMessages,
-            'home_away_balance' => $homeAwayMessages,
-            'home_venue_balance' => $homeVenueMessages,
-        ]);
 
         return new GenerationReport(
             hardConstraintsSatisfied: empty($hardViolations),
             hardViolations: $hardViolations,
             softViolationsByCriterion: $softViolationsByCriterion,
-            score: $venueStreakPenalty + $equalityPenalty + $repeatPenalty + $homeAwayPenalty + $homeVenuePenalty,
+            score: $score,
             degenerate: false,
+            softCriteriaScores: $softCriteriaScores,
         );
     }
 }

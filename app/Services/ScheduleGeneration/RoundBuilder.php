@@ -104,7 +104,7 @@ final class RoundBuilder
                 }
 
                 $lastMet = $lastMeetingRoundByPair[PairKey::for($team->id, $other->id)] ?? null;
-                $gap = $lastMet === null ? PHP_INT_MAX : $roundIndex - $lastMet;
+                $gap = OpponentGapCalculator::sinceLastMeeting($roundIndex, $lastMet) ?? PHP_INT_MAX;
 
                 $candidates[] = ['index' => $index, 'gap' => $gap];
             }
@@ -164,8 +164,8 @@ final class RoundBuilder
                 // game overall hosts; a genuine tie is broken by coin flip
                 // rather than silently favoring whichever team happens to be
                 // "A" in this pairing.
-                $aJustHosted = ($lastVenueByTeam[$teamA->id] ?? null) === $teamA->homeVenueId;
-                $bJustHosted = ($lastVenueByTeam[$teamB->id] ?? null) === $teamB->homeVenueId;
+                $aJustHosted = HomeVenueMatch::isOwnVenue($teamA->homeVenueId, $lastVenueByTeam[$teamA->id] ?? null);
+                $bJustHosted = HomeVenueMatch::isOwnVenue($teamB->homeVenueId, $lastVenueByTeam[$teamB->id] ?? null);
                 $aAppearances = $homeVenueAppearancesByTeam[$teamA->id] ?? 0;
                 $bAppearances = $homeVenueAppearancesByTeam[$teamB->id] ?? 0;
 
