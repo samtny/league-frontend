@@ -13,6 +13,16 @@ use App\Venue;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
+/**
+ * Automatic assignment no longer creates or deletes Rounds/Matches - it only
+ * populates home_team_id/away_team_id onto Matches that already exist for
+ * the schedule (see ScheduleController::applyCandidateToExistingMatches()).
+ * These fixtures build that pre-existing structure the same way production
+ * does: posting to the ordinary Schedule update endpoint with no rounds yet
+ * present triggers ScheduleController::regenerateRounds(), which creates one
+ * empty (no team assigned) Round/Match per active venue per round date -
+ * exactly what a real schedule looks like before anyone runs Automatic.
+ */
 class AutomaticScheduleGenerationTest extends TestCase
 {
     use RefreshDatabase;
@@ -49,6 +59,16 @@ class AutomaticScheduleGenerationTest extends TestCase
         \Bouncer::assign('superadmin')->to($admin);
         $this->actingAs($admin);
 
+        // Creates the empty Rounds/Matches (no Rounds exist yet, so this
+        // resubmission of the schedule's own values triggers regeneration).
+        $this->post(route('schedule.update', ['association' => $association, 'schedule' => $schedule]), [
+            'name' => $schedule->name,
+            'division_id' => $schedule->division_id,
+            'start_date' => '2026-07-01',
+            'end_date' => '2026-09-30',
+            'weekday' => 'mon',
+        ]);
+
         return compact('association', 'schedule', 'activeTeams', 'activeVenues', 'inactiveVenue');
     }
 
@@ -56,12 +76,18 @@ class AutomaticScheduleGenerationTest extends TestCase
     {
         ['association' => $association, 'schedule' => $schedule] = $this->buildFixture();
 
+        // July-Sept 2026 has 13 Mondays.
+        $this->assertSame(13, Round::where('schedule_id', $schedule->id)->count());
+
         $response = $this->post(route('schedule.generate-matches.store', ['association' => $association, 'schedule' => $schedule]), [
             'generate' => 'random',
         ]);
 
         $response->assertRedirect(route('schedule.generate-matches.review', ['association' => $association, 'schedule' => $schedule]));
-        $this->assertSame(0, Round::where('schedule_id', $schedule->id)->count());
+
+        // Rounds/Matches are untouched - nothing is mutated until Accept.
+        $this->assertSame(13, Round::where('schedule_id', $schedule->id)->count());
+        $this->assertSame(0, PLMatch::where('schedule_id', $schedule->id)->whereNotNull('home_team_id')->count());
 
         $review = $this->get(route('schedule.generate-matches.review', ['association' => $association, 'schedule' => $schedule]));
         $review->assertStatus(200);
@@ -73,6 +99,9 @@ class AutomaticScheduleGenerationTest extends TestCase
     {
         ['association' => $association, 'schedule' => $schedule, 'inactiveVenue' => $inactiveVenue] = $this->buildFixture();
 
+        $roundIdsBefore = Round::where('schedule_id', $schedule->id)->orderBy('id')->pluck('id')->all();
+        $matchIdsBefore = PLMatch::where('schedule_id', $schedule->id)->orderBy('id')->pluck('id')->all();
+
         $this->post(route('schedule.generate-matches.store', ['association' => $association, 'schedule' => $schedule]), [
             'generate' => 'random',
         ]);
@@ -81,12 +110,14 @@ class AutomaticScheduleGenerationTest extends TestCase
 
         $response->assertRedirect(route('schedule.view', ['association' => $association, 'schedule' => $schedule]));
 
-        // July-Sept 2026 has 13 Mondays.
+        // Same Round/Match rows as before - Accept only ever updates
+        // home_team_id/away_team_id, never deletes or recreates rows.
         $rounds = Round::where('schedule_id', $schedule->id)->orderBy('start_date')->get();
-        $this->assertSame(13, $rounds->count());
+        $this->assertSame($roundIdsBefore, $rounds->pluck('id')->sort()->values()->all());
 
         $matches = PLMatch::where('schedule_id', $schedule->id)->get();
-        $this->assertGreaterThan(0, $matches->count());
+        $this->assertSame($matchIdsBefore, $matches->pluck('id')->sort()->values()->all());
+        $this->assertGreaterThan(0, $matches->whereNotNull('home_team_id')->count());
 
         // Hard constraints, verified directly against the persisted data:
         $inactiveTeamIds = \App\Team::where('association_id', $association->id)->where('active', false)->pluck('id');
@@ -100,7 +131,7 @@ class AutomaticScheduleGenerationTest extends TestCase
         // No back-to-back opponent repeats and no team double-booked per round.
         $lastOpponent = [];
         foreach ($rounds as $round) {
-            $roundMatches = $matches->where('round_id', $round->id);
+            $roundMatches = $matches->where('round_id', $round->id)->whereNotNull('home_team_id');
             $seen = [];
 
             foreach ($roundMatches as $match) {
@@ -123,7 +154,7 @@ class AutomaticScheduleGenerationTest extends TestCase
 
         // Matches played spread across active teams should be minimal (equal or off by one).
         $counts = [];
-        foreach ($matches as $match) {
+        foreach ($matches->whereNotNull('home_team_id') as $match) {
             $counts[$match->home_team_id] = ($counts[$match->home_team_id] ?? 0) + 1;
             $counts[$match->away_team_id] = ($counts[$match->away_team_id] ?? 0) + 1;
         }
@@ -144,7 +175,7 @@ class AutomaticScheduleGenerationTest extends TestCase
         $response = $this->post(route('schedule.generate-matches.retry', ['association' => $association, 'schedule' => $schedule]));
 
         $response->assertRedirect(route('schedule.generate-matches.review', ['association' => $association, 'schedule' => $schedule]));
-        $this->assertSame(0, Round::where('schedule_id', $schedule->id)->count());
+        $this->assertSame(13, Round::where('schedule_id', $schedule->id)->count());
         $this->assertNotNull(session("schedule_generation.{$schedule->id}.candidate"));
     }
 
@@ -174,12 +205,80 @@ class AutomaticScheduleGenerationTest extends TestCase
 
         $homeVenueIdByTeam = Team::where('association_id', $association->id)->pluck('venue_id', 'id');
 
-        foreach (PLMatch::where('schedule_id', $schedule->id)->get() as $match) {
+        foreach (PLMatch::where('schedule_id', $schedule->id)->whereNotNull('home_team_id')->get() as $match) {
             $this->assertNotSame(
                 $homeVenueIdByTeam[$match->away_team_id] ?? null,
                 $match->venue_id,
                 "team {$match->away_team_id} was persisted away at their own home venue"
             );
         }
+    }
+
+    /**
+     * Automatic runs an implicit Clear immediately before applying its
+     * candidate (see ScheduleController::generateMatchesAccept()), precisely
+     * because applyCandidateToExistingMatches() only ever writes team ids
+     * for Matches the candidate actually touches - without that Clear, a
+     * Match slot the candidate skips would keep whatever was assigned to it
+     * by a previous run.
+     */
+    public function test_accepting_clears_stale_assignments_on_matches_the_new_candidate_does_not_touch()
+    {
+        $association = Association::factory()->create(['subdomain' => 'auto-gen-stale']);
+
+        $division = new Division(['name' => 'Auto Division']);
+        $division->association_id = $association->id;
+        $division->save();
+
+        $series = Series::create(['name' => 'Auto Series', 'association_id' => $association->id]);
+        $schedule = $association->schedules()->create([
+            'name' => 'Auto Schedule', 'series_id' => $series->id, 'division_id' => $division->id,
+            'start_date' => '2026-07-06', 'end_date' => '2026-07-06', 'weekday' => 'mon',
+        ]);
+
+        // 2 active teams but 2 active venues: capacity is min(1, 2) = 1, so
+        // only one of the round's two Match rows is ever touched by a
+        // candidate - the other is a stale leftover from a previous run.
+        $teamA = Team::create(['name' => 'Team A', 'association_id' => $association->id, 'active' => true]);
+        $teamB = Team::create(['name' => 'Team B', 'association_id' => $association->id, 'active' => true]);
+        Venue::create(['name' => 'Venue 1', 'association_id' => $association->id, 'active' => true]);
+        Venue::create(['name' => 'Venue 2', 'association_id' => $association->id, 'active' => true]);
+
+        \Bouncer::allow('superadmin')->everything();
+        $admin = User::factory()->create();
+        \Bouncer::assign('superadmin')->to($admin);
+        $this->actingAs($admin);
+
+        $this->post(route('schedule.update', ['association' => $association, 'schedule' => $schedule]), [
+            'name' => $schedule->name,
+            'division_id' => $schedule->division_id,
+            'start_date' => '2026-07-06',
+            'end_date' => '2026-07-06',
+            'weekday' => 'mon',
+        ]);
+
+        $round = Round::where('schedule_id', $schedule->id)->firstOrFail();
+        $matches = PLMatch::where('round_id', $round->id)->get();
+        $this->assertSame(2, $matches->count());
+
+        // Simulate a stale assignment left over from a previous run on both rows.
+        foreach ($matches as $match) {
+            $match->update(['home_team_id' => $teamA->id, 'away_team_id' => $teamB->id]);
+        }
+
+        $this->post(route('schedule.generate-matches.store', ['association' => $association, 'schedule' => $schedule]), [
+            'generate' => 'random',
+        ]);
+        $this->post(route('schedule.generate-matches.accept', ['association' => $association, 'schedule' => $schedule]));
+
+        $refreshed = PLMatch::where('round_id', $round->id)->get();
+
+        // Exactly one match got the new assignment; the other was cleared,
+        // not left with its stale home/away teams from before Accept ran.
+        $this->assertSame(1, $refreshed->whereNotNull('home_team_id')->count());
+
+        $untouched = $refreshed->whereNull('home_team_id')->first();
+        $this->assertNotNull($untouched);
+        $this->assertNull($untouched->away_team_id);
     }
 }

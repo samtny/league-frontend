@@ -3,6 +3,13 @@
 namespace App\Services\ScheduleGeneration;
 
 /**
+ * SET ASIDE (dead code): no longer invoked by ScheduleGenerator, which is
+ * greedy-only for now while Automatic assignment is reworked to populate
+ * existing Matches instead of creating/deleting Rounds. Left in place, along
+ * with its full test coverage in RoundRobinConstructorTest, in case it's
+ * revisited later - see ScheduleGenerator::generate() for where it used to
+ * be wired in.
+ *
  * Deterministic classical round-robin construction for the exclusive-home-
  * venue case: every active team owns a distinct active venue. Produces a
  * "seed" ScheduleCandidate for ScheduleGenerator to score and (if it scores

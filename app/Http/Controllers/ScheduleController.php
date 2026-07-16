@@ -233,13 +233,46 @@ class ScheduleController extends Controller
      * Entry point for the Generate Matches wizard. If the schedule is
      * missing a field generation depends on (start/end date, weekday),
      * that's caught here before either option is even offered -
-     * createRoundsManual/generateAutomaticCandidate fail silently (e.g.
-     * strtolower(null) never matches a weekday) rather than throwing.
-     * Otherwise always goes straight to the Clear/Automatic choice: Clear
-     * only nulls out home_team_id/away_team_id (see clearMatchAssignments()),
-     * so it doesn't need a separate destructive-action confirmation step.
+     * generateAutomaticCandidate() fails silently (e.g. strtolower(null)
+     * never matches a weekday) rather than throwing. If any of this
+     * schedule's Matches already have a Home/Away team assigned, a warning
+     * gate is shown first: both Clear and Automatic (which runs its own
+     * implicit Clear on accept - see generateMatchesAccept()) end up
+     * clearing those assignments, so this is purely informational -
+     * "Proceed" just moves on to generateMatchesSelect() below, nothing is
+     * mutated here.
      */
     public function generateMatches(Association $association, Schedule $schedule)
+    {
+        $missingFields = $this->scheduleGenerationErrors($schedule);
+
+        if (! empty($missingFields)) {
+            return view('schedule.generate-matches-invalid', [
+                'association' => $association,
+                'schedule' => $schedule,
+                'missingFields' => $missingFields,
+            ]);
+        }
+
+        if ($this->scheduleHasAssignedMatches($schedule)) {
+            return view('schedule.generate-matches-confirm', [
+                'association' => $association,
+                'schedule' => $schedule,
+            ]);
+        }
+
+        return view('schedule.generate-matches-select', [
+            'association' => $association,
+            'schedule' => $schedule,
+        ]);
+    }
+
+    /**
+     * The actual Clear/Automatic select screen - reached either directly
+     * from generateMatches() above (no assigned matches to warn about) or
+     * via its confirm gate's "Proceed" link.
+     */
+    public function generateMatchesSelect(Association $association, Schedule $schedule)
     {
         $missingFields = $this->scheduleGenerationErrors($schedule);
 
@@ -275,7 +308,6 @@ class ScheduleController extends Controller
             return redirect()->route('schedule.view', ['association' => $association, 'schedule' => $schedule]);
         }
 
-        $this->truncateRounds($schedule);
         $this->stashGeneratedCandidate($schedule, $this->generateAutomaticCandidate($schedule));
 
         return redirect()->route('schedule.generate-matches.review', ['association' => $association, 'schedule' => $schedule]);
@@ -307,7 +339,10 @@ class ScheduleController extends Controller
     /**
      * Commits exactly the candidate the admin reviewed: re-reads it from the
      * session rather than re-running generation, so what gets persisted is
-     * guaranteed to match what was shown on the review screen.
+     * guaranteed to match what was shown on the review screen. Runs an
+     * implicit Clear first (same as the "Clear" option one step up) so
+     * Automatic always starts from a clean slate - see
+     * applyCandidateToExistingMatches() for why that matters.
      */
     public function generateMatchesAccept(Association $association, Schedule $schedule, Request $request)
     {
@@ -320,8 +355,8 @@ class ScheduleController extends Controller
         $candidate = ScheduleCandidate::fromArray($candidateData);
 
         DB::transaction(function () use ($schedule, $candidate) {
-            $this->truncateRounds($schedule);
-            $this->persistCandidate($schedule, $candidate);
+            $this->clearMatchAssignments($schedule);
+            $this->applyCandidateToExistingMatches($schedule, $candidate);
         });
 
         session()->forget([$this->sessionKey($schedule, 'candidate'), $this->sessionKey($schedule, 'report')]);
@@ -391,8 +426,11 @@ class ScheduleController extends Controller
 
     /**
      * Runs the constraint-aware generator (see App\Services\ScheduleGeneration)
-     * against this schedule's active teams/venues and its own persisted
-     * date range/weekday - the same inputs createRoundsManual reads.
+     * against this schedule's active teams/venues and its own already-
+     * persisted Rounds. Uses the actual Round dates (not RoundDatePlanner
+     * recomputed from the schedule's weekday/start/end date) so the
+     * candidate's rounds line up 1:1 with real Rounds when applied - see
+     * applyCandidateToExistingMatches().
      */
     private function generateAutomaticCandidate(Schedule $schedule): GenerationResult
     {
@@ -400,7 +438,9 @@ class ScheduleController extends Controller
 
         $activeTeams = $association->activeTeams->map(fn ($team) => TeamInput::fromModel($team))->all();
         $activeVenues = $association->activeVenues->map(fn ($venue) => VenueInput::fromModel($venue))->all();
-        $roundDates = (new RoundDatePlanner)->datesFor($schedule->start_date, $schedule->end_date, $schedule->weekday);
+        $roundDates = $schedule->rounds()->orderBy('start_date')->get()
+            ->map(fn (Round $round) => $round->start_date->toDateTimeImmutable())
+            ->all();
 
         return app(ScheduleGenerator::class)->generate($roundDates, $activeTeams, $activeVenues, GenerationConfig::fromConfig());
     }
@@ -419,49 +459,57 @@ class ScheduleController extends Controller
     }
 
     /**
-     * Persists exactly the rounds/matches described by a generated
-     * candidate. Bypasses Round::createMatches() (which creates one empty
-     * match per active venue) because the candidate already knows which
-     * venues are used each round and who's playing.
+     * Applies a generated candidate's Home/Away assignments onto this
+     * schedule's own existing PLMatch rows - Rounds/Matches are never
+     * created or deleted here. Each RoundCandidate is matched back to a
+     * real Round by date, and each MatchCandidate within it to a real
+     * PLMatch by venue_id; anything that doesn't resolve (e.g. the venue
+     * lineup changed since the Round's Matches were created) is silently
+     * skipped. This only ever writes new team ids - it never nulls out ones
+     * a candidate doesn't happen to touch - so the caller (generateMatchesAccept())
+     * always runs clearMatchAssignments() immediately first; otherwise a
+     * Match slot the new candidate skips (e.g. capacity < venue count that
+     * round) could keep a stale assignment from a previous run.
      */
-    private function persistCandidate(Schedule $schedule, ScheduleCandidate $candidate): void
+    private function applyCandidateToExistingMatches(Schedule $schedule, ScheduleCandidate $candidate): void
     {
-        $roundNumber = 1;
+        $roundsByDate = $schedule->rounds()->get()->keyBy(fn (Round $round) => $round->start_date->format('Y-m-d'));
 
         foreach ($candidate->rounds as $roundCandidate) {
-            $round = new Round;
+            $round = $roundsByDate->get($roundCandidate->date->format('Y-m-d'));
 
-            $round->schedule_id = $schedule->id;
-            $round->division_id = $schedule->division_id;
-            $round->series_id = $schedule->series_id;
+            if ($round === null) {
+                continue;
+            }
 
-            $round->start_date = $roundCandidate->date;
-            $round->end_date = $roundCandidate->date;
-            $round->name = 'Round '.$roundNumber;
-
-            $round->save();
-
-            $roundNumber += 1;
+            $matchesByVenue = PLMatch::where('round_id', $round->id)->get()->keyBy('venue_id');
 
             foreach ($roundCandidate->matches as $matchCandidate) {
-                $match = new PLMatch;
+                $match = $matchesByVenue->get($matchCandidate->venueId);
 
-                $match->name = $matchCandidate->venueName.' – '.$roundCandidate->date->format('m-d-Y');
-                $match->association_id = $schedule->association_id;
-                $match->series_id = $schedule->series_id;
-                $match->division_id = $schedule->division_id;
-                $match->schedule_id = $schedule->id;
-                $match->round_id = $round->id;
-                $match->venue_id = $matchCandidate->venueId;
-                $match->sequence = 1;
-                $match->start_date = $roundCandidate->date;
-                $match->end_date = $roundCandidate->date;
+                if ($match === null) {
+                    continue;
+                }
+
                 $match->home_team_id = $matchCandidate->homeTeamId;
                 $match->away_team_id = $matchCandidate->awayTeamId;
 
                 $match->save();
             }
         }
+    }
+
+    /**
+     * True if any of this schedule's Matches already have a Home or Away
+     * team assigned - gates the Generate Matches wizard's confirm warning.
+     */
+    private function scheduleHasAssignedMatches(Schedule $schedule): bool
+    {
+        return PLMatch::where('schedule_id', $schedule->id)
+            ->where(function ($query) {
+                $query->whereNotNull('home_team_id')->orWhereNotNull('away_team_id');
+            })
+            ->exists();
     }
 
     /**

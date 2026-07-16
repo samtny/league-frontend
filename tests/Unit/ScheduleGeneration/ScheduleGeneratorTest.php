@@ -264,6 +264,8 @@ class ScheduleGeneratorTest extends TestCase
 
     public function test_exclusive_home_venue_seed_is_used_when_it_reaches_a_perfect_score()
     {
+        $this->markTestSkipped('RoundRobinConstructor seed disabled in ScheduleGenerator for now - see its class docblock.');
+
         // 4 teams, 4 distinct owned venues, only 2 rounds - short enough
         // that RoundRobinConstructor's single-cycle prefix hasn't reached
         // its first unavoidable break yet (that happens at round index 2;
@@ -285,22 +287,13 @@ class ScheduleGeneratorTest extends TestCase
 
     public function test_exclusive_home_venue_seed_never_regresses_the_associaton_2_schedule_6_benchmark()
     {
-        // The real shape that motivated this enhancement (see plan.md,
-        // "Optimal Round-Robin Construction for the Exclusive-Home-Venue
-        // Case"): 4 teams, 4 distinct owned venues, 7 rounds (two full
-        // cycles plus a 1-round leftover). S1 now charges every
-        // consecutive-same-venue occurrence its base cost, plus a surcharge
-        // if the same team is hit more than once (see plan.md, "S1
-        // reweighted" and its "tolerance regression" correction) - so a
-        // multi-cycle-plus-leftover schedule's unavoidable handful of seam
-        // incidents cost real points again, same as before this whole
-        // enhancement. Measured directly: the seed alone scores 30.0 here,
-        // worse than greedy's observed 15.0 plateau, so the final result
-        // (seed+polish) correctly falls back to matching that 15.0 plateau
-        // rather than regressing to the seed's worse score - the
-        // unconditional "never worse than greedy-only" guarantee is what
-        // this test actually locks in, not an improvement for this
-        // particular shape (see plan.md for the shapes where it does help).
+        // The real shape that originally motivated the (now set-aside, see
+        // RoundRobinConstructor's class docblock) seed: 4 teams, 4 distinct
+        // owned venues, 7 rounds (two full cycles plus a 1-round leftover).
+        // With the seed disabled this exercises greedy-only, which plateaus
+        // at 15.0 for this shape - this test just locks that plateau in as a
+        // regression guard, independent of whether the seed is ever
+        // re-enabled (see plan.md for background on the scoring criteria).
         $teams = $this->teamsWithHomeVenues([1 => 100, 2 => 200, 3 => 300, 4 => 400]);
         $venues = $this->venues(100, 200, 300, 400);
 
@@ -313,6 +306,8 @@ class ScheduleGeneratorTest extends TestCase
 
     public function test_exclusive_home_venue_seed_beats_greedy_once_team_count_is_large_enough()
     {
+        $this->markTestSkipped('RoundRobinConstructor seed disabled in ScheduleGenerator for now - see its class docblock.');
+
         // Single-cycle schedules (R = N-1) are where the construction's
         // advantage is real and grows with scale: measured directly (500
         // attempts, same budget both ways), greedy-only degrades sharply as

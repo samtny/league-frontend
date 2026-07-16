@@ -14,13 +14,14 @@ use Tests\TestCase;
 
 /**
  * The "Generate Matches" wizard is reachable from
- * /admin/association/{a}/schedule/{s}: a single select screen (Clear /
- * Automatic radios). Clear just nulls out home_team_id/away_team_id on the
- * schedule's own Matches - it never touches Round/Match rows themselves, so
- * unlike the old "Generate Rounds" flow it needs no separate destructive-
- * action confirmation step beforehand. Automatic is unchanged from the old
- * flow (still truncates/regenerates Rounds via the constraint-aware
- * generator) and is out of scope for this test file's coverage.
+ * /admin/association/{a}/schedule/{s}: if any of the schedule's Matches
+ * already have a Home/Away team assigned, a warning gate is shown first
+ * (Proceed/Cancel, nothing mutated) since both options on the next step end
+ * up clearing them; otherwise it goes straight to the select screen (Clear /
+ * Automatic radios). Neither option creates or deletes Round/Match rows -
+ * Clear just nulls out home_team_id/away_team_id, and Automatic (covered in
+ * AutomaticScheduleGenerationTest) only ever populates those same fields on
+ * Matches that already exist.
  */
 class GenerateMatchesWizardTest extends TestCase
 {
@@ -88,7 +89,20 @@ class GenerateMatchesWizardTest extends TestCase
         $response->assertSee('Assignment Method');
     }
 
-    public function test_select_step_is_shown_even_when_matches_already_have_assigned_teams()
+    public function test_existing_rounds_without_assigned_matches_go_straight_to_the_select_step()
+    {
+        ['association' => $association, 'schedule' => $schedule] = $this->buildFixture('wizard-b0');
+
+        $round = $this->createRound($schedule);
+        $this->createMatch($association, $schedule, $round);
+
+        $response = $this->get(route('schedule.generate-matches', ['association' => $association, 'schedule' => $schedule]));
+
+        $response->assertStatus(200);
+        $response->assertSee('Assignment Method');
+    }
+
+    public function test_confirm_gate_is_shown_when_matches_already_have_assigned_teams()
     {
         ['association' => $association, 'schedule' => $schedule] = $this->buildFixture('wizard-b');
 
@@ -96,14 +110,37 @@ class GenerateMatchesWizardTest extends TestCase
         $awayTeam = Team::create(['name' => 'Away Team', 'association_id' => $association->id, 'active' => true]);
 
         $round = $this->createRound($schedule);
-        $this->createMatch($association, $schedule, $round, $homeTeam->id, $awayTeam->id);
+        $match = $this->createMatch($association, $schedule, $round, $homeTeam->id, $awayTeam->id);
 
-        // No separate confirmation step: Clear is non-destructive to
-        // Round/Match rows, so it's always safe to offer directly.
         $response = $this->get(route('schedule.generate-matches', ['association' => $association, 'schedule' => $schedule]));
 
         $response->assertStatus(200);
-        $response->assertSee('Assignment Method');
+        $response->assertSee('clear those assignments');
+        $response->assertSee('Proceed');
+        $response->assertDontSee('Assignment Method');
+
+        // Purely a warning - nothing was mutated just by viewing it.
+        $this->assertDatabaseHas('matches', ['id' => $match->id, 'home_team_id' => $homeTeam->id, 'away_team_id' => $awayTeam->id]);
+
+        // "Proceed" leads to the actual select screen.
+        $proceed = $this->get(route('schedule.generate-matches.select', ['association' => $association, 'schedule' => $schedule]));
+        $proceed->assertStatus(200);
+        $proceed->assertSee('Assignment Method');
+    }
+
+    public function test_confirm_gate_cancel_link_returns_to_the_schedule()
+    {
+        ['association' => $association, 'schedule' => $schedule] = $this->buildFixture('wizard-b1');
+
+        $homeTeam = Team::create(['name' => 'Home Team', 'association_id' => $association->id, 'active' => true]);
+        $awayTeam = Team::create(['name' => 'Away Team', 'association_id' => $association->id, 'active' => true]);
+
+        $round = $this->createRound($schedule);
+        $this->createMatch($association, $schedule, $round, $homeTeam->id, $awayTeam->id);
+
+        $response = $this->get(route('schedule.generate-matches', ['association' => $association, 'schedule' => $schedule]));
+
+        $response->assertSee(route('schedule.view', ['association' => $association, 'schedule' => $schedule]), false);
     }
 
     public function test_clearing_nulls_team_assignments_without_deleting_rounds_or_matches()
@@ -181,7 +218,7 @@ class GenerateMatchesWizardTest extends TestCase
         $this->assertDatabaseHas('matches', ['id' => $match->id]);
     }
 
-    public function test_selecting_automatic_assignment_clears_old_rounds_and_goes_to_review()
+    public function test_selecting_automatic_assignment_leaves_existing_rounds_untouched_and_goes_to_review()
     {
         ['association' => $association, 'schedule' => $schedule] = $this->buildFixture('wizard-e');
 
@@ -191,10 +228,11 @@ class GenerateMatchesWizardTest extends TestCase
             'generate' => 'random',
         ]);
 
-        // Nothing is persisted until the review screen's Accept is submitted,
-        // but any pre-existing rounds are cleared immediately regardless.
+        // Nothing is persisted until the review screen's Accept is submitted -
+        // the existing Round is left exactly as it was either way.
         $response->assertRedirect(route('schedule.generate-matches.review', ['association' => $association, 'schedule' => $schedule]));
-        $this->assertSame(0, Round::where('schedule_id', $schedule->id)->count());
+        $this->assertDatabaseHas('rounds', ['id' => $round->id]);
+        $this->assertSame(1, Round::where('schedule_id', $schedule->id)->count());
     }
 
     public function test_generate_requires_a_valid_method()

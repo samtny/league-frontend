@@ -100,6 +100,7 @@ Route::prefix('admin')->middleware('admin')->group(function () {
         Route::get('{association}/schedule/{schedule}/delete-confirm', 'ScheduleController@deleteConfirm')->name('schedule.delete-confirm');
         Route::post('{association}/schedule/{schedule}/delete', 'ScheduleController@destroy')->name('schedule.delete');
         Route::get('{association}/schedule/{schedule}/generate-matches', 'ScheduleController@generateMatches')->name('schedule.generate-matches');
+        Route::get('{association}/schedule/{schedule}/generate-matches/select', 'ScheduleController@generateMatchesSelect')->name('schedule.generate-matches.select');
         Route::post('{association}/schedule/{schedule}/generate-matches', 'ScheduleController@generateMatchesStore')->name('schedule.generate-matches.store');
         Route::get('{association}/schedule/{schedule}/generate-matches/review', 'ScheduleController@generateMatchesReview')->name('schedule.generate-matches.review');
         Route::post('{association}/schedule/{schedule}/generate-matches/accept', 'ScheduleController@generateMatchesAccept')->name('schedule.generate-matches.accept');
