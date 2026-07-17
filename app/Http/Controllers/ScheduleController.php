@@ -49,14 +49,6 @@ class ScheduleController extends Controller
         ]);
     }
 
-    public function rounds(Association $association, Schedule $schedule)
-    {
-        return view('schedule.rounds', [
-            'association' => $association,
-            'schedule' => $schedule,
-        ]);
-    }
-
     public function deleteConfirm(Association $association, Schedule $schedule)
     {
         return view('schedule.delete-confirm', [

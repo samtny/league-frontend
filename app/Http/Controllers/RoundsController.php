@@ -53,7 +53,7 @@ class RoundsController extends Controller
 
         $round->createMatches();
 
-        return redirect()->route('schedule.rounds', ['association' => $association, 'schedule' => $schedule]);
+        return redirect()->route('schedule.view', ['association' => $association, 'schedule' => $schedule]);
     }
 
     public function edit(Association $association, Schedule $schedule, Round $round)
@@ -117,6 +117,6 @@ class RoundsController extends Controller
     {
         $round->delete();
 
-        return redirect()->route('schedule.rounds', ['association' => $association, 'schedule' => $schedule]);
+        return redirect()->route('schedule.view', ['association' => $association, 'schedule' => $schedule]);
     }
 }

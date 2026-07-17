@@ -31,6 +31,11 @@
                     No rounds exist for this Schedule
                 </div>
             <?php endif; ?>
+            <div class="row actions mt-3">
+                <div class="col">
+                    <a class="btn btn-primary" href="{{ route('round.create', ['association' => $schedule->association, 'schedule' => $schedule]) }}">Create Round</a>
+                </div>
+            </div>
         </div>
     </div>
 @endsection

@@ -230,11 +230,6 @@ Breadcrumbs::for('schedule.update.confirm', function ($trail, $schedule) {
     $trail->push(__('Confirm Update'), route('schedule.update.confirm', ['association' => $schedule->association, 'schedule' => $schedule]));
 });
 
-Breadcrumbs::for('schedule.rounds', function ($trail, $schedule) {
-    $trail->parent('schedule.view', $schedule);
-    $trail->push(__('Rounds'), route('schedule.rounds', ['association' => $schedule->association, 'schedule' => $schedule]));
-});
-
 Breadcrumbs::for('schedule.generate-matches', function ($trail, $schedule) {
     $trail->parent('schedule.view', $schedule);
     $trail->push(__('Generate Matches'), route('schedule.generate-matches', ['association' => $schedule->association, 'schedule' => $schedule]));
@@ -246,12 +241,12 @@ Breadcrumbs::for('schedule.generate-matches.review', function ($trail, $schedule
 });
 
 Breadcrumbs::for('round.view', function ($trail, $schedule, $round) {
-    $trail->parent('schedule.rounds', $schedule);
+    $trail->parent('schedule.view', $schedule);
     $trail->push(! empty($round->start_date) ? Carbon::parse($round->start_date)->format('m-d-Y') : '<empty>');
 });
 
 Breadcrumbs::for('round.create', function ($trail, $schedule) {
-    $trail->parent('schedule.rounds', $schedule);
+    $trail->parent('schedule.view', $schedule);
     $trail->push(__('Create'), route('round.create', ['association' => $schedule->association, 'schedule' => $schedule]));
 });
 
