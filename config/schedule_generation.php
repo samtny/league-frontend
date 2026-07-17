@@ -59,15 +59,15 @@ return [
     // two different tiers; or a tier element that's neither a string nor a
     // non-empty array of strings) falls back silently to this default.
     'soft_criteria' => [
-        ['home_cycle_spacing', 'away_cycle_spacing'],
+        'full_cycle_spacing',
+        //['home_cycle_spacing', 'away_cycle_spacing'],
         'home_away_break',
         'balanced_opponents',
         'repeat_opponent_consecutive_rounds',
         'rematch_home_away_reversal',
         'consecutive_venue',
-        'home_away_balance', # seems already solved / overlap w / less good than home_away_break
-        #'full_cycle_spacing',
-        #'equal_matches_played',
-        #'home_venue_balance',
+        'home_away_balance', // seems already solved / overlap w / less good than home_away_break
+        //'equal_matches_played',
+        //'home_venue_balance',
     ],
 ];

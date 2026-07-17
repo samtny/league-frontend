@@ -597,15 +597,19 @@ class ScheduleScorerTest extends TestCase
         $this->assertArrayNotHasKey('home_away_break', $report->softViolationsByCriterion);
     }
 
-    public function test_home_away_break_penalty_is_flat_with_no_repeat_offense_surcharge()
+    public function test_home_away_break_penalty_escalates_once_a_streak_reaches_three()
     {
         $teams = $this->teams(1, 2);
         $venues = $this->venues(10);
 
-        // Team 1 is home for all 3 rounds (2 consecutive-round transitions:
-        // round1->2, round2->3), team 2 is away for all 3 - 4 break events
-        // total (2 per team). Unlike ConsecutiveVenueCriterion, this is a
-        // flat count with no escalating surcharge for repeat offenders.
+        // Team 1 is home for all 3 rounds, team 2 is away for all 3. Each
+        // team's round1->2 transition is a plain break (streak=2, costs 1
+        // raw unit); each team's round2->3 transition extends the streak to
+        // 3, which costs SEVERE_STREAK_MULTIPLIER (3) raw units instead of 1
+        // - rawUnits = (1+3) per team x 2 teams = 8, matchCount=3 (1 match x
+        // 3 rounds), normalized = 8/(2x3) = 1.3333. tierWeight is 10000 (10
+        // tiers total since balanced_opponents was added - see the previous
+        // test's comment).
         $candidate = new ScheduleCandidate([
             new RoundCandidate($this->date('2026-07-06'), [new MatchCandidate(10, 'Venue 10', 1, 2)], []),
             new RoundCandidate($this->date('2026-07-13'), [new MatchCandidate(10, 'Venue 10', 1, 2)], []),
@@ -614,14 +618,37 @@ class ScheduleScorerTest extends TestCase
 
         $report = (new ScheduleScorer)->score($candidate, $teams, $venues, new GenerationConfig);
 
-        // breakCount=4, matchCount=3 (1 match x 3 rounds), normalized =
-        // 4/(2x3) = 0.6667; tierWeight is 10000 (10 tiers total since
-        // balanced_opponents was added - see the previous test's comment).
-        // Checked via the criterion's own score, not the report total, since
-        // this candidate also triggers consecutive_venue (same venue every
-        // round).
-        $this->assertEqualsWithDelta(10000 * (4 / 6), $this->criterionScore($report, 'home_away_break'), 0.01);
+        $this->assertEqualsWithDelta(10000 * (8 / 6), $this->criterionScore($report, 'home_away_break'), 0.01);
         $this->assertCount(4, $report->softViolationsByCriterion['home_away_break']);
+        $messages = implode(' ', $report->softViolationsByCriterion['home_away_break']);
+        $this->assertStringContainsString('Team 1 played home in consecutive rounds', $messages);
+        $this->assertStringContainsString('Team 1 has played home in 3 consecutive rounds', $messages);
+        $this->assertStringContainsString('Team 2 has played away in 3 consecutive rounds', $messages);
+    }
+
+    public function test_home_away_break_two_isolated_breaks_are_not_treated_as_a_severe_streak()
+    {
+        $teams = $this->teams(1, 2, 3, 4);
+        $venues = $this->venues(10, 20);
+
+        // Team 1 breaks home/home in rounds 1-2, then alternates normally,
+        // then breaks home/home again in rounds 4-5 - two SEPARATE streaks of
+        // 2, never a streak of 3, so neither occurrence should be escalated
+        // even though this team has two lifetime break events (unlike
+        // ConsecutiveVenueCriterion's per-team lifetime-occurrence surcharge,
+        // this criterion only escalates a genuine consecutive run).
+        $candidate = new ScheduleCandidate([
+            new RoundCandidate($this->date('2026-07-06'), [new MatchCandidate(10, 'Venue 10', 1, 2)], []),
+            new RoundCandidate($this->date('2026-07-13'), [new MatchCandidate(10, 'Venue 10', 1, 3)], []),
+            new RoundCandidate($this->date('2026-07-20'), [new MatchCandidate(10, 'Venue 10', 2, 1)], []),
+            new RoundCandidate($this->date('2026-07-27'), [new MatchCandidate(10, 'Venue 10', 1, 4)], []),
+            new RoundCandidate($this->date('2026-08-03'), [new MatchCandidate(10, 'Venue 10', 1, 2)], []),
+        ]);
+
+        $report = (new ScheduleScorer)->score($candidate, $teams, $venues, new GenerationConfig);
+
+        $messages = implode(' ', $report->softViolationsByCriterion['home_away_break']);
+        $this->assertStringNotContainsString('consecutive rounds through round', $messages);
     }
 
     public function test_balanced_opponents_does_not_penalize_a_single_clean_round()
