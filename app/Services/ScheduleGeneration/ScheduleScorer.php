@@ -7,13 +7,7 @@ use App\Services\ScheduleGeneration\HardConstraints\ByeAndMatchConflictConstrain
 use App\Services\ScheduleGeneration\HardConstraints\DoubleBookedTeamConstraint;
 use App\Services\ScheduleGeneration\HardConstraints\InactiveTeamConstraint;
 use App\Services\ScheduleGeneration\HardConstraints\InactiveVenueConstraint;
-use App\Services\ScheduleGeneration\SoftCriteria\ConsecutiveVenueCriterion;
-use App\Services\ScheduleGeneration\SoftCriteria\EqualMatchesPlayedCriterion;
-use App\Services\ScheduleGeneration\SoftCriteria\HomeAwayBalanceCriterion;
-use App\Services\ScheduleGeneration\SoftCriteria\HomeAwayBreakCriterion;
-use App\Services\ScheduleGeneration\SoftCriteria\HomeVenueBalanceCriterion;
-use App\Services\ScheduleGeneration\SoftCriteria\OpponentRecencyCriterion;
-use App\Services\ScheduleGeneration\SoftCriteria\RepeatOpponentConsecutiveRoundsCriterion;
+use App\Services\ScheduleGeneration\SoftCriteria\SoftCriterionRegistry;
 
 /**
  * Pure, randomness-free scoring: replays a candidate round by round, feeding
@@ -40,15 +34,7 @@ final class ScheduleScorer
             new ByeAndMatchConflictConstraint($context),
         ];
 
-        $softCriteria = [
-            new ConsecutiveVenueCriterion($context),
-            new EqualMatchesPlayedCriterion($context),
-            new OpponentRecencyCriterion($context),
-            new HomeAwayBalanceCriterion($context),
-            new HomeVenueBalanceCriterion($context),
-            new HomeAwayBreakCriterion($context),
-            new RepeatOpponentConsecutiveRoundsCriterion($context),
-        ];
+        $softCriteria = SoftCriterionRegistry::build($config->softCriteria, $context);
 
         foreach ($candidate->rounds as $roundIndex => $round) {
             foreach ($hardConstraints as $constraint) {
@@ -99,6 +85,8 @@ final class ScheduleScorer
                 'label' => $criterion->label(),
                 'score' => $criterionScore,
                 'weight' => $criterion->weight($config),
+                'raw' => $criterion->rawPenalty(),
+                'epsilonUnit' => $criterion->epsilonUnit(),
             ];
 
             $messages = $criterion->messages();

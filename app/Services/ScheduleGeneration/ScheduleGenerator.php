@@ -4,9 +4,10 @@ namespace App\Services\ScheduleGeneration;
 
 /**
  * Construct-then-anneal: builds one hard-valid seed candidate
- * (InitialSolutionBuilder), then locally improves it via simulated
- * annealing (SimulatedAnnealingOptimizer) within the attempt/time budget.
- * Never true exhaustive brute force - intractable in general and
+ * (InitialSolutionBuilder), then locally improves it via sequential
+ * epsilon-constraint search (EpsilonConstraintOptimizer, one simulated
+ * annealing pass per soft-criteria priority tier) within the attempt/time
+ * budget. Never true exhaustive brute force - intractable in general and
  * unnecessary at league scale.
  */
 final class ScheduleGenerator
@@ -93,17 +94,18 @@ final class ScheduleGenerator
                 return new GenerationResult($seed, $seedReport, $attempts, $this->elapsedMs($startedAt));
             }
 
-            // Polish phase: simulated annealing with reheat-on-new-best,
-            // replacing plain randomized restart (see
-            // SimulatedAnnealingOptimizer).
-            $outcome = (new SimulatedAnnealingOptimizer($this->rng, $this->scorer))->optimize(
+            // Polish phase: sequential epsilon-constraint search, one
+            // simulated-annealing pass per priority tier (see
+            // EpsilonConstraintOptimizer). Its own budget is measured from
+            // its own invocation rather than $startedAt, since it manages
+            // per-pass clocks internally.
+            $outcome = (new EpsilonConstraintOptimizer($this->rng, $this->scorer))->optimize(
                 $seed,
                 $seedReport,
                 $rounds,
                 $activeTeams,
                 $activeVenues,
                 $config,
-                $startedAt,
             );
 
             $best = $outcome['candidate'];

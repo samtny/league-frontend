@@ -78,6 +78,16 @@ final class ConsecutiveVenueCriterion implements SoftCriterion
 
     public function penalty(GenerationConfig $config): float
     {
+        return $this->weight($config) * $this->rawPenalty();
+    }
+
+    public function weight(GenerationConfig $config): float
+    {
+        return $config->tierWeight($this->key());
+    }
+
+    public function rawPenalty(): float
+    {
         $rawTotal = 0.0;
 
         foreach ($this->venueStreakCountByTeam as $count) {
@@ -87,12 +97,12 @@ final class ConsecutiveVenueCriterion implements SoftCriterion
             }
         }
 
-        return $this->weight($config) * ($rawTotal / max(1, 2 * $this->matchCount));
+        return $rawTotal / max(1, 2 * $this->matchCount);
     }
 
-    public function weight(GenerationConfig $config): float
+    public function epsilonUnit(): float
     {
-        return $config->tierWeight($this->key());
+        return 1 / max(1, 2 * $this->matchCount);
     }
 
     public function messages(): array

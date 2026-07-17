@@ -44,6 +44,24 @@ interface SoftCriterion
     public function weight(GenerationConfig $config): float;
 
     /**
+     * The intrinsic, config-independent normalized penalty - the same value
+     * penalty() multiplies by weight(). Exists on its own so it can be
+     * compared across GenerationConfigs whose weight() for this criterion
+     * differs (e.g. epsilon-constraint search, where a criterion's weight
+     * changes pass to pass but its raw penalty doesn't).
+     */
+    public function rawPenalty(): float;
+
+    /**
+     * "1 raw unit" on this criterion's own normalized scale - e.g. what one
+     * additional occurrence of the underlying violation would cost
+     * rawPenalty() before any priority weighting. Used as the epsilon-
+     * constraint tolerance: a candidate may worsen this criterion's raw
+     * penalty by up to one unit relative to the best achieved so far.
+     */
+    public function epsilonUnit(): float;
+
+    /**
      * @return string[]
      */
     public function messages(): array;

@@ -66,14 +66,27 @@ final class OpponentRecencyCriterion implements SoftCriterion
 
     public function penalty(GenerationConfig $config): float
     {
-        $divisor = max(1, $this->matchCount * max(1, $this->context->idealGap));
-
-        return $this->weight($config) * ($this->shortfallTotal / $divisor);
+        return $this->weight($config) * $this->rawPenalty();
     }
 
     public function weight(GenerationConfig $config): float
     {
         return $config->tierWeight($this->key());
+    }
+
+    public function rawPenalty(): float
+    {
+        return $this->shortfallTotal / $this->divisor();
+    }
+
+    public function epsilonUnit(): float
+    {
+        return 1 / $this->divisor();
+    }
+
+    private function divisor(): int
+    {
+        return max(1, $this->matchCount * max(1, $this->context->idealGap));
     }
 
     public function messages(): array

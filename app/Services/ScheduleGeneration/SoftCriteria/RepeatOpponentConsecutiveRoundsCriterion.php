@@ -66,12 +66,22 @@ final class RepeatOpponentConsecutiveRoundsCriterion implements SoftCriterion
 
     public function penalty(GenerationConfig $config): float
     {
-        return $this->weight($config) * ($this->repeatCount / max(1, $this->matchCount));
+        return $this->weight($config) * $this->rawPenalty();
     }
 
     public function weight(GenerationConfig $config): float
     {
         return $config->tierWeight($this->key());
+    }
+
+    public function rawPenalty(): float
+    {
+        return $this->repeatCount / max(1, $this->matchCount);
+    }
+
+    public function epsilonUnit(): float
+    {
+        return 1 / max(1, $this->matchCount);
     }
 
     public function messages(): array

@@ -33,6 +33,8 @@ final class SimulatedAnnealingOptimizer
      * @param RoundInput[] $rounds
      * @param TeamInput[] $activeTeams
      * @param VenueInput[] $activeVenues
+     * @param array<string, float> $fixedTierThresholds criterion key => max allowed raw penalty; any candidate
+     *   exceeding a threshold is rejected the same way a hard-constraint violation is
      * @return array{candidate: ScheduleCandidate, report: GenerationReport, iterations: int}
      */
     public function optimize(
@@ -43,6 +45,7 @@ final class SimulatedAnnealingOptimizer
         array $activeVenues,
         GenerationConfig $config,
         float $startedAt,
+        array $fixedTierThresholds = [],
     ): array {
         $best = $initial;
         $bestReport = $initialReport;
@@ -54,9 +57,9 @@ final class SimulatedAnnealingOptimizer
         $current = $initial;
         $currentReport = $initialReport;
 
-        $t0 = $this->initialTemperature($current, $currentReport, $rounds, $activeTeams, $activeVenues, $config);
+        $t0 = $this->initialTemperature($current, $currentReport, $rounds, $activeTeams, $activeVenues, $config, $fixedTierThresholds);
         $temperature = $t0;
-        $epochSize = max(1, $this->slotCount($rounds));
+        $epochSize = max(1, SlotCount::total($rounds));
         $iterations = 0;
 
         while ($iterations < $config->maxAttempts && $this->elapsedMs($startedAt) < $config->timeBudgetMs) {
@@ -65,7 +68,7 @@ final class SimulatedAnnealingOptimizer
             $candidate = $this->applyRandomMove($current, $rounds, $activeTeams) ?? $current;
             $report = $this->scorer->score($candidate, $activeTeams, $activeVenues, $config);
 
-            if (! $report->hardConstraintsSatisfied) {
+            if (! $report->hardConstraintsSatisfied || ! $this->satisfiesFixedTiers($report, $fixedTierThresholds)) {
                 continue;
             }
 
@@ -109,6 +112,8 @@ final class SimulatedAnnealingOptimizer
      * @param RoundInput[] $rounds
      * @param TeamInput[] $activeTeams
      * @param VenueInput[] $activeVenues
+     * @param array<string, float> $fixedTierThresholds see optimize() - the probe must use the same gate as the
+     *   main loop, or T0 gets calibrated against worsening deltas the main loop would never actually accept
      */
     private function initialTemperature(
         ScheduleCandidate $candidate,
@@ -117,6 +122,7 @@ final class SimulatedAnnealingOptimizer
         array $activeTeams,
         array $activeVenues,
         GenerationConfig $config,
+        array $fixedTierThresholds = [],
     ): float {
         $positiveDeltas = [];
         $probe = $candidate;
@@ -126,7 +132,7 @@ final class SimulatedAnnealingOptimizer
             $next = $this->applyRandomMove($probe, $rounds, $activeTeams) ?? $probe;
             $nextReport = $this->scorer->score($next, $activeTeams, $activeVenues, $config);
 
-            if (! $nextReport->hardConstraintsSatisfied) {
+            if (! $nextReport->hardConstraintsSatisfied || ! $this->satisfiesFixedTiers($nextReport, $fixedTierThresholds)) {
                 continue;
             }
 
@@ -153,20 +159,6 @@ final class SimulatedAnnealingOptimizer
         $mean = array_sum($positiveDeltas) / count($positiveDeltas);
 
         return max(1e-6, -$mean / log(self::ACCEPTANCE_QUANTILE));
-    }
-
-    /**
-     * @param RoundInput[] $rounds
-     */
-    private function slotCount(array $rounds): int
-    {
-        $count = 0;
-
-        foreach ($rounds as $round) {
-            $count += count($round->slots);
-        }
-
-        return $count;
     }
 
     /**
@@ -446,5 +438,21 @@ final class SimulatedAnnealingOptimizer
     private function elapsedMs(float $startedAt): float
     {
         return (microtime(true) - $startedAt) * 1000;
+    }
+
+    /**
+     * @param array<string, float> $fixedTierThresholds
+     */
+    private function satisfiesFixedTiers(GenerationReport $report, array $fixedTierThresholds): bool
+    {
+        foreach ($fixedTierThresholds as $key => $maxRaw) {
+            foreach ($report->softCriteriaScores as $entry) {
+                if ($entry['key'] === $key && $entry['raw'] > $maxRaw) {
+                    return false;
+                }
+            }
+        }
+
+        return true;
     }
 }

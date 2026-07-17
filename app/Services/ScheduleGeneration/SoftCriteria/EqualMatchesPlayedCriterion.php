@@ -66,12 +66,22 @@ final class EqualMatchesPlayedCriterion implements SoftCriterion
 
     public function penalty(GenerationConfig $config): float
     {
-        return $this->weight($config) * ($this->spread / max(1, $this->roundsSeen));
+        return $this->weight($config) * $this->rawPenalty();
     }
 
     public function weight(GenerationConfig $config): float
     {
         return $config->tierWeight($this->key());
+    }
+
+    public function rawPenalty(): float
+    {
+        return $this->spread / max(1, $this->roundsSeen);
+    }
+
+    public function epsilonUnit(): float
+    {
+        return 1 / max(1, $this->roundsSeen);
     }
 
     public function messages(): array

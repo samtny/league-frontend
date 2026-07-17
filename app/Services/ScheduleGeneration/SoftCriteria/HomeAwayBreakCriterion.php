@@ -74,12 +74,22 @@ final class HomeAwayBreakCriterion implements SoftCriterion
 
     public function penalty(GenerationConfig $config): float
     {
-        return $this->weight($config) * ($this->breakCount / max(1, 2 * $this->matchCount));
+        return $this->weight($config) * $this->rawPenalty();
     }
 
     public function weight(GenerationConfig $config): float
     {
         return $config->tierWeight($this->key());
+    }
+
+    public function rawPenalty(): float
+    {
+        return $this->breakCount / max(1, 2 * $this->matchCount);
+    }
+
+    public function epsilonUnit(): float
+    {
+        return 1 / max(1, 2 * $this->matchCount);
     }
 
     public function messages(): array
