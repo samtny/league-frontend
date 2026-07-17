@@ -11,7 +11,9 @@ use App\Series;
 use App\Services\ScheduleGeneration\GenerationConfig;
 use App\Services\ScheduleGeneration\GenerationReport;
 use App\Services\ScheduleGeneration\GenerationResult;
+use App\Services\ScheduleGeneration\MatchSlotInput;
 use App\Services\ScheduleGeneration\RoundDatePlanner;
+use App\Services\ScheduleGeneration\RoundInput;
 use App\Services\ScheduleGeneration\ScheduleCandidate;
 use App\Services\ScheduleGeneration\ScheduleGenerator;
 use App\Services\ScheduleGeneration\TeamInput;
@@ -427,10 +429,16 @@ class ScheduleController extends Controller
     /**
      * Runs the constraint-aware generator (see App\Services\ScheduleGeneration)
      * against this schedule's active teams/venues and its own already-
-     * persisted Rounds. Uses the actual Round dates (not RoundDatePlanner
-     * recomputed from the schedule's weekday/start/end date) so the
-     * candidate's rounds line up 1:1 with real Rounds when applied - see
-     * applyCandidateToExistingMatches().
+     * persisted Rounds/Matches. Each Round becomes a RoundInput carrying the
+     * real matches.id of every empty match slot it already has (created by
+     * Round::createMatches() one per active venue) - the generator never
+     * invents Round/Match rows, it only ever assigns teams into slots that
+     * already exist. Slots pointing at a since-deactivated venue are
+     * excluded from the pool the same way they always were (RoundBuilder
+     * only ever drew from the active venue pool). Only Rounds attached to
+     * this Schedule are included today; once Rounds gain an "active"/"type"
+     * flag (bye/semifinal/final weeks), filtering to the eligible subset
+     * happens right here with no change needed inside the generator.
      */
     private function generateAutomaticCandidate(Schedule $schedule): GenerationResult
     {
@@ -438,11 +446,21 @@ class ScheduleController extends Controller
 
         $activeTeams = $association->activeTeams->map(fn ($team) => TeamInput::fromModel($team))->all();
         $activeVenues = $association->activeVenues->map(fn ($venue) => VenueInput::fromModel($venue))->all();
-        $roundDates = $schedule->rounds()->orderBy('start_date')->get()
-            ->map(fn (Round $round) => $round->start_date->toDateTimeImmutable())
+        $activeVenueIds = $association->activeVenues->pluck('id')->flip();
+
+        $rounds = $schedule->rounds()->with('matches.venue')->orderBy('start_date')->get()
+            ->map(function (Round $round) use ($activeVenueIds) {
+                $slots = $round->matches
+                    ->filter(fn (PLMatch $match) => $match->venue_id !== null && $activeVenueIds->has($match->venue_id))
+                    ->map(fn (PLMatch $match) => new MatchSlotInput($match->id, $match->venue_id, optional($match->venue)->name ?? ''))
+                    ->values()
+                    ->all();
+
+                return new RoundInput($round->id, $round->start_date->toDateTimeImmutable(), $slots);
+            })
             ->all();
 
-        return app(ScheduleGenerator::class)->generate($roundDates, $activeTeams, $activeVenues, GenerationConfig::fromConfig());
+        return app(ScheduleGenerator::class)->generate($rounds, $activeTeams, $activeVenues, GenerationConfig::forAssociation($association));
     }
 
     private function stashGeneratedCandidate(Schedule $schedule, GenerationResult $result): void
@@ -460,41 +478,29 @@ class ScheduleController extends Controller
 
     /**
      * Applies a generated candidate's Home/Away assignments onto this
-     * schedule's own existing PLMatch rows - Rounds/Matches are never
-     * created or deleted here. Each RoundCandidate is matched back to a
-     * real Round by date, and each MatchCandidate within it to a real
-     * PLMatch by venue_id; anything that doesn't resolve (e.g. the venue
-     * lineup changed since the Round's Matches were created) is silently
-     * skipped. This only ever writes new team ids - it never nulls out ones
-     * a candidate doesn't happen to touch - so the caller (generateMatchesAccept())
-     * always runs clearMatchAssignments() immediately first; otherwise a
-     * Match slot the new candidate skips (e.g. capacity < venue count that
-     * round) could keep a stale assignment from a previous run.
+     * schedule's own existing PLMatch rows, keyed directly by the real
+     * matches.id each MatchCandidate carries (see generateAutomaticCandidate()) -
+     * Rounds/Matches are never created or deleted here. This only ever
+     * writes new team ids - it never nulls out ones a candidate doesn't
+     * happen to touch - so the caller (generateMatchesAccept()) always runs
+     * clearMatchAssignments() immediately first; otherwise a Match slot the
+     * new candidate skips (e.g. capacity < venue count that round) could
+     * keep a stale assignment from a previous run.
      */
     private function applyCandidateToExistingMatches(Schedule $schedule, ScheduleCandidate $candidate): void
     {
-        $roundsByDate = $schedule->rounds()->get()->keyBy(fn (Round $round) => $round->start_date->format('Y-m-d'));
-
         foreach ($candidate->rounds as $roundCandidate) {
-            $round = $roundsByDate->get($roundCandidate->date->format('Y-m-d'));
-
-            if ($round === null) {
-                continue;
-            }
-
-            $matchesByVenue = PLMatch::where('round_id', $round->id)->get()->keyBy('venue_id');
-
             foreach ($roundCandidate->matches as $matchCandidate) {
-                $match = $matchesByVenue->get($matchCandidate->venueId);
-
-                if ($match === null) {
+                if ($matchCandidate->matchId === null) {
                     continue;
                 }
 
-                $match->home_team_id = $matchCandidate->homeTeamId;
-                $match->away_team_id = $matchCandidate->awayTeamId;
-
-                $match->save();
+                PLMatch::where('id', $matchCandidate->matchId)
+                    ->where('schedule_id', $schedule->id)
+                    ->update([
+                        'home_team_id' => $matchCandidate->homeTeamId,
+                        'away_team_id' => $matchCandidate->awayTeamId,
+                    ]);
             }
         }
     }

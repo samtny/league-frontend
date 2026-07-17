@@ -3,6 +3,9 @@
 namespace Tests\Unit\ScheduleGeneration;
 
 use App\Services\ScheduleGeneration\GenerationConfig;
+use App\Services\ScheduleGeneration\InitialSolutionBuilder;
+use App\Services\ScheduleGeneration\MatchSlotInput;
+use App\Services\ScheduleGeneration\RoundInput;
 use App\Services\ScheduleGeneration\RoundRobinConstructor;
 use App\Services\ScheduleGeneration\ScheduleGenerator;
 use App\Services\ScheduleGeneration\ScheduleScorer;
@@ -35,17 +38,27 @@ class ScheduleGeneratorTest extends TestCase
         return array_map(fn (int $id) => new VenueInput($id, "Venue {$id}"), $ids);
     }
 
-    private function dates(int $count): array
+    /**
+     * @param VenueInput[] $venues
+     * @return RoundInput[]
+     */
+    private function rounds(int $count, array $venues): array
     {
-        $dates = [];
+        $rounds = [];
         $date = new \DateTimeImmutable('2026-07-06');
+        $matchId = 1;
 
         for ($i = 0; $i < $count; $i++) {
-            $dates[] = $date;
+            $slots = array_map(
+                fn (VenueInput $venue) => new MatchSlotInput($matchId++, $venue->id, $venue->name),
+                $venues,
+            );
+
+            $rounds[] = new RoundInput($i + 1, $date, $slots);
             $date = $date->add(new \DateInterval('P7D'));
         }
 
-        return $dates;
+        return $rounds;
     }
 
     private function generator(int $seed): ScheduleGenerator
@@ -55,10 +68,12 @@ class ScheduleGeneratorTest extends TestCase
 
     public function test_valid_schedule_satisfies_all_hard_constraints_for_a_realistic_league()
     {
+        $venues = $this->venues(10, 20);
+
         $result = $this->generator(1)->generate(
-            $this->dates(10),
+            $this->rounds(10, $venues),
             $this->teams(1, 2, 3, 4, 5, 6),
-            $this->venues(10, 20),
+            $venues,
             new GenerationConfig,
         );
 
@@ -71,10 +86,10 @@ class ScheduleGeneratorTest extends TestCase
     {
         $teams = $this->teams(1, 2, 3, 4, 5, 6);
         $venues = $this->venues(10, 20);
-        $dates = $this->dates(8);
+        $rounds = $this->rounds(8, $venues);
 
-        $resultA = $this->generator(42)->generate($dates, $teams, $venues, new GenerationConfig);
-        $resultB = $this->generator(42)->generate($dates, $teams, $venues, new GenerationConfig);
+        $resultA = $this->generator(42)->generate($rounds, $teams, $venues, new GenerationConfig);
+        $resultB = $this->generator(42)->generate($rounds, $teams, $venues, new GenerationConfig);
 
         $this->assertEquals($resultA->candidate, $resultB->candidate);
         $this->assertSame($resultA->attemptsUsed, $resultB->attemptsUsed);
@@ -83,10 +98,12 @@ class ScheduleGeneratorTest extends TestCase
     public function test_odd_team_count_byes_are_evenly_rotated()
     {
         // 5 active teams, 1 venue -> capacity 2 matches/round (4 teams), 1 bye/round.
+        $venues = $this->venues(10);
+
         $result = $this->generator(7)->generate(
-            $this->dates(10),
+            $this->rounds(10, $venues),
             $this->teams(1, 2, 3, 4, 5),
-            $this->venues(10),
+            $venues,
             new GenerationConfig,
         );
 
@@ -109,7 +126,7 @@ class ScheduleGeneratorTest extends TestCase
         $activeTeams = $this->teams(1, 2, 3, 4);
         $activeVenues = $this->venues(10, 20);
 
-        $result = $this->generator(3)->generate($this->dates(6), $activeTeams, $activeVenues, new GenerationConfig);
+        $result = $this->generator(3)->generate($this->rounds(6, $activeVenues), $activeTeams, $activeVenues, new GenerationConfig);
 
         $allowedTeamIds = [1, 2, 3, 4];
         $allowedVenueIds = [10, 20];
@@ -129,7 +146,9 @@ class ScheduleGeneratorTest extends TestCase
 
     public function test_fewer_than_two_active_teams_is_reported_as_degenerate()
     {
-        $result = $this->generator(1)->generate($this->dates(4), $this->teams(1), $this->venues(10), new GenerationConfig);
+        $venues = $this->venues(10);
+
+        $result = $this->generator(1)->generate($this->rounds(4, $venues), $this->teams(1), $venues, new GenerationConfig);
 
         $this->assertTrue($result->report->degenerate);
         $this->assertNotNull($result->report->degenerateReason);
@@ -141,7 +160,7 @@ class ScheduleGeneratorTest extends TestCase
 
     public function test_no_active_venues_is_reported_as_degenerate()
     {
-        $result = $this->generator(1)->generate($this->dates(4), $this->teams(1, 2), [], new GenerationConfig);
+        $result = $this->generator(1)->generate($this->rounds(4, []), $this->teams(1, 2), [], new GenerationConfig);
 
         $this->assertTrue($result->report->degenerate);
         $this->assertNotNull($result->report->degenerateReason);
@@ -163,8 +182,9 @@ class ScheduleGeneratorTest extends TestCase
         // commits a valid (if heavily-penalized) schedule rather than being
         // flagged degenerate.
         $config = new GenerationConfig(maxAttempts: 20, timeBudgetMs: 500);
+        $venues = $this->venues(10);
 
-        $result = $this->generator(9)->generate($this->dates(5), $this->teams(1, 2), $this->venues(10), $config);
+        $result = $this->generator(9)->generate($this->rounds(5, $venues), $this->teams(1, 2), $venues, $config);
 
         $this->assertFalse($result->report->degenerate);
         $this->assertTrue($result->report->hardConstraintsSatisfied);
@@ -174,8 +194,9 @@ class ScheduleGeneratorTest extends TestCase
     public function test_respects_the_max_attempts_budget()
     {
         $config = new GenerationConfig(maxAttempts: 3, timeBudgetMs: 60_000);
+        $venues = $this->venues(10);
 
-        $result = $this->generator(5)->generate($this->dates(5), $this->teams(1, 2), $this->venues(10), $config);
+        $result = $this->generator(5)->generate($this->rounds(5, $venues), $this->teams(1, 2), $venues, $config);
 
         $this->assertLessThanOrEqual(3, $result->attemptsUsed);
     }
@@ -186,7 +207,7 @@ class ScheduleGeneratorTest extends TestCase
         $teams = $this->teamsWithHomeVenues([1 => 100, 2 => 200, 3 => 300, 4 => 400, 5 => null, 6 => null]);
         $venues = $this->venues(100, 200, 300, 400);
 
-        $result = $this->generator(11)->generate($this->dates(12), $teams, $venues, new GenerationConfig);
+        $result = $this->generator(11)->generate($this->rounds(12, $venues), $teams, $venues, new GenerationConfig);
 
         $homeVenueIdByTeam = [1 => 100, 2 => 200, 3 => 300, 4 => 400, 5 => null, 6 => null];
 
@@ -206,7 +227,7 @@ class ScheduleGeneratorTest extends TestCase
         $teams = $this->teamsWithHomeVenues([1 => 100, 2 => 200, 3 => 300, 4 => 400]);
         $venues = $this->venues(100, 200, 300, 400);
 
-        $result = $this->generator(30)->generate($this->dates(16), $teams, $venues, new GenerationConfig);
+        $result = $this->generator(30)->generate($this->rounds(16, $venues), $teams, $venues, new GenerationConfig);
 
         $homeVenueIdByTeam = [1 => 100, 2 => 200, 3 => 300, 4 => 400];
         $homeAppearances = array_fill_keys(array_keys($homeVenueIdByTeam), 0);
@@ -243,7 +264,7 @@ class ScheduleGeneratorTest extends TestCase
         $teams = $this->teamsWithHomeVenues([1 => 500, 2 => 500, 3 => null, 4 => null, 5 => null, 6 => null]);
         $venues = $this->venues(500, 600);
 
-        $result = $this->generator(33)->generate($this->dates(10), $teams, $venues, new GenerationConfig);
+        $result = $this->generator(33)->generate($this->rounds(10, $venues), $teams, $venues, new GenerationConfig);
 
         $this->assertFalse($result->report->degenerate);
         $this->assertTrue($result->report->hardConstraintsSatisfied);
@@ -265,8 +286,6 @@ class ScheduleGeneratorTest extends TestCase
 
     public function test_exclusive_home_venue_seed_is_used_when_it_reaches_a_perfect_score()
     {
-        $this->markTestSkipped('RoundRobinConstructor seed disabled in ScheduleGenerator for now - see its class docblock.');
-
         // 4 teams, 4 distinct owned venues, only 2 rounds - short enough
         // that RoundRobinConstructor's single-cycle prefix hasn't reached
         // its first unavoidable break yet (that happens at round index 2;
@@ -278,7 +297,7 @@ class ScheduleGeneratorTest extends TestCase
         $teams = $this->teamsWithHomeVenues([1 => 100, 2 => 200, 3 => 300, 4 => 400]);
         $venues = $this->venues(100, 200, 300, 400);
 
-        $result = $this->generator(1)->generate($this->dates(2), $teams, $venues, new GenerationConfig);
+        $result = $this->generator(1)->generate($this->rounds(2, $venues), $teams, $venues, new GenerationConfig);
 
         $this->assertFalse($result->report->degenerate);
         $this->assertTrue($result->report->hardConstraintsSatisfied);
@@ -288,47 +307,43 @@ class ScheduleGeneratorTest extends TestCase
 
     public function test_exclusive_home_venue_seed_never_regresses_the_associaton_2_schedule_6_benchmark()
     {
-        // The real shape that originally motivated the (now set-aside, see
-        // RoundRobinConstructor's class docblock) seed: 4 teams, 4 distinct
-        // owned venues, 7 rounds (two full cycles plus a 1-round leftover).
-        // With the seed disabled this exercises greedy-only, which plateaus
-        // at 63.0 for this shape - this test just locks that plateau in as a
-        // regression guard, independent of whether the seed is ever
-        // re-enabled (see plan.md for background on the scoring criteria).
-        // This plateau rose from 15.0 once HomeAwayBreakCriterion was added:
-        // the underlying candidate schedule is unchanged, but 6 consecutive
-        // home/away repeats that were previously invisible to scoring are
-        // now counted (48.0 of this total). With only 4 teams, pairTeams()'s
-        // opponent selection is close to deterministic (it always picks the
-        // single largest-gap candidate), so the randomized-restart search
-        // doesn't have much real diversity to search through for this shape
-        // - raising the criterion's weight doesn't change which candidate
-        // wins, only how much it costs. See RoundBuilder for where the
-        // pairing itself would need more diversity to actually reduce this.
+        // The real shape that motivated RoundRobinConstructor: 4 teams, 4
+        // distinct owned venues, 7 rounds (two full cycles plus a 1-round
+        // leftover) - a shape where the construction's pass-boundary seam
+        // cost can make the seed itself score worse than a lucky greedy
+        // pass at this small scale (see plan.md). The actual guarantee
+        // "seed + polish" makes isn't "the seed always wins," it's "the
+        // full generator never ends up worse than a single greedy pass
+        // would" - asserted here directly by comparing against a fresh
+        // single greedy pass over the exact same input, rather than pinning
+        // a raw score to the current weight scheme (which is orders of
+        // magnitude different from the flat weight=1.0 scheme this bound
+        // was originally measured under).
         $teams = $this->teamsWithHomeVenues([1 => 100, 2 => 200, 3 => 300, 4 => 400]);
         $venues = $this->venues(100, 200, 300, 400);
+        $rounds = $this->rounds(7, $venues);
+        $config = new GenerationConfig;
 
-        $result = $this->generator(1)->generate($this->dates(7), $teams, $venues, new GenerationConfig);
+        $greedyOnly = (new InitialSolutionBuilder(new SeededRng(1)))->greedyPass($rounds, $teams);
+        $greedyReport = (new ScheduleScorer)->score($greedyOnly, $teams, $venues, $config);
+
+        $result = $this->generator(1)->generate($rounds, $teams, $venues, $config);
 
         $this->assertFalse($result->report->degenerate);
         $this->assertTrue($result->report->hardConstraintsSatisfied);
-        $this->assertLessThanOrEqual(63.0, $result->report->score);
+        $this->assertLessThanOrEqual($greedyReport->score, $result->report->score);
     }
 
     public function test_exclusive_home_venue_seed_beats_greedy_once_team_count_is_large_enough()
     {
-        $this->markTestSkipped('RoundRobinConstructor seed disabled in ScheduleGenerator for now - see its class docblock.');
-
         // Single-cycle schedules (R = N-1) are where the construction's
-        // advantage is real and grows with scale: measured directly (500
-        // attempts, same budget both ways), greedy-only degrades sharply as
-        // team count grows (n=8: 20.0, n=10: 42.0, n=12: 74.0, n=16: 166.0)
-        // while the construction's score grows only linearly with the
-        // unavoidable minimum-breaks bound (n=8: 15.0, n=10: 20.0, n=12:
-        // 25.0, n=16: 35.0) because it isn't searching at all - see
-        // plan.md for the full table. By 16 teams greedy is left roughly
-        // 4.7x worse off. The full generator (seed+polish) captures this
-        // end to end, confirmed by running it directly below.
+        // advantage is real and grows with scale: it's a closed-form,
+        // break-minimal answer with whole-schedule visibility, while a
+        // single greedy pass has none. Compares the construction seed's own
+        // score directly against a single greedy pass over the exact same
+        // input (rather than pinning an absolute score, which depends on
+        // the weight scheme), and confirms the full generator (seed+polish)
+        // never ends up worse than the seed alone.
         $homeVenueIdByTeamId = [];
         for ($id = 1; $id <= 16; $id++) {
             $homeVenueIdByTeamId[$id] = 1000 + $id;
@@ -336,13 +351,23 @@ class ScheduleGeneratorTest extends TestCase
 
         $teams = $this->teamsWithHomeVenues($homeVenueIdByTeamId);
         $venues = $this->venuesFor($homeVenueIdByTeamId);
+        $rounds = $this->rounds(15, $venues); // Exactly one single cycle (R = N-1 = 15 rounds).
+        $config = new GenerationConfig;
 
-        // Exactly one single cycle (R = N-1 = 15 rounds).
-        $result = $this->generator(1)->generate($this->dates(15), $teams, $venues, new GenerationConfig);
+        $seed = (new RoundRobinConstructor())->construct($rounds, $teams, $venues);
+        $seedReport = (new ScheduleScorer)->score($seed, $teams, $venues, $config);
+
+        $greedyOnly = (new InitialSolutionBuilder(new SeededRng(1)))->greedyPass($rounds, $teams);
+        $greedyReport = (new ScheduleScorer)->score($greedyOnly, $teams, $venues, $config);
+
+        $this->assertTrue($seedReport->hardConstraintsSatisfied);
+        $this->assertLessThan($greedyReport->score, $seedReport->score, 'construction should beat a single greedy pass at this scale');
+
+        $result = $this->generator(1)->generate($rounds, $teams, $venues, $config);
 
         $this->assertFalse($result->report->degenerate);
         $this->assertTrue($result->report->hardConstraintsSatisfied);
-        $this->assertSame(35.0, $result->report->score, 'should match the construction seed, far below the ~166.0 greedy-only result at this scale');
+        $this->assertLessThanOrEqual($seedReport->score, $result->report->score, 'seed+polish should never be worse than the seed alone');
     }
 
     private function venuesFor(array $homeVenueIdByTeamId): array

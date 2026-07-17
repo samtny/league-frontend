@@ -88,10 +88,12 @@ class ScheduleScorerTest extends TestCase
         // it's just penalized like any other soft criterion.
         $teams = $this->teams(1, 2, 3, 4);
         $venues = $this->venues(10, 20);
-        $config = new GenerationConfig(weightVenue: 0.0, weightEquality: 0.0, weightRepeat: 0.0, weightHomeAway: 0.0, weightHomeVenueBalance: 0.0, weightHomeAwayBreak: 0.0, weightConsecutiveOpponentRepeat: 4.0);
 
         // Both pairs repeat their round-1 matchup in round 2 (1v2 and 3v4
-        // each meet again immediately) - two occurrences total.
+        // each meet again immediately) - two occurrences total, out of 4
+        // matches observed (matchCount=4), so normalized = 2/4 = 0.5.
+        // tierWeight('repeat_opponent_consecutive_rounds') is 100^3 = 1e6
+        // under the default priority order (see GenerationConfig).
         $candidate = new ScheduleCandidate([
             new RoundCandidate($this->date('2026-07-06'), [
                 new MatchCandidate(10, 'Venue 10', 1, 2),
@@ -103,10 +105,10 @@ class ScheduleScorerTest extends TestCase
             ], []),
         ]);
 
-        $report = (new ScheduleScorer)->score($candidate, $teams, $venues, $config);
+        $report = (new ScheduleScorer)->score($candidate, $teams, $venues, new GenerationConfig);
 
         $this->assertTrue($report->hardConstraintsSatisfied);
-        $this->assertSame(8.0, $this->criterionScore($report, 'repeat_opponent_consecutive_rounds'));
+        $this->assertEqualsWithDelta(500_000.0, $this->criterionScore($report, 'repeat_opponent_consecutive_rounds'), 0.01);
         $this->assertArrayHasKey('repeat_opponent_consecutive_rounds', $report->softViolationsByCriterion);
         $this->assertCount(2, $report->softViolationsByCriterion['repeat_opponent_consecutive_rounds']);
         $messages = implode(' ', $report->softViolationsByCriterion['repeat_opponent_consecutive_rounds']);
@@ -189,21 +191,19 @@ class ScheduleScorerTest extends TestCase
     public function test_two_different_teams_each_hitting_a_consecutive_same_venue_once_scores_the_base_penalty_for_each()
     {
         // Every consecutive-same-venue occurrence is a real break and always
-        // costs one instance of weight() - dynamic here, 1 / 4 active teams
-        // = 0.25 - no matter which team or how many other teams also have
-        // one: two different teams each hit once is 2x weight(), the same
-        // as it would be added up individually. What's NOT charged here is
-        // any *extra* repeat-offense surcharge, since neither team was hit
-        // twice - see
+        // costs one raw unit - no matter which team or how many other teams
+        // also have one: two different teams each hit once is 2 raw units,
+        // the same as it would be added up individually. What's NOT charged
+        // here is any *extra* repeat-offense surcharge, since neither team
+        // was hit twice - see
         // test_the_same_team_hitting_consecutive_same_venue_twice_costs_more_than_two_isolated_incidents
         // below for the case that does add a surcharge. Checked via the
         // criterion's own score (not the report total), since this candidate
         // also happens to trigger home_away_break for teams 1 and 4 (they
         // keep the same venue by staying in the same home/away role too) -
-        // irrelevant noise for this test now that its weight is dynamic too.
+        // irrelevant noise for this test.
         $teams = $this->teams(1, 2, 3, 4);
         $venues = $this->venues(10, 20);
-        $config = new GenerationConfig(weightVenue: 5.0, weightEquality: 0.0, weightRepeat: 0.0, weightHomeAway: 0.0, weightHomeAwayBreak: 0.0);
 
         $candidate = new ScheduleCandidate([
             new RoundCandidate($this->date('2026-07-06'), [
@@ -216,12 +216,14 @@ class ScheduleScorerTest extends TestCase
             ], []),
         ]);
 
-        $report = (new ScheduleScorer)->score($candidate, $teams, $venues, $config);
+        $report = (new ScheduleScorer)->score($candidate, $teams, $venues, new GenerationConfig);
 
         $this->assertTrue($report->hardConstraintsSatisfied);
-        // Team 1 (1 occurrence) + team 4 (1 occurrence) = 2 x weight(0.25),
-        // no repeat-offense surcharge since neither team was hit twice.
-        $this->assertSame(0.5, $this->criterionScore($report, 'consecutive_venue'));
+        // Team 1 (1 occurrence) + team 4 (1 occurrence) = 2 raw units, no
+        // repeat-offense surcharge since neither team was hit twice.
+        // matchCount=4, normalized = 2/(2x4) = 0.25; tierWeight is 100^0 = 1
+        // (consecutive_venue is last in the default priority order).
+        $this->assertSame(0.25, $this->criterionScore($report, 'consecutive_venue'));
         $this->assertArrayHasKey('consecutive_venue', $report->softViolationsByCriterion);
         $this->assertCount(2, $report->softViolationsByCriterion['consecutive_venue']);
         $messages = implode(' ', $report->softViolationsByCriterion['consecutive_venue']);
@@ -233,7 +235,6 @@ class ScheduleScorerTest extends TestCase
     {
         $teams = $this->teams(1, 2, 3, 4);
         $venues = $this->venues(10, 20, 30);
-        $config = new GenerationConfig(weightVenue: 5.0, weightEquality: 0.0, weightRepeat: 0.0, weightHomeAway: 0.0, weightHomeAwayBreak: 0.0);
 
         // Team 1 is at venue 10 for rounds 1-2 (incident #1), then at venue
         // 20 for rounds 3-4 (incident #2) - two separate repeat-offense
@@ -260,19 +261,20 @@ class ScheduleScorerTest extends TestCase
             ], []),
         ]);
 
-        $report = (new ScheduleScorer)->score($candidate, $teams, $venues, $config);
+        $report = (new ScheduleScorer)->score($candidate, $teams, $venues, new GenerationConfig);
 
         $this->assertTrue($report->hardConstraintsSatisfied);
-        // Dynamic weight here is 1 / 4 active teams = 0.25.
-        // Team 1: 2 occurrences -> base 2 x 0.25 + repeat-offense surcharge
-        // of 1 x 0.25 = 3 x 0.25 = 0.75.
-        // Team 4: 1 occurrence -> base 1 x 0.25 = 0.25, no surcharge.
-        // Total = 1.0 - strictly more than two teams each hit once would
-        // cost (0.5), which is the whole point of the surcharge: the same
-        // team being hit twice is treated as worse than the incident count
-        // spread across different teams. Checked via the criterion's own
-        // score, not the report total (see the previous test's comment).
-        $this->assertSame(1.0, $this->criterionScore($report, 'consecutive_venue'));
+        // Team 1: 2 occurrences -> base 2 raw units + repeat-offense
+        // surcharge of 1 raw unit = 3 raw units.
+        // Team 4: 1 occurrence -> base 1 raw unit, no surcharge.
+        // rawTotal = 4; matchCount = 8 (2 matches x 4 rounds), normalized =
+        // 4/(2x8) = 0.25 - strictly more than two teams each hit once would
+        // cost in the same shape (which is the whole point of the surcharge:
+        // the same team being hit twice is treated as worse than the
+        // incident count spread across different teams). Checked via the
+        // criterion's own score, not the report total (see the previous
+        // test's comment).
+        $this->assertSame(0.25, $this->criterionScore($report, 'consecutive_venue'));
         $this->assertArrayHasKey('consecutive_venue', $report->softViolationsByCriterion);
         $this->assertCount(3, $report->softViolationsByCriterion['consecutive_venue']);
         $messages = implode(' ', $report->softViolationsByCriterion['consecutive_venue']);
@@ -284,7 +286,6 @@ class ScheduleScorerTest extends TestCase
     {
         $teams = $this->teams(1, 2, 3, 4);
         $venues = $this->venues(10);
-        $config = new GenerationConfig(weightVenue: 0.0, weightEquality: 8.0, weightRepeat: 0.0, weightHomeAway: 0.0);
 
         // Byes rotate unevenly here on purpose: 1/2 play twice, 3/4 play once.
         // A bye between a team's matches resets its "last opponent", so the
@@ -302,11 +303,13 @@ class ScheduleScorerTest extends TestCase
             ], [3, 4]),
         ]);
 
-        $report = (new ScheduleScorer)->score($candidate, $teams, $venues, $config);
+        $report = (new ScheduleScorer)->score($candidate, $teams, $venues, new GenerationConfig);
 
         $this->assertTrue($report->hardConstraintsSatisfied);
-        // Teams 1/2 played 2 matches, teams 3/4 played 1 -> spread of 1.
-        $this->assertSame(8.0, $report->score);
+        // Teams 1/2 played 2 matches, teams 3/4 played 1 -> spread of 1,
+        // over 3 rounds seen -> normalized = 1/3. tierWeight is 100^6 = 1e12
+        // (equal_matches_played is highest priority in the default order).
+        $this->assertEqualsWithDelta(1_000_000_000_000 * (1 / 3), $this->criterionScore($report, 'equal_matches_played'), 0.01);
         $this->assertArrayHasKey('equal_matches_played', $report->softViolationsByCriterion);
     }
 
@@ -314,7 +317,6 @@ class ScheduleScorerTest extends TestCase
     {
         $teams = $this->teams(1, 2);
         $venues = $this->venues(10);
-        $config = new GenerationConfig(weightVenue: 0.0, weightEquality: 0.0, weightRepeat: 0.0, weightHomeAway: 2.0, weightHomeAwayBreak: 0.0, weightConsecutiveOpponentRepeat: 0.0);
 
         // Team 1 is home 3 times in a row (diff of 3, over by 2 once |diff|-1 = 2).
         $candidate = new ScheduleCandidate([
@@ -323,15 +325,16 @@ class ScheduleScorerTest extends TestCase
             new RoundCandidate($this->date('2026-07-20'), [new MatchCandidate(10, 'Venue 10', 1, 2)], []),
         ]);
 
-        $report = (new ScheduleScorer)->score($candidate, $teams, $venues, $config);
+        $report = (new ScheduleScorer)->score($candidate, $teams, $venues, new GenerationConfig);
 
         // Team 1: 3 home / 0 away -> |diff|=3, over the ±1 tolerance by 2.
         // Team 2: 0 home / 3 away -> same imbalance from the other side.
+        // totalOver=4, teamCount=2, normalized=2; tierWeight is 100^5 = 1e10
+        // (home_away_balance is 2nd-highest priority in the default order).
         // Checked via the criterion's own score, not the report total, since
-        // this candidate (same match repeated 3 rounds) also happens to
-        // trigger consecutive_venue and home_away_break, both dynamically
-        // weighted now regardless of this test's zeroed config values.
-        $this->assertSame(8.0, $this->criterionScore($report, 'home_away_balance'));
+        // this candidate (same match repeated 3 rounds) also triggers other
+        // criteria now that every criterion has a real, nonzero weight.
+        $this->assertSame(20_000_000_000.0, $this->criterionScore($report, 'home_away_balance'));
         $this->assertArrayHasKey('home_away_balance', $report->softViolationsByCriterion);
         $this->assertCount(2, $report->softViolationsByCriterion['home_away_balance']);
     }
@@ -364,7 +367,6 @@ class ScheduleScorerTest extends TestCase
     {
         $teams = $this->teamsWithHomeVenues([1 => 100, 2 => null, 3 => null, 4 => null]);
         $venues = $this->venues(100, 300);
-        $config = new GenerationConfig(weightVenue: 0.0, weightEquality: 0.0, weightRepeat: 0.0, weightHomeAway: 0.0, weightHomeVenueBalance: 6.0, weightHomeAwayBreak: 0.0);
 
         // Team 1 has a home venue (100) but is always sent away to a neutral
         // venue (300) instead, across 4 rounds with varying opponents. Teams
@@ -378,15 +380,17 @@ class ScheduleScorerTest extends TestCase
             new RoundCandidate($this->date('2026-07-27'), [new MatchCandidate(300, 'Venue 300', 2, 1)], [3, 4]),
         ]);
 
-        $report = (new ScheduleScorer)->score($candidate, $teams, $venues, $config);
+        $report = (new ScheduleScorer)->score($candidate, $teams, $venues, new GenerationConfig);
 
         $this->assertTrue($report->hardConstraintsSatisfied);
-        // Team 1: 0 home-venue appearances out of 4 matches -> diff=4, over the
-        // ±1 tolerance by 3 -> penalty = 6 * 3 = 18. Checked via the
-        // criterion's own score, not the report total, since team 1 also
-        // racks up consecutive_venue and home_away_break occurrences here
-        // (always sent to the same neutral venue in the same away role).
-        $this->assertSame(18.0, $this->criterionScore($report, 'home_venue_balance'));
+        // Team 1: 0 home-venue appearances out of 4 matches -> diff=4, over
+        // the ±1 tolerance by 3 -> totalOver=3, teamCount=4, normalized=0.75.
+        // tierWeight is 100^4 = 1e8 (home_venue_balance is 3rd-highest
+        // priority in the default order). Checked via the criterion's own
+        // score, not the report total, since team 1 also racks up
+        // consecutive_venue and home_away_break occurrences here (always
+        // sent to the same neutral venue in the same away role).
+        $this->assertSame(75_000_000.0, $this->criterionScore($report, 'home_venue_balance'));
         $this->assertArrayHasKey('home_venue_balance', $report->softViolationsByCriterion);
         $this->assertCount(1, $report->softViolationsByCriterion['home_venue_balance']);
     }
@@ -395,7 +399,6 @@ class ScheduleScorerTest extends TestCase
     {
         $teams = $this->teamsWithHomeVenues([1 => 100, 2 => null, 3 => null]);
         $venues = $this->venues(100, 300);
-        $config = new GenerationConfig(weightVenue: 0.0, weightEquality: 0.0, weightRepeat: 0.0, weightHomeAway: 0.0, weightHomeVenueBalance: 6.0);
 
         // Team 1 plays at its own home venue (100) half the time and away
         // (300) the other half - within the ±1 tolerance, no penalty.
@@ -404,10 +407,10 @@ class ScheduleScorerTest extends TestCase
             new RoundCandidate($this->date('2026-07-13'), [new MatchCandidate(300, 'Venue 300', 3, 1)], []),
         ]);
 
-        $report = (new ScheduleScorer)->score($candidate, $teams, $venues, $config);
+        $report = (new ScheduleScorer)->score($candidate, $teams, $venues, new GenerationConfig);
 
         $this->assertTrue($report->hardConstraintsSatisfied);
-        $this->assertSame(0.0, $report->score);
+        $this->assertSame(0.0, $this->criterionScore($report, 'home_venue_balance'));
         $this->assertArrayNotHasKey('home_venue_balance', $report->softViolationsByCriterion);
     }
 
@@ -418,7 +421,6 @@ class ScheduleScorerTest extends TestCase
             new TeamInput(2, "Rullo's Team"),
         ];
         $venues = $this->venues(10, 20);
-        $config = new GenerationConfig(weightVenue: 5.0, weightEquality: 0.0, weightRepeat: 0.0, weightHomeAway: 0.0, weightHomeVenueBalance: 0.0);
 
         // Three rounds at the same venue is two incidents for each team
         // (round1-2, then round2-3) - over the one-incident tolerance, so
@@ -429,7 +431,7 @@ class ScheduleScorerTest extends TestCase
             new RoundCandidate($this->date('2026-07-20'), [new MatchCandidate(10, 'Venue 10', 1, 2)], []),
         ]);
 
-        $report = (new ScheduleScorer)->score($candidate, $teams, $venues, $config);
+        $report = (new ScheduleScorer)->score($candidate, $teams, $venues, new GenerationConfig);
 
         $messages = implode(' ', $report->softViolationsByCriterion['consecutive_venue']);
         $this->assertStringContainsString('Buttermilk Team', $messages);
@@ -442,7 +444,6 @@ class ScheduleScorerTest extends TestCase
     {
         $teams = $this->teams(1, 2, 3, 4);
         $venues = $this->venues(10, 20);
-        $config = new GenerationConfig(weightVenue: 0.0, weightEquality: 0.0, weightRepeat: 0.0, weightHomeAway: 0.0, weightHomeVenueBalance: 0.0, weightHomeAwayBreak: 5.0);
 
         // Team 1 is home in both rounds (a home/home break) and team 4 is
         // away in both rounds (an away/away break) - teams 2 and 3 properly
@@ -459,13 +460,15 @@ class ScheduleScorerTest extends TestCase
             ], []),
         ]);
 
-        $report = (new ScheduleScorer)->score($candidate, $teams, $venues, $config);
+        $report = (new ScheduleScorer)->score($candidate, $teams, $venues, new GenerationConfig);
 
-        // Dynamic weight here is 1 / (2 x 4 active teams) = 0.125, so 2
-        // occurrences = 0.25. Checked via the criterion's own score, not the
-        // report total, since this candidate also happens to trigger
-        // consecutive_venue for teams 1 and 4 (same venue as their role).
-        $this->assertSame(0.25, $this->criterionScore($report, 'home_away_break'));
+        // breakCount=2, matchCount=4 (2 matches x 2 rounds), normalized =
+        // 2/(2x4) = 0.25; tierWeight is 100^1 = 100 (home_away_break is
+        // 2nd-lowest priority in the default order), so 100 x 0.25 = 25.
+        // Checked via the criterion's own score, not the report total, since
+        // this candidate also happens to trigger consecutive_venue for teams
+        // 1 and 4 (same venue as their role).
+        $this->assertSame(25.0, $this->criterionScore($report, 'home_away_break'));
         $this->assertArrayHasKey('home_away_break', $report->softViolationsByCriterion);
         $this->assertCount(2, $report->softViolationsByCriterion['home_away_break']);
         $messages = implode(' ', $report->softViolationsByCriterion['home_away_break']);
@@ -477,7 +480,6 @@ class ScheduleScorerTest extends TestCase
     {
         $teams = $this->teams(1, 2, 3, 4);
         $venues = $this->venues(10);
-        $config = new GenerationConfig(weightVenue: 0.0, weightEquality: 0.0, weightRepeat: 0.0, weightHomeAway: 0.0, weightHomeVenueBalance: 0.0, weightHomeAwayBreak: 4.0);
 
         // Team 1 is home in rounds 1 and 3, but byes round 2 in between -
         // that bye should reset team 1's (and team 2's) "last role" the same
@@ -489,9 +491,9 @@ class ScheduleScorerTest extends TestCase
             new RoundCandidate($this->date('2026-07-20'), [new MatchCandidate(10, 'Venue 10', 1, 2)], [3, 4]),
         ]);
 
-        $report = (new ScheduleScorer)->score($candidate, $teams, $venues, $config);
+        $report = (new ScheduleScorer)->score($candidate, $teams, $venues, new GenerationConfig);
 
-        $this->assertSame(0.0, $report->score);
+        $this->assertSame(0.0, $this->criterionScore($report, 'home_away_break'));
         $this->assertArrayNotHasKey('home_away_break', $report->softViolationsByCriterion);
     }
 
@@ -499,7 +501,6 @@ class ScheduleScorerTest extends TestCase
     {
         $teams = $this->teams(1, 2);
         $venues = $this->venues(10);
-        $config = new GenerationConfig(weightVenue: 0.0, weightEquality: 0.0, weightRepeat: 0.0, weightHomeAway: 0.0, weightHomeVenueBalance: 0.0, weightHomeAwayBreak: 3.0, weightConsecutiveOpponentRepeat: 0.0);
 
         // Team 1 is home for all 3 rounds (2 consecutive-round transitions:
         // round1->2, round2->3), team 2 is away for all 3 - 4 break events
@@ -511,13 +512,13 @@ class ScheduleScorerTest extends TestCase
             new RoundCandidate($this->date('2026-07-20'), [new MatchCandidate(10, 'Venue 10', 1, 2)], []),
         ]);
 
-        $report = (new ScheduleScorer)->score($candidate, $teams, $venues, $config);
+        $report = (new ScheduleScorer)->score($candidate, $teams, $venues, new GenerationConfig);
 
-        // Dynamic weight here is 1 / (2 x 2 active teams) = 0.25, so 4
-        // occurrences = 1.0. Checked via the criterion's own score, not the
-        // report total, since this candidate also triggers consecutive_venue
-        // (same venue every round).
-        $this->assertSame(1.0, $this->criterionScore($report, 'home_away_break'));
+        // breakCount=4, matchCount=3 (1 match x 3 rounds), normalized =
+        // 4/(2x3) = 0.6667; tierWeight is 100. Checked via the criterion's
+        // own score, not the report total, since this candidate also
+        // triggers consecutive_venue (same venue every round).
+        $this->assertEqualsWithDelta(100 * (4 / 6), $this->criterionScore($report, 'home_away_break'), 0.01);
         $this->assertCount(4, $report->softViolationsByCriterion['home_away_break']);
     }
 }

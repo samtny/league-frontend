@@ -3,14 +3,22 @@
 namespace App\Services\ScheduleGeneration;
 
 /**
- * Randomized-restart search: builds full candidate schedules attempt by
- * attempt (never true exhaustive brute force - intractable in general and
- * unnecessary at league scale), scores each against the soft criteria, and
- * keeps the best hard-constraint-valid one seen within the attempt/time
- * budget. See plan.md for the constraint model this implements.
+ * Construct-then-anneal: builds one hard-valid seed candidate
+ * (InitialSolutionBuilder), then locally improves it via simulated
+ * annealing (SimulatedAnnealingOptimizer) within the attempt/time budget.
+ * Never true exhaustive brute force - intractable in general and
+ * unnecessary at league scale.
  */
 final class ScheduleGenerator
 {
+    /**
+     * Bounded feasibility retries for the construction phase only - see the
+     * comment at its call site. RoundRobinConstructor never needs more than
+     * one (it's deterministic and always hard-valid); this budget exists for
+     * the greedy fallback path on tightly venue-constrained inputs.
+     */
+    private const MAX_SEED_ATTEMPTS = 20;
+
     public function __construct(
         private readonly Rng $rng,
         private readonly ScheduleScorer $scorer,
@@ -18,18 +26,18 @@ final class ScheduleGenerator
     }
 
     /**
-     * @param \DateTimeImmutable[] $roundDates
+     * @param RoundInput[] $rounds
      * @param TeamInput[] $activeTeams
      * @param VenueInput[] $activeVenues
      */
-    public function generate(array $roundDates, array $activeTeams, array $activeVenues, GenerationConfig $config): GenerationResult
+    public function generate(array $rounds, array $activeTeams, array $activeVenues, GenerationConfig $config): GenerationResult
     {
         $startedAt = microtime(true);
 
-        if (empty($roundDates)) {
+        if (empty($rounds)) {
             return $this->degenerateResult(
                 new ScheduleCandidate([]),
-                "No round dates were generated for this schedule's date range and weekday.",
+                "No rounds are available to assign for this schedule.",
                 0,
                 $this->elapsedMs($startedAt),
             );
@@ -37,7 +45,7 @@ final class ScheduleGenerator
 
         if (count($activeTeams) < 2) {
             return $this->degenerateResult(
-                $this->allByeCandidate($roundDates, $activeTeams),
+                $this->allByeCandidate($rounds, $activeTeams),
                 'Fewer than 2 active teams are available, so no matches can be scheduled.',
                 0,
                 $this->elapsedMs($startedAt),
@@ -46,7 +54,7 @@ final class ScheduleGenerator
 
         if (empty($activeVenues)) {
             return $this->degenerateResult(
-                $this->allByeCandidate($roundDates, $activeTeams),
+                $this->allByeCandidate($rounds, $activeTeams),
                 'No active venues are available, so no matches can be scheduled.',
                 0,
                 $this->elapsedMs($startedAt),
@@ -57,46 +65,50 @@ final class ScheduleGenerator
         $best = null;
         $bestReport = null;
 
-        // RoundRobinConstructor (the exclusive-home-venue seed) is set aside
-        // for now - greedy-only below is the sole code path while Automatic
-        // assignment is reworked to populate existing Matches instead of
-        // creating/deleting Rounds. See RoundRobinConstructor's class
-        // docblock; left in place as dead code rather than deleted in case
-        // it's revisited later.
-        //
-        // $seed = (new RoundRobinConstructor())->construct($roundDates, $activeTeams, $activeVenues);
-        //
-        // if ($seed !== null) {
-        //     $seedReport = $this->scorer->score($seed, $activeTeams, $activeVenues, $config);
-        //
-        //     if ($seedReport->hardConstraintsSatisfied) {
-        //         $best = $seed;
-        //         $bestReport = $seedReport;
-        //
-        //         if ($bestReport->score <= 0.0) {
-        //             return new GenerationResult($best, $bestReport, $attempts, $this->elapsedMs($startedAt));
-        //         }
-        //     }
-        // }
+        // Construction phase: a strong deterministic seed when every active
+        // team owns a distinct home venue (RoundRobinConstructor) - always
+        // hard-valid by construction, so this never needs a second try.
+        // Otherwise a single greedy pass, which is hard-valid for almost any
+        // input but can occasionally fail on a tightly venue-constrained one
+        // (e.g. very few active venues shared across teams) - bounded retries
+        // here are a feasibility search only (a fresh RNG-driven shuffle each
+        // try), not a quality search, which the polish phase below owns.
+        $seed = null;
+        $seedReport = null;
 
-        while ($attempts < $config->maxAttempts && $this->elapsedMs($startedAt) < $config->timeBudgetMs) {
-            $attempts++;
+        for ($seedAttempt = 0; $seedAttempt < self::MAX_SEED_ATTEMPTS; $seedAttempt++) {
+            $candidateSeed = (new InitialSolutionBuilder($this->rng))->build($rounds, $activeTeams, $activeVenues);
+            $candidateSeedReport = $this->scorer->score($candidateSeed, $activeTeams, $activeVenues, $config);
 
-            $candidate = $this->attempt($roundDates, $activeTeams, $activeVenues);
-            $report = $this->scorer->score($candidate, $activeTeams, $activeVenues, $config);
+            if ($candidateSeedReport->hardConstraintsSatisfied) {
+                $seed = $candidateSeed;
+                $seedReport = $candidateSeedReport;
 
-            if (! $report->hardConstraintsSatisfied) {
-                continue;
-            }
-
-            if ($bestReport === null || $report->score < $bestReport->score) {
-                $best = $candidate;
-                $bestReport = $report;
-            }
-
-            if ($bestReport->score <= 0.0) {
                 break;
             }
+        }
+
+        if ($seed !== null) {
+            if ($seedReport->score <= 0.0) {
+                return new GenerationResult($seed, $seedReport, $attempts, $this->elapsedMs($startedAt));
+            }
+
+            // Polish phase: simulated annealing with reheat-on-new-best,
+            // replacing plain randomized restart (see
+            // SimulatedAnnealingOptimizer).
+            $outcome = (new SimulatedAnnealingOptimizer($this->rng, $this->scorer))->optimize(
+                $seed,
+                $seedReport,
+                $rounds,
+                $activeTeams,
+                $activeVenues,
+                $config,
+                $startedAt,
+            );
+
+            $best = $outcome['candidate'];
+            $bestReport = $outcome['report'];
+            $attempts = $outcome['iterations'];
         }
 
         if ($best === null) {
@@ -106,7 +118,7 @@ final class ScheduleGenerator
             // but it keeps a concrete, honestly-flagged-degenerate schedule
             // available if it ever does). Run one more attempt purely so
             // there's something to show the admin.
-            $fallback = $this->attempt($roundDates, $activeTeams, $activeVenues);
+            $fallback = $this->attempt($rounds, $activeTeams);
             $report = $this->scorer->score($fallback, $activeTeams, $activeVenues, $config);
             $reason = "Could not find a schedule that satisfies all required constraints within {$attempts} attempts.";
 
@@ -130,56 +142,28 @@ final class ScheduleGenerator
     }
 
     /**
-     * @param \DateTimeImmutable[] $roundDates
+     * @param RoundInput[] $rounds
      * @param TeamInput[] $activeTeams
-     * @param VenueInput[] $activeVenues
      */
-    private function attempt(array $roundDates, array $activeTeams, array $activeVenues): ScheduleCandidate
+    private function attempt(array $rounds, array $activeTeams): ScheduleCandidate
     {
-        $builder = new RoundBuilder($this->rng);
-
-        $teamIds = array_map(fn (TeamInput $t) => $t->id, $activeTeams);
-        $byeCountByTeam = array_fill_keys($teamIds, 0);
-        $homeCountByTeam = array_fill_keys($teamIds, 0);
-        $awayCountByTeam = array_fill_keys($teamIds, 0);
-        $homeVenueAppearancesByTeam = array_fill_keys($teamIds, 0);
-        $lastVenueByTeam = [];
-        $lastMeetingRoundByPair = [];
-
-        $rounds = [];
-
-        foreach ($roundDates as $index => $date) {
-            $rounds[] = $builder->build(
-                $date,
-                $activeTeams,
-                $activeVenues,
-                $byeCountByTeam,
-                $lastVenueByTeam,
-                $lastMeetingRoundByPair,
-                $homeCountByTeam,
-                $awayCountByTeam,
-                $homeVenueAppearancesByTeam,
-                $index,
-            );
-        }
-
-        return new ScheduleCandidate($rounds);
+        return (new InitialSolutionBuilder($this->rng))->greedyPass($rounds, $activeTeams);
     }
 
     /**
-     * @param \DateTimeImmutable[] $roundDates
+     * @param RoundInput[] $rounds
      * @param TeamInput[] $activeTeams
      */
-    private function allByeCandidate(array $roundDates, array $activeTeams): ScheduleCandidate
+    private function allByeCandidate(array $rounds, array $activeTeams): ScheduleCandidate
     {
         $teamIds = array_map(fn (TeamInput $t) => $t->id, $activeTeams);
 
-        $rounds = array_map(
-            fn (\DateTimeImmutable $date) => new RoundCandidate($date, [], $teamIds),
-            $roundDates,
+        $roundCandidates = array_map(
+            fn (RoundInput $round) => new RoundCandidate($round->date, [], $teamIds, $round->roundId),
+            $rounds,
         );
 
-        return new ScheduleCandidate($rounds);
+        return new ScheduleCandidate($roundCandidates);
     }
 
     private function degenerateResult(ScheduleCandidate $candidate, string $reason, int $attempts, float $elapsedMs): GenerationResult

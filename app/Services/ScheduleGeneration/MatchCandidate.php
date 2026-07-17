@@ -9,6 +9,7 @@ final class MatchCandidate
         public readonly string $venueName,
         public readonly int $homeTeamId,
         public readonly int $awayTeamId,
+        public readonly ?int $matchId = null,
     ) {
     }
 
@@ -19,6 +20,7 @@ final class MatchCandidate
             'venue_name' => $this->venueName,
             'home_team_id' => $this->homeTeamId,
             'away_team_id' => $this->awayTeamId,
+            'match_id' => $this->matchId,
         ];
     }
 
@@ -29,6 +31,7 @@ final class MatchCandidate
             $data['venue_name'],
             $data['home_team_id'],
             $data['away_team_id'],
+            $data['match_id'] ?? null,
         );
     }
 }

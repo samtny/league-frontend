@@ -74,12 +74,14 @@ final class HomeVenueBalanceCriterion implements SoftCriterion
 
     public function penalty(GenerationConfig $config): float
     {
-        return $config->weightHomeVenueBalance * $this->totalOver;
+        $teamCount = count($this->context->activeTeamIds);
+
+        return $this->weight($config) * ($this->totalOver / max(1, $teamCount));
     }
 
     public function weight(GenerationConfig $config): float
     {
-        return $config->weightHomeVenueBalance;
+        return $config->tierWeight($this->key());
     }
 
     public function messages(): array

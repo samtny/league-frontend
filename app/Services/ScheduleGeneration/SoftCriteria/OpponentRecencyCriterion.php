@@ -15,6 +15,8 @@ final class OpponentRecencyCriterion implements SoftCriterion
 
     private float $shortfallTotal = 0.0;
 
+    private int $matchCount = 0;
+
     /** @var string[] */
     private array $messages = [];
 
@@ -51,6 +53,7 @@ final class OpponentRecencyCriterion implements SoftCriterion
         }
 
         $this->lastMeetingRoundByPair[$pairKey] = $roundIndex;
+        $this->matchCount++;
     }
 
     public function observeBye(int $roundIndex, int $teamId): void
@@ -63,12 +66,14 @@ final class OpponentRecencyCriterion implements SoftCriterion
 
     public function penalty(GenerationConfig $config): float
     {
-        return $config->weightRepeat * $this->shortfallTotal;
+        $divisor = max(1, $this->matchCount * max(1, $this->context->idealGap));
+
+        return $this->weight($config) * ($this->shortfallTotal / $divisor);
     }
 
     public function weight(GenerationConfig $config): float
     {
-        return $config->weightRepeat;
+        return $config->tierWeight($this->key());
     }
 
     public function messages(): array

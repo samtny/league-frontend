@@ -17,7 +17,6 @@ final class RoundBuilder
 
     /**
      * @param TeamInput[] $activeTeams
-     * @param VenueInput[] $activeVenues
      * @param array<int, int> $byeCountByTeam team id => byes taken so far (mutated)
      * @param array<int, int|null> $lastVenueByTeam team id => venue played at in the immediately preceding round (mutated)
      * @param array<string, int> $lastMeetingRoundByPair pair key => round index of last meeting (mutated)
@@ -26,9 +25,8 @@ final class RoundBuilder
      * @param array<int, int> $homeVenueAppearancesByTeam team id => times played at their own home venue so far (mutated)
      */
     public function build(
-        \DateTimeImmutable $date,
+        RoundInput $round,
         array $activeTeams,
-        array $activeVenues,
         array &$byeCountByTeam,
         array &$lastVenueByTeam,
         array &$lastMeetingRoundByPair,
@@ -37,7 +35,7 @@ final class RoundBuilder
         array &$homeVenueAppearancesByTeam,
         int $roundIndex,
     ): RoundCandidate {
-        $capacity = min(intdiv(count($activeTeams), 2), count($activeVenues));
+        $capacity = min(intdiv(count($activeTeams), 2), count($round->slots));
         $byeSlots = count($activeTeams) - 2 * $capacity;
 
         $shuffled = $this->rng->shuffle($activeTeams);
@@ -52,7 +50,7 @@ final class RoundBuilder
 
         $pairs = $this->pairTeams($playingTeams, $lastMeetingRoundByPair, $roundIndex);
 
-        $matches = $this->assignVenuesAndSides($pairs, $activeVenues, $lastVenueByTeam, $homeCountByTeam, $awayCountByTeam, $homeVenueAppearancesByTeam);
+        $matches = $this->assignVenuesAndSides($pairs, $round->slots, $lastVenueByTeam, $homeCountByTeam, $awayCountByTeam, $homeVenueAppearancesByTeam);
 
         foreach ($matches as $match) {
             $lastVenueByTeam[$match->homeTeamId] = $match->venueId;
@@ -64,7 +62,7 @@ final class RoundBuilder
             $lastVenueByTeam[$team->id] = null;
         }
 
-        return new RoundCandidate($date, $matches, array_map(fn (TeamInput $t) => $t->id, $byeTeams));
+        return new RoundCandidate($round->date, $matches, array_map(fn (TeamInput $t) => $t->id, $byeTeams), $round->roundId);
     }
 
     /**
@@ -105,7 +103,7 @@ final class RoundBuilder
 
     /**
      * @param array<int, array{0: TeamInput, 1: TeamInput}> $pairs
-     * @param VenueInput[] $activeVenues
+     * @param MatchSlotInput[] $slots
      * @param array<int, int|null> $lastVenueByTeam
      * @param array<int, int> $homeCountByTeam
      * @param array<int, int> $awayCountByTeam
@@ -114,19 +112,29 @@ final class RoundBuilder
      */
     private function assignVenuesAndSides(
         array $pairs,
-        array $activeVenues,
+        array $slots,
         array $lastVenueByTeam,
         array &$homeCountByTeam,
         array &$awayCountByTeam,
         array &$homeVenueAppearancesByTeam,
     ): array {
-        $remainingVenues = array_values($this->rng->shuffle($activeVenues));
+        $remainingVenues = array_values($this->rng->shuffle($slots));
         $pairs = $this->rng->shuffle($pairs);
         $matches = [];
 
         foreach ($pairs as [$teamA, $teamB]) {
             $indexA = $teamA->homeVenueId !== null ? $this->findVenueIndex($remainingVenues, $teamA->homeVenueId) : null;
             $indexB = $teamB->homeVenueId !== null ? $this->findVenueIndex($remainingVenues, $teamB->homeVenueId) : null;
+
+            if ($indexA !== null && $indexB !== null && $indexA === $indexB) {
+                // These two opponents share the same home venue slot -
+                // whichever one isn't "home" would have to be sent away to
+                // their OWN home venue, which is always an H4 violation.
+                // Route this match through the generic neutral-venue pool
+                // below instead of forcing that.
+                $indexA = null;
+                $indexB = null;
+            }
 
             $venueIndex = null;
 
@@ -171,17 +179,32 @@ final class RoundBuilder
                 $homeVenueAppearancesByTeam[$home->id] = ($homeVenueAppearancesByTeam[$home->id] ?? 0) + 1;
             } else {
                 // Neither team has an eligible home venue free this round -
-                // fall back to the generic pool, avoiding each team's own
-                // last-played venue, and balance by the home/away label count.
+                // fall back to the generic pool, preferring a venue that is
+                // neither team's own home venue (never safe - whoever ends
+                // up away there would violate H4) nor either team's last-
+                // played venue; relaxing the last-played preference first if
+                // no venue satisfies both, and only accepting a team's own
+                // venue as an absolute last resort when literally no other
+                // slot remains this round.
                 $chosenIndex = null;
+                $aLast = $lastVenueByTeam[$teamA->id] ?? null;
+                $bLast = $lastVenueByTeam[$teamB->id] ?? null;
 
-                foreach ($remainingVenues as $index => $candidate) {
-                    $aLast = $lastVenueByTeam[$teamA->id] ?? null;
-                    $bLast = $lastVenueByTeam[$teamB->id] ?? null;
+                foreach ($remainingVenues as $index => $candidateSlot) {
+                    $isEitherTeamsOwnVenue = $candidateSlot->venueId === $teamA->homeVenueId || $candidateSlot->venueId === $teamB->homeVenueId;
 
-                    if ($candidate->id !== $aLast && $candidate->id !== $bLast) {
+                    if (! $isEitherTeamsOwnVenue && $candidateSlot->venueId !== $aLast && $candidateSlot->venueId !== $bLast) {
                         $chosenIndex = $index;
                         break;
+                    }
+                }
+
+                if ($chosenIndex === null) {
+                    foreach ($remainingVenues as $index => $candidateSlot) {
+                        if ($candidateSlot->venueId !== $teamA->homeVenueId && $candidateSlot->venueId !== $teamB->homeVenueId) {
+                            $chosenIndex = $index;
+                            break;
+                        }
                     }
                 }
 
@@ -204,19 +227,19 @@ final class RoundBuilder
             $homeCountByTeam[$home->id] = ($homeCountByTeam[$home->id] ?? 0) + 1;
             $awayCountByTeam[$away->id] = ($awayCountByTeam[$away->id] ?? 0) + 1;
 
-            $matches[] = new MatchCandidate($venue->id, $venue->name, $home->id, $away->id);
+            $matches[] = new MatchCandidate($venue->venueId, $venue->venueName, $home->id, $away->id, $venue->matchId);
         }
 
         return $matches;
     }
 
     /**
-     * @param VenueInput[] $venues
+     * @param MatchSlotInput[] $slots
      */
-    private function findVenueIndex(array $venues, int $venueId): ?int
+    private function findVenueIndex(array $slots, int $venueId): ?int
     {
-        foreach ($venues as $index => $venue) {
-            if ($venue->id === $venueId) {
+        foreach ($slots as $index => $slot) {
+            if ($slot->venueId === $venueId) {
                 return $index;
             }
         }

@@ -3,21 +3,13 @@
 namespace App\Services\ScheduleGeneration;
 
 /**
- * SET ASIDE (dead code): no longer invoked by ScheduleGenerator, which is
- * greedy-only for now while Automatic assignment is reworked to populate
- * existing Matches instead of creating/deleting Rounds. Left in place, along
- * with its full test coverage in RoundRobinConstructorTest, in case it's
- * revisited later - see ScheduleGenerator::generate() for where it used to
- * be wired in.
- *
  * Deterministic classical round-robin construction for the exclusive-home-
- * venue case: every active team owns a distinct active venue. Produces a
- * "seed" ScheduleCandidate for ScheduleGenerator to score and (if it scores
- * lower than what the randomized-restart loop finds on its own) keep -
- * see plan.md, "Optimal Round-Robin Construction for the Exclusive-Home-
- * Venue Case". This class never returns an invalid candidate by design, but
- * makes no promises beyond that; the caller always re-verifies with
- * ScheduleScorer before trusting the result.
+ * venue case: every active team owns a distinct active venue. Used by
+ * InitialSolutionBuilder as the construction phase's seed whenever eligible
+ * - see plan.md, "Optimal Round-Robin Construction for the Exclusive-Home-
+ * Venue Case", for the theory behind it. This class never returns an
+ * invalid candidate by design, but makes no promises beyond that; the
+ * caller always re-verifies with ScheduleScorer before trusting the result.
  *
  * Pairing uses the standard circle (polygon) method: team N-1 is fixed,
  * the rest rotate one step each round. Home/away is assigned by having
@@ -67,23 +59,22 @@ final class RoundRobinConstructor
     }
 
     /**
-     * @param \DateTimeImmutable[] $roundDates
+     * @param RoundInput[] $rounds
      * @param TeamInput[] $activeTeams
      * @param VenueInput[] $activeVenues
      */
-    public function construct(array $roundDates, array $activeTeams, array $activeVenues): ?ScheduleCandidate
+    public function construct(array $rounds, array $activeTeams, array $activeVenues): ?ScheduleCandidate
     {
         if (! $this->isEligible($activeTeams, $activeVenues)) {
             return null;
         }
 
-        if (empty($roundDates)) {
+        if (empty($rounds)) {
             return new ScheduleCandidate([]);
         }
 
         $n = count($activeTeams);
         $isOdd = $n % 2 === 1;
-        $slots = 0;
 
         // Slots 0..n-1 are the real teams, in input order (deterministic).
         // For an odd team count a phantom occupies the final slot; whoever
@@ -103,27 +94,27 @@ final class RoundRobinConstructor
         }
 
         $cycle = $this->buildSingleCycle($slotCount);
-        $roundCount = count($roundDates);
+        $roundCount = count($rounds);
 
-        $rounds = [];
+        $roundCandidates = [];
         $pass = 0;
 
-        while (count($rounds) < $roundCount) {
+        while (count($roundCandidates) < $roundCount) {
             $flip = $pass % 2 === 1;
 
             foreach ($cycle as $cycleRound) {
-                if (count($rounds) >= $roundCount) {
+                if (count($roundCandidates) >= $roundCount) {
                     break;
                 }
 
-                $date = $roundDates[count($rounds)];
-                $rounds[] = $this->mapRound($date, $cycleRound, $slotTeams, $venueLookup, $flip);
+                $round = $rounds[count($roundCandidates)];
+                $roundCandidates[] = $this->mapRound($round, $cycleRound, $slotTeams, $venueLookup, $flip);
             }
 
             $pass++;
         }
 
-        return new ScheduleCandidate($rounds);
+        return new ScheduleCandidate($roundCandidates);
     }
 
     /**
@@ -217,12 +208,18 @@ final class RoundRobinConstructor
      * @param array<int, VenueInput> $venueLookup
      */
     private function mapRound(
-        \DateTimeImmutable $date,
+        RoundInput $round,
         array $cycleRound,
         array $slotTeams,
         array $venueLookup,
         bool $flip,
     ): RoundCandidate {
+        $matchIdByVenueId = [];
+
+        foreach ($round->slots as $slot) {
+            $matchIdByVenueId[$slot->venueId] = $slot->matchId;
+        }
+
         $matches = [];
         $byeTeamIds = [];
 
@@ -245,9 +242,9 @@ final class RoundRobinConstructor
             [$home, $away] = $roleA === 1 ? [$teamA, $teamB] : [$teamB, $teamA];
 
             $venue = $venueLookup[$home->homeVenueId];
-            $matches[] = new MatchCandidate($home->homeVenueId, $venue->name, $home->id, $away->id);
+            $matches[] = new MatchCandidate($home->homeVenueId, $venue->name, $home->id, $away->id, $matchIdByVenueId[$home->homeVenueId] ?? null);
         }
 
-        return new RoundCandidate($date, $matches, $byeTeamIds);
+        return new RoundCandidate($round->date, $matches, $byeTeamIds, $round->roundId);
     }
 }

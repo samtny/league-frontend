@@ -19,6 +19,8 @@ final class RepeatOpponentConsecutiveRoundsCriterion implements SoftCriterion
 
     private float $repeatCount = 0.0;
 
+    private int $matchCount = 0;
+
     /** @var string[] */
     private array $messages = [];
 
@@ -50,6 +52,7 @@ final class RepeatOpponentConsecutiveRoundsCriterion implements SoftCriterion
 
         $this->lastOpponentByTeam[$home] = $away;
         $this->lastOpponentByTeam[$away] = $home;
+        $this->matchCount++;
     }
 
     public function observeBye(int $roundIndex, int $teamId): void
@@ -63,12 +66,12 @@ final class RepeatOpponentConsecutiveRoundsCriterion implements SoftCriterion
 
     public function penalty(GenerationConfig $config): float
     {
-        return $config->weightConsecutiveOpponentRepeat * $this->repeatCount;
+        return $this->weight($config) * ($this->repeatCount / max(1, $this->matchCount));
     }
 
     public function weight(GenerationConfig $config): float
     {
-        return $config->weightConsecutiveOpponentRepeat;
+        return $config->tierWeight($this->key());
     }
 
     public function messages(): array

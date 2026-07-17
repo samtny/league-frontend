@@ -4,6 +4,11 @@ namespace App\Services\ScheduleGeneration;
 
 abstract class AbstractRng implements Rng
 {
+    public function nextFloat(): float
+    {
+        return $this->nextInt(0, 1_000_000_000) / 1_000_000_000;
+    }
+
     /**
      * @param array<int, mixed> $items
      * @return array<int, mixed>

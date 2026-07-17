@@ -2,10 +2,11 @@
 
 namespace Tests\Unit\ScheduleGeneration;
 
+use App\Services\ScheduleGeneration\MatchSlotInput;
 use App\Services\ScheduleGeneration\MtRng;
 use App\Services\ScheduleGeneration\RoundBuilder;
+use App\Services\ScheduleGeneration\RoundInput;
 use App\Services\ScheduleGeneration\TeamInput;
-use App\Services\ScheduleGeneration\VenueInput;
 use Tests\TestCase;
 
 class RoundBuilderTest extends TestCase
@@ -19,7 +20,8 @@ class RoundBuilderTest extends TestCase
         // rounds running (see plan.md for the real schedule this was found on).
         $teamA = new TeamInput(1, 'Team A', 100);
         $teamB = new TeamInput(2, 'Team B', 200);
-        $venues = [new VenueInput(100, 'Venue A'), new VenueInput(200, 'Venue B')];
+        $slots = [new MatchSlotInput(901, 100, 'Venue A'), new MatchSlotInput(902, 200, 'Venue B')];
+        $round = new RoundInput(1, new \DateTimeImmutable('2026-07-06'), $slots);
 
         $byeCountByTeam = [1 => 0, 2 => 0];
         $lastVenueByTeam = [1 => 100]; // team 1 played at their own venue last round.
@@ -28,10 +30,9 @@ class RoundBuilderTest extends TestCase
         $awayCountByTeam = [1 => 0, 2 => 0];
         $homeVenueAppearancesByTeam = [1 => 0, 2 => 5];
 
-        $round = (new RoundBuilder(new MtRng))->build(
-            new \DateTimeImmutable('2026-07-06'),
+        $result = (new RoundBuilder(new MtRng))->build(
+            $round,
             [$teamA, $teamB],
-            $venues,
             $byeCountByTeam,
             $lastVenueByTeam,
             $lastMeetingRoundByPair,
@@ -41,8 +42,9 @@ class RoundBuilderTest extends TestCase
             1,
         );
 
-        $this->assertCount(1, $round->matches);
-        $this->assertSame(2, $round->matches[0]->homeTeamId, 'team 2 should host since team 1 just played at home last round');
-        $this->assertSame(200, $round->matches[0]->venueId);
+        $this->assertCount(1, $result->matches);
+        $this->assertSame(2, $result->matches[0]->homeTeamId, 'team 2 should host since team 1 just played at home last round');
+        $this->assertSame(200, $result->matches[0]->venueId);
+        $this->assertSame(902, $result->matches[0]->matchId);
     }
 }

@@ -2,6 +2,8 @@
 
 namespace Tests\Unit\ScheduleGeneration;
 
+use App\Services\ScheduleGeneration\MatchSlotInput;
+use App\Services\ScheduleGeneration\RoundInput;
 use App\Services\ScheduleGeneration\RoundRobinConstructor;
 use App\Services\ScheduleGeneration\ScheduleCandidate;
 use App\Services\ScheduleGeneration\TeamInput;
@@ -27,17 +29,27 @@ class RoundRobinConstructorTest extends TestCase
         return array_map(fn (int $venueId) => new VenueInput($venueId, "Venue {$venueId}"), array_values($homeVenueIdByTeamId));
     }
 
-    private function dates(int $count): array
+    /**
+     * @param VenueInput[] $venues
+     * @return RoundInput[]
+     */
+    private function rounds(int $count, array $venues): array
     {
-        $dates = [];
+        $rounds = [];
         $date = new \DateTimeImmutable('2026-07-06');
+        $matchId = 1;
 
         for ($i = 0; $i < $count; $i++) {
-            $dates[] = $date;
+            $slots = array_map(
+                fn (VenueInput $venue) => new MatchSlotInput($matchId++, $venue->id, $venue->name),
+                $venues,
+            );
+
+            $rounds[] = new RoundInput($i + 1, $date, $slots);
             $date = $date->add(new \DateInterval('P7D'));
         }
 
-        return $dates;
+        return $rounds;
     }
 
     /**
@@ -131,7 +143,7 @@ class RoundRobinConstructorTest extends TestCase
             $teams = $this->teamsWithOwnVenues($homeVenueIdByTeamId);
             $venues = $this->venuesFor($homeVenueIdByTeamId);
 
-            $candidate = (new RoundRobinConstructor())->construct($this->dates($n - 1), $teams, $venues);
+            $candidate = (new RoundRobinConstructor())->construct($this->rounds($n - 1, $venues), $teams, $venues);
 
             $this->assertNotNull($candidate, "n={$n} should be eligible");
             $this->assertCount($n - 1, $candidate->rounds, "n={$n} single cycle is N-1 rounds");
@@ -170,7 +182,7 @@ class RoundRobinConstructorTest extends TestCase
         $teams = $this->teamsWithOwnVenues($homeVenueIdByTeamId);
         $venues = $this->venuesFor($homeVenueIdByTeamId);
 
-        $candidate = (new RoundRobinConstructor())->construct($this->dates(4), $teams, $venues);
+        $candidate = (new RoundRobinConstructor())->construct($this->rounds(4, $venues), $teams, $venues);
 
         $this->assertNotNull($candidate);
         $this->assertCount(4, $candidate->rounds);
@@ -196,7 +208,7 @@ class RoundRobinConstructorTest extends TestCase
         $teams = $this->teamsWithOwnVenues($homeVenueIdByTeamId);
         $venues = $this->venuesFor($homeVenueIdByTeamId);
 
-        $candidate = (new RoundRobinConstructor())->construct($this->dates(6), $teams, $venues);
+        $candidate = (new RoundRobinConstructor())->construct($this->rounds(6, $venues), $teams, $venues);
 
         $this->assertNotNull($candidate);
         $this->assertCount(6, $candidate->rounds);
@@ -270,7 +282,7 @@ class RoundRobinConstructorTest extends TestCase
         $teams = $this->teamsWithOwnVenues($homeVenueIdByTeamId);
         $venues = $this->venuesFor($homeVenueIdByTeamId);
 
-        $candidate = (new RoundRobinConstructor())->construct($this->dates(2), $teams, $venues);
+        $candidate = (new RoundRobinConstructor())->construct($this->rounds(2, $venues), $teams, $venues);
 
         $this->assertNotNull($candidate);
         $this->assertCount(2, $candidate->rounds);
@@ -286,7 +298,7 @@ class RoundRobinConstructorTest extends TestCase
         $teams = $this->teamsWithOwnVenues($homeVenueIdByTeamId);
         $venues = $this->venuesFor($homeVenueIdByTeamId);
 
-        $candidate = (new RoundRobinConstructor())->construct($this->dates(7), $teams, $venues);
+        $candidate = (new RoundRobinConstructor())->construct($this->rounds(7, $venues), $teams, $venues);
 
         $this->assertNotNull($candidate);
         $this->assertCount(7, $candidate->rounds);
@@ -303,7 +315,7 @@ class RoundRobinConstructorTest extends TestCase
         $venues = [new VenueInput(101, 'Venue 101'), new VenueInput(102, 'Venue 102')];
 
         $this->assertFalse((new RoundRobinConstructor())->isEligible($teams, $venues));
-        $this->assertNull((new RoundRobinConstructor())->construct($this->dates(2), $teams, $venues));
+        $this->assertNull((new RoundRobinConstructor())->construct($this->rounds(2, $venues), $teams, $venues));
     }
 
     public function test_declines_when_two_teams_share_a_home_venue()
@@ -316,7 +328,7 @@ class RoundRobinConstructorTest extends TestCase
         $venues = [new VenueInput(500, 'Venue 500'), new VenueInput(600, 'Venue 600')];
 
         $this->assertFalse((new RoundRobinConstructor())->isEligible($teams, $venues));
-        $this->assertNull((new RoundRobinConstructor())->construct($this->dates(2), $teams, $venues));
+        $this->assertNull((new RoundRobinConstructor())->construct($this->rounds(2, $venues), $teams, $venues));
     }
 
     public function test_declines_when_a_home_venue_is_not_in_the_active_venue_list()
@@ -329,7 +341,7 @@ class RoundRobinConstructorTest extends TestCase
         $venues = [new VenueInput(101, 'Venue 101'), new VenueInput(103, 'Venue 103')];
 
         $this->assertFalse((new RoundRobinConstructor())->isEligible($teams, $venues));
-        $this->assertNull((new RoundRobinConstructor())->construct($this->dates(2), $teams, $venues));
+        $this->assertNull((new RoundRobinConstructor())->construct($this->rounds(2, $venues), $teams, $venues));
     }
 
     public function test_declines_with_fewer_than_three_teams()
@@ -338,6 +350,6 @@ class RoundRobinConstructorTest extends TestCase
         $venues = [new VenueInput(101, 'Venue 101'), new VenueInput(102, 'Venue 102')];
 
         $this->assertFalse((new RoundRobinConstructor())->isEligible($teams, $venues));
-        $this->assertNull((new RoundRobinConstructor())->construct($this->dates(2), $teams, $venues));
+        $this->assertNull((new RoundRobinConstructor())->construct($this->rounds(2, $venues), $teams, $venues));
     }
 }

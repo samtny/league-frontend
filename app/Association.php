@@ -12,7 +12,9 @@ class Association extends Model
     use HasFactory;
     use SoftDeletes;
 
-    protected $fillable = ['name', 'user_id', 'subdomain', 'home_image_path', 'about', 'rules_file_path', 'favicon_metadata', 'venues_label_override'];
+    protected $fillable = ['name', 'user_id', 'subdomain', 'home_image_path', 'about', 'rules_file_path', 'favicon_metadata', 'venues_label_override', 'schedule_generation_settings'];
+
+    protected $casts = ['schedule_generation_settings' => 'array'];
 
     /**
      * The single place that turns a request host into a subdomain string.

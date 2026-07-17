@@ -28,12 +28,18 @@ interface SoftCriterion
      */
     public function finalize(): void;
 
+    /**
+     * weight(config) * a normalized, roughly scale-invariant measure of how
+     * badly this criterion is violated (e.g. raw occurrence count divided by
+     * team/match/round count as appropriate) - so the same priority ordering
+     * behaves consistently whether the league has 4 teams or 16.
+     */
     public function penalty(GenerationConfig $config): float;
 
     /**
-     * The configured penalty for a single instance of this criterion (e.g.
-     * one consecutive-venue occurrence, one point of match-count spread),
-     * independent of how many instances actually occurred.
+     * This criterion's dominance-scaled priority weight (see
+     * GenerationConfig::tierWeight()) - independent of how many instances of
+     * the violation actually occurred.
      */
     public function weight(GenerationConfig $config): float;
 

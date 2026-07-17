@@ -13,6 +13,8 @@ final class EqualMatchesPlayedCriterion implements SoftCriterion
 
     private float $spread = 0.0;
 
+    private int $roundsSeen = 0;
+
     /** @var string[] */
     private array $messages = [];
 
@@ -39,10 +41,12 @@ final class EqualMatchesPlayedCriterion implements SoftCriterion
 
         $this->matchesPlayedByTeam[$home] = ($this->matchesPlayedByTeam[$home] ?? 0) + 1;
         $this->matchesPlayedByTeam[$away] = ($this->matchesPlayedByTeam[$away] ?? 0) + 1;
+        $this->roundsSeen = max($this->roundsSeen, $roundIndex + 1);
     }
 
     public function observeBye(int $roundIndex, int $teamId): void
     {
+        $this->roundsSeen = max($this->roundsSeen, $roundIndex + 1);
     }
 
     public function finalize(): void
@@ -62,12 +66,12 @@ final class EqualMatchesPlayedCriterion implements SoftCriterion
 
     public function penalty(GenerationConfig $config): float
     {
-        return $config->weightEquality * $this->spread;
+        return $this->weight($config) * ($this->spread / max(1, $this->roundsSeen));
     }
 
     public function weight(GenerationConfig $config): float
     {
-        return $config->weightEquality;
+        return $config->tierWeight($this->key());
     }
 
     public function messages(): array

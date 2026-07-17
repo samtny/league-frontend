@@ -1,0 +1,73 @@
+<?php
+
+namespace App\Services\ScheduleGeneration;
+
+/**
+ * The construction phase: builds exactly one hard-valid ScheduleCandidate to
+ * seed the polish phase that runs afterward. Uses RoundRobinConstructor's
+ * deterministic, break-minimal circle-method construction whenever eligible
+ * (every active team owns a distinct active home venue); otherwise falls
+ * back to a single greedy pass through RoundBuilder. Either path is
+ * guaranteed hard-valid by construction (see RoundBuilder/HardConstraints),
+ * so no restart-for-feasibility is needed here - only the polish phase's
+ * restart-for-quality.
+ */
+final class InitialSolutionBuilder
+{
+    public function __construct(
+        private readonly Rng $rng,
+    ) {
+    }
+
+    /**
+     * @param RoundInput[] $rounds
+     * @param TeamInput[] $activeTeams
+     * @param VenueInput[] $activeVenues
+     */
+    public function build(array $rounds, array $activeTeams, array $activeVenues): ScheduleCandidate
+    {
+        $seed = (new RoundRobinConstructor())->construct($rounds, $activeTeams, $activeVenues);
+
+        return $seed ?? $this->greedyPass($rounds, $activeTeams);
+    }
+
+    /**
+     * A single randomized greedy pass (no restart) - also used directly by
+     * ScheduleGenerator's polish loop, which wants a fresh randomized
+     * attempt each iteration rather than the deterministic RoundRobinConstructor
+     * seed repeated pointlessly.
+     *
+     * @param RoundInput[] $rounds
+     * @param TeamInput[] $activeTeams
+     */
+    public function greedyPass(array $rounds, array $activeTeams): ScheduleCandidate
+    {
+        $builder = new RoundBuilder($this->rng);
+
+        $teamIds = array_map(fn (TeamInput $t) => $t->id, $activeTeams);
+        $byeCountByTeam = array_fill_keys($teamIds, 0);
+        $homeCountByTeam = array_fill_keys($teamIds, 0);
+        $awayCountByTeam = array_fill_keys($teamIds, 0);
+        $homeVenueAppearancesByTeam = array_fill_keys($teamIds, 0);
+        $lastVenueByTeam = [];
+        $lastMeetingRoundByPair = [];
+
+        $roundCandidates = [];
+
+        foreach ($rounds as $index => $round) {
+            $roundCandidates[] = $builder->build(
+                $round,
+                $activeTeams,
+                $byeCountByTeam,
+                $lastVenueByTeam,
+                $lastMeetingRoundByPair,
+                $homeCountByTeam,
+                $awayCountByTeam,
+                $homeVenueAppearancesByTeam,
+                $index,
+            );
+        }
+
+        return new ScheduleCandidate($roundCandidates);
+    }
+}
