@@ -22,6 +22,7 @@ final class SoftCriterionRegistry
         'full_cycle_spacing' => FullCycleSpacingCriterion::class,
         'rematch_home_away_reversal' => RematchHomeAwayReversalCriterion::class,
         'home_away_break' => HomeAwayBreakCriterion::class,
+        'balanced_opponents' => BalancedOpponentsCriterion::class,
         'consecutive_venue' => ConsecutiveVenueCriterion::class,
     ];
 

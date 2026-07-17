@@ -118,8 +118,9 @@ class ScheduleScorerTest extends TestCase
         // Both pairs repeat their round-1 matchup in round 2 (1v2 and 3v4
         // each meet again immediately) - two occurrences total, out of 4
         // matches observed (matchCount=4), so normalized = 2/4 = 0.5.
-        // tierWeight('repeat_opponent_consecutive_rounds') is 100^4 = 1e8
-        // under the default priority order (see GenerationConfig).
+        // tierWeight('repeat_opponent_consecutive_rounds') is 100^5 = 1e10
+        // under the default priority order (10 tiers total since
+        // balanced_opponents was added - see GenerationConfig).
         $candidate = new ScheduleCandidate([
             new RoundCandidate($this->date('2026-07-06'), [
                 new MatchCandidate(10, 'Venue 10', 1, 2),
@@ -134,7 +135,7 @@ class ScheduleScorerTest extends TestCase
         $report = (new ScheduleScorer)->score($candidate, $teams, $venues, new GenerationConfig);
 
         $this->assertTrue($report->hardConstraintsSatisfied);
-        $this->assertEqualsWithDelta(50_000_000.0, $this->criterionScore($report, 'repeat_opponent_consecutive_rounds'), 0.01);
+        $this->assertEqualsWithDelta(5_000_000_000.0, $this->criterionScore($report, 'repeat_opponent_consecutive_rounds'), 0.01);
         $this->assertArrayHasKey('repeat_opponent_consecutive_rounds', $report->softViolationsByCriterion);
         $this->assertCount(2, $report->softViolationsByCriterion['repeat_opponent_consecutive_rounds']);
         $messages = implode(' ', $report->softViolationsByCriterion['repeat_opponent_consecutive_rounds']);
@@ -333,9 +334,10 @@ class ScheduleScorerTest extends TestCase
 
         $this->assertTrue($report->hardConstraintsSatisfied);
         // Teams 1/2 played 2 matches, teams 3/4 played 1 -> spread of 1,
-        // over 3 rounds seen -> normalized = 1/3. tierWeight is 100^7 = 1e14
-        // (equal_matches_played is highest priority in the default order).
-        $this->assertEqualsWithDelta(100_000_000_000_000 * (1 / 3), $this->criterionScore($report, 'equal_matches_played'), 0.01);
+        // over 3 rounds seen -> normalized = 1/3. tierWeight is 100^8 = 1e16
+        // (equal_matches_played is highest priority in the default order,
+        // 10 tiers total since balanced_opponents was added).
+        $this->assertEqualsWithDelta(10_000_000_000_000_000.0 * (1 / 3), $this->criterionScore($report, 'equal_matches_played'), 0.01);
         $this->assertArrayHasKey('equal_matches_played', $report->softViolationsByCriterion);
     }
 
@@ -355,12 +357,13 @@ class ScheduleScorerTest extends TestCase
 
         // Team 1: 3 home / 0 away -> |diff|=3, over the ±1 tolerance by 2.
         // Team 2: 0 home / 3 away -> same imbalance from the other side.
-        // totalOver=4, teamCount=2, normalized=2; tierWeight is 100^6 = 1e12
-        // (home_away_balance is 2nd-highest priority in the default order).
-        // Checked via the criterion's own score, not the report total, since
-        // this candidate (same match repeated 3 rounds) also triggers other
+        // totalOver=4, teamCount=2, normalized=2; tierWeight is 100^7 = 1e14
+        // (home_away_balance is 2nd-highest priority in the default order,
+        // 10 tiers total since balanced_opponents was added). Checked via
+        // the criterion's own score, not the report total, since this
+        // candidate (same match repeated 3 rounds) also triggers other
         // criteria now that every criterion has a real, nonzero weight.
-        $this->assertSame(2_000_000_000_000.0, $this->criterionScore($report, 'home_away_balance'));
+        $this->assertSame(200_000_000_000_000.0, $this->criterionScore($report, 'home_away_balance'));
         $this->assertArrayHasKey('home_away_balance', $report->softViolationsByCriterion);
         $this->assertCount(2, $report->softViolationsByCriterion['home_away_balance']);
     }
@@ -480,12 +483,13 @@ class ScheduleScorerTest extends TestCase
         $this->assertTrue($report->hardConstraintsSatisfied);
         // Team 1: 0 home-venue appearances out of 4 matches -> diff=4, over
         // the ±1 tolerance by 3 -> totalOver=3, teamCount=4, normalized=0.75.
-        // tierWeight is 100^5 = 1e10 (home_venue_balance is 3rd-highest
-        // priority in the default order). Checked via the criterion's own
+        // tierWeight is 100^6 = 1e12 (home_venue_balance is 3rd-highest
+        // priority in the default order, 10 tiers total since
+        // balanced_opponents was added). Checked via the criterion's own
         // score, not the report total, since team 1 also racks up
         // consecutive_venue and home_away_break occurrences here (always
         // sent to the same neutral venue in the same away role).
-        $this->assertSame(7_500_000_000.0, $this->criterionScore($report, 'home_venue_balance'));
+        $this->assertSame(750_000_000_000.0, $this->criterionScore($report, 'home_venue_balance'));
         $this->assertArrayHasKey('home_venue_balance', $report->softViolationsByCriterion);
         $this->assertCount(1, $report->softViolationsByCriterion['home_venue_balance']);
     }
@@ -558,12 +562,13 @@ class ScheduleScorerTest extends TestCase
         $report = (new ScheduleScorer)->score($candidate, $teams, $venues, new GenerationConfig);
 
         // breakCount=2, matchCount=4 (2 matches x 2 rounds), normalized =
-        // 2/(2x4) = 0.25; tierWeight is 100^1 = 100 (home_away_break is
-        // 2nd-lowest priority in the default order), so 100 x 0.25 = 25.
+        // 2/(2x4) = 0.25; tierWeight is 100^2 = 10000 (home_away_break is
+        // 3rd-lowest priority in the default order, 10 tiers total since
+        // balanced_opponents was added), so 10000 x 0.25 = 2500.
         // Checked via the criterion's own score, not the report total, since
         // this candidate also happens to trigger consecutive_venue for teams
         // 1 and 4 (same venue as their role).
-        $this->assertSame(25.0, $this->criterionScore($report, 'home_away_break'));
+        $this->assertSame(2500.0, $this->criterionScore($report, 'home_away_break'));
         $this->assertArrayHasKey('home_away_break', $report->softViolationsByCriterion);
         $this->assertCount(2, $report->softViolationsByCriterion['home_away_break']);
         $messages = implode(' ', $report->softViolationsByCriterion['home_away_break']);
@@ -610,11 +615,91 @@ class ScheduleScorerTest extends TestCase
         $report = (new ScheduleScorer)->score($candidate, $teams, $venues, new GenerationConfig);
 
         // breakCount=4, matchCount=3 (1 match x 3 rounds), normalized =
-        // 4/(2x3) = 0.6667; tierWeight is 100. Checked via the criterion's
-        // own score, not the report total, since this candidate also
-        // triggers consecutive_venue (same venue every round).
-        $this->assertEqualsWithDelta(100 * (4 / 6), $this->criterionScore($report, 'home_away_break'), 0.01);
+        // 4/(2x3) = 0.6667; tierWeight is 10000 (10 tiers total since
+        // balanced_opponents was added - see the previous test's comment).
+        // Checked via the criterion's own score, not the report total, since
+        // this candidate also triggers consecutive_venue (same venue every
+        // round).
+        $this->assertEqualsWithDelta(10000 * (4 / 6), $this->criterionScore($report, 'home_away_break'), 0.01);
         $this->assertCount(4, $report->softViolationsByCriterion['home_away_break']);
+    }
+
+    public function test_balanced_opponents_does_not_penalize_a_single_clean_round()
+    {
+        // Same candidate as test_clean_single_round_candidate_scores_zero_and_passes_hard_constraints:
+        // each pair meets at most once, which is fully expected with only 1
+        // of the 3 rounds a full cycle needs (fullCycleGap=3) played -
+        // ceil(1/3)=1, so a single meeting is never an "excess".
+        $teams = $this->teams(1, 2, 3, 4);
+        $venues = $this->venues(10, 20);
+
+        $candidate = new ScheduleCandidate([
+            new RoundCandidate($this->date('2026-07-06'), [
+                new MatchCandidate(10, 'Venue 10', 1, 2),
+                new MatchCandidate(20, 'Venue 20', 3, 4),
+            ], []),
+        ]);
+
+        $report = (new ScheduleScorer)->score($candidate, $teams, $venues, new GenerationConfig);
+
+        $this->assertSame(0.0, $this->criterionScore($report, 'balanced_opponents'));
+        $this->assertArrayNotHasKey('balanced_opponents', $report->softViolationsByCriterion);
+    }
+
+    public function test_balanced_opponents_penalizes_a_pair_meeting_more_than_their_fair_share()
+    {
+        // Same candidate as test_back_to_back_opponent_repeat_is_a_soft_penalty:
+        // pairs (1,2) and (3,4) meet twice each across 2 rounds, but
+        // fullCycleGap for 4 teams is 3, so the fair share over 2 rounds is
+        // only ceil(2/3)=1 meeting - each pair is over by 1, excessTotal=2,
+        // matchCount=4, normalized = 2/4 = 0.5. tierWeight('balanced_opponents')
+        // is 100^1 = 100 (2nd-lowest priority in the default order).
+        $teams = $this->teams(1, 2, 3, 4);
+        $venues = $this->venues(10, 20);
+
+        $candidate = new ScheduleCandidate([
+            new RoundCandidate($this->date('2026-07-06'), [
+                new MatchCandidate(10, 'Venue 10', 1, 2),
+                new MatchCandidate(20, 'Venue 20', 3, 4),
+            ], []),
+            new RoundCandidate($this->date('2026-07-13'), [
+                new MatchCandidate(10, 'Venue 10', 2, 1),
+                new MatchCandidate(20, 'Venue 20', 3, 4),
+            ], []),
+        ]);
+
+        $report = (new ScheduleScorer)->score($candidate, $teams, $venues, new GenerationConfig);
+
+        $this->assertSame(50.0, $this->criterionScore($report, 'balanced_opponents'));
+        $this->assertArrayHasKey('balanced_opponents', $report->softViolationsByCriterion);
+        $this->assertCount(2, $report->softViolationsByCriterion['balanced_opponents']);
+        $messages = implode(' ', $report->softViolationsByCriterion['balanced_opponents']);
+        $this->assertStringContainsString('Team 1 and Team 2 played 2 times', $messages);
+        $this->assertStringContainsString('Team 3 and Team 4 played 2 times', $messages);
+    }
+
+    public function test_balanced_opponents_raw_and_epsilon_unit_are_normalized_by_match_count()
+    {
+        // Same candidate as test_balanced_opponents_penalizes_a_pair_meeting_more_than_their_fair_share:
+        // excessTotal=2, matchCount=4.
+        $teams = $this->teams(1, 2, 3, 4);
+        $venues = $this->venues(10, 20);
+
+        $candidate = new ScheduleCandidate([
+            new RoundCandidate($this->date('2026-07-06'), [
+                new MatchCandidate(10, 'Venue 10', 1, 2),
+                new MatchCandidate(20, 'Venue 20', 3, 4),
+            ], []),
+            new RoundCandidate($this->date('2026-07-13'), [
+                new MatchCandidate(10, 'Venue 10', 2, 1),
+                new MatchCandidate(20, 'Venue 20', 3, 4),
+            ], []),
+        ]);
+
+        $report = (new ScheduleScorer)->score($candidate, $teams, $venues, new GenerationConfig);
+
+        $this->assertEqualsWithDelta(2 / 4, $this->criterionRaw($report, 'balanced_opponents'), 0.0001);
+        $this->assertEqualsWithDelta(1 / 4, $this->criterionEpsilonUnit($report, 'balanced_opponents'), 0.0001);
     }
 
     public function test_consecutive_venue_raw_and_epsilon_unit_are_normalized_by_two_times_match_count()

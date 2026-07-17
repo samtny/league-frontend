@@ -50,6 +50,7 @@ final class GenerationConfig
         'full_cycle_spacing',
         'rematch_home_away_reversal',
         'home_away_break',
+        'balanced_opponents',
         'consecutive_venue',
     ];
 

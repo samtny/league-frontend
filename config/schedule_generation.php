@@ -61,6 +61,7 @@ return [
     'soft_criteria' => [
         ['home_cycle_spacing', 'away_cycle_spacing'],
         'home_away_break',
+        'balanced_opponents',
         'repeat_opponent_consecutive_rounds',
         'rematch_home_away_reversal',
         'consecutive_venue',
