@@ -13,11 +13,14 @@ use App\Services\ScheduleGeneration\ScoringContext;
 final class SoftCriterionRegistry
 {
     private const FACTORIES = [
+        'home_cycle_spacing' => HomeCycleSpacingCriterion::class,
+        'away_cycle_spacing' => AwayCycleSpacingCriterion::class,
         'equal_matches_played' => EqualMatchesPlayedCriterion::class,
         'home_away_balance' => HomeAwayBalanceCriterion::class,
         'home_venue_balance' => HomeVenueBalanceCriterion::class,
         'repeat_opponent_consecutive_rounds' => RepeatOpponentConsecutiveRoundsCriterion::class,
-        'opponent_recency' => OpponentRecencyCriterion::class,
+        'full_cycle_spacing' => FullCycleSpacingCriterion::class,
+        'rematch_home_away_reversal' => RematchHomeAwayReversalCriterion::class,
         'home_away_break' => HomeAwayBreakCriterion::class,
         'consecutive_venue' => ConsecutiveVenueCriterion::class,
     ];

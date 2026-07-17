@@ -5,6 +5,7 @@ namespace App\Services\ScheduleGeneration;
 use App\Services\ScheduleGeneration\HardConstraints\AwayTeamAtOwnVenueConstraint;
 use App\Services\ScheduleGeneration\HardConstraints\ByeAndMatchConflictConstraint;
 use App\Services\ScheduleGeneration\HardConstraints\DoubleBookedTeamConstraint;
+use App\Services\ScheduleGeneration\HardConstraints\HomeTeamAtAnotherTeamsVenueConstraint;
 use App\Services\ScheduleGeneration\HardConstraints\InactiveTeamConstraint;
 use App\Services\ScheduleGeneration\HardConstraints\InactiveVenueConstraint;
 use App\Services\ScheduleGeneration\SoftCriteria\SoftCriterionRegistry;
@@ -31,10 +32,11 @@ final class ScheduleScorer
             new DoubleBookedTeamConstraint($context),
             new InactiveVenueConstraint($context),
             new AwayTeamAtOwnVenueConstraint($context),
+            new HomeTeamAtAnotherTeamsVenueConstraint($context),
             new ByeAndMatchConflictConstraint($context),
         ];
 
-        $softCriteria = SoftCriterionRegistry::build($config->softCriteria, $context);
+        $softCriteria = SoftCriterionRegistry::build($config->flatSoftCriteria(), $context);
 
         foreach ($candidate->rounds as $roundIndex => $round) {
             foreach ($hardConstraints as $constraint) {

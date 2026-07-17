@@ -8,7 +8,18 @@ use App\Services\ScheduleGeneration\OpponentGapCalculator;
 use App\Services\ScheduleGeneration\PairKey;
 use App\Services\ScheduleGeneration\ScoringContext;
 
-final class OpponentRecencyCriterion implements SoftCriterion
+/**
+ * Targets literally "every other active team faced once before a rematch" -
+ * the ideal gap is a full single round-robin cycle
+ * (ScoringContext::$fullCycleGap, activeTeamCount - 1 rounds), not merely
+ * "some" spacing. A shorter schedule than that (see SlotCount/RoundInput -
+ * round count is date-range driven, independent of team count, so a season
+ * can easily be shorter than one full cycle) simply can't reach the ideal
+ * for every pair; the criterion still rewards getting as close to it as the
+ * available rounds allow, same as any other soft criterion whose ideal isn't
+ * always attainable.
+ */
+final class FullCycleSpacingCriterion implements SoftCriterion
 {
     /** @var array<string, int> pair key => round index of last meeting */
     private array $lastMeetingRoundByPair = [];
@@ -27,16 +38,17 @@ final class OpponentRecencyCriterion implements SoftCriterion
 
     public function key(): string
     {
-        return 'opponent_recency';
+        return 'full_cycle_spacing';
     }
 
     public function label(): string
     {
-        return 'Spacing between rematches';
+        return 'Every team faced before a rematch';
     }
 
     public function observeMatch(int $roundIndex, MatchCandidate $match): void
     {
+        $roundNumber = $roundIndex + 1;
         $home = $match->homeTeamId;
         $away = $match->awayTeamId;
         $pairKey = PairKey::for($home, $away);
@@ -44,11 +56,11 @@ final class OpponentRecencyCriterion implements SoftCriterion
         $gap = OpponentGapCalculator::sinceLastMeeting($roundIndex, $this->lastMeetingRoundByPair[$pairKey] ?? null);
 
         if ($gap !== null) {
-            $shortfall = max(0, $this->context->idealGap - $gap);
+            $shortfall = max(0, $this->context->fullCycleGap - $gap);
 
             if ($shortfall > 0) {
                 $this->shortfallTotal += $shortfall;
-                $this->messages[] = "{$this->context->teamLabel($home)} and {$this->context->teamLabel($away)} rematched after only {$gap} round(s) (ideally {$this->context->idealGap}+).";
+                $this->messages[] = "{$this->context->teamLabel($home)} and {$this->context->teamLabel($away)} rematched in round {$roundNumber} after only {$gap} round(s), before facing every other team (needs {$this->context->fullCycleGap}+).";
             }
         }
 
@@ -86,7 +98,7 @@ final class OpponentRecencyCriterion implements SoftCriterion
 
     private function divisor(): int
     {
-        return max(1, $this->matchCount * max(1, $this->context->idealGap));
+        return max(1, $this->matchCount * max(1, $this->context->fullCycleGap));
     }
 
     public function messages(): array

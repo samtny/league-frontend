@@ -33,6 +33,20 @@ final class GenerationReport
         ];
     }
 
+    /**
+     * @return array{key: string, label: string, score: float, weight: float, raw: float, epsilonUnit: float}|null
+     */
+    public function criterion(string $key): ?array
+    {
+        foreach ($this->softCriteriaScores as $entry) {
+            if ($entry['key'] === $key) {
+                return $entry;
+            }
+        }
+
+        return null;
+    }
+
     public static function fromArray(array $data): self
     {
         return new self(

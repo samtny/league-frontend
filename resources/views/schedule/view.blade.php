@@ -21,8 +21,8 @@
                 <div class="list-group">
                 <?php foreach ($schedule->rounds->sortBy('start_date') as $round): ?>
                     <?php $scheduledMatchCount = $round->scheduledMatches->count(); ?>
-                    <a class="list-group-item list-group-item-action" href="{{ route('round.edit', ['association' => $schedule->association, 'schedule' => $schedule, 'round' => $round]) }}">
-                        <?php echo ('<div class="round">' . (!empty($round->name) ? ($round->name . ' - ') : '') . (!empty($round->start_date) ? $round->start_date->format('m-d-Y') : '') . ($scheduledMatchCount > 0 ? ' - ' . $scheduledMatchCount . ' Matches' : ' - No Matches') . '</div>'); ?>
+                    <a class="list-group-item list-group-item-action<?php if ($round->off_week): ?> text-body-tertiary<?php endif; ?>" href="{{ route('round.edit', ['association' => $schedule->association, 'schedule' => $schedule, 'round' => $round]) }}">
+                        <?php echo ('<div class="round">' . (!empty($round->name) ? ($round->name . ' - ') : '') . (!empty($round->start_date) ? $round->start_date->format('m-d-Y') : '') . ($round->off_week ? ' - Off Week' : ($scheduledMatchCount > 0 ? ' - ' . $scheduledMatchCount . ' Matches' : ' - No Matches')) . '</div>'); ?>
                     </a>
                 <?php endforeach; ?>
                 </div>

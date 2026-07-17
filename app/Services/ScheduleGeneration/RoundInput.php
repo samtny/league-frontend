@@ -4,10 +4,10 @@ namespace App\Services\ScheduleGeneration;
 
 /**
  * One already-persisted Round, plus its already-persisted match slots. The
- * caller decides which Rounds are eligible for assignment (today: every
- * Round on the schedule; later, once a Round "active"/"type" flag exists,
- * a filtered subset) - the generator has no opinion on why a Round is or
- * isn't in this list.
+ * caller decides which Rounds are eligible for assignment - e.g.
+ * ScheduleController::generateAutomaticCandidate() excludes any Round
+ * flagged off_week or playoffs_week - the generator has no opinion on why
+ * a Round is or isn't in this list.
  */
 final class RoundInput
 {

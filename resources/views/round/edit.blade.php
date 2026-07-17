@@ -105,6 +105,29 @@
                 </div>
             </div>
 
+            <div class="mb-3">
+                <div class="form-check">
+                    <input class="form-check-input" name="off_week" type="checkbox" value="off_week" id="off_week" <?php echo old('off_week', $round->off_week) ? ' checked' : ''; ?>>
+                    <label class="form-check-label" for="off_week">
+                        Off Week
+                    </label>
+                    <small class="form-text text-muted">When checked, this round is a schedule-wide break (e.g. a holiday) with no games scheduled.</small>
+                </div>
+            </div>
+
+            <div class="mb-3">
+                <div class="form-check">
+                    <input class="form-check-input" name="playoffs_week" type="checkbox" value="playoffs_week" id="playoffs_week" <?php echo old('playoffs_week', $round->playoffs_week) ? ' checked' : ''; ?>>
+                    <label class="form-check-label" for="playoffs_week">
+                        Playoffs Week
+                    </label>
+                    <small class="form-text text-muted">When checked, this round is part of the playoff/knockout stage (quarterfinals, semifinals, or finals) rather than the regular round-robin season.</small>
+                </div>
+            </div>
+            @error('off_week')
+                <div class="alert alert-danger">{{ $message }}</div>
+            @enderror
+
             <div class="form-actions">
                 <div class="mb-3">
                     <input id="submit" class="btn btn-primary" type="submit" value="Update"/>

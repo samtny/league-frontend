@@ -435,10 +435,15 @@ class ScheduleController extends Controller
      * invents Round/Match rows, it only ever assigns teams into slots that
      * already exist. Slots pointing at a since-deactivated venue are
      * excluded from the pool the same way they always were (RoundBuilder
-     * only ever drew from the active venue pool). Only Rounds attached to
-     * this Schedule are included today; once Rounds gain an "active"/"type"
-     * flag (bye/semifinal/final weeks), filtering to the eligible subset
-     * happens right here with no change needed inside the generator.
+     * only ever drew from the active venue pool). A Round flagged off_week
+     * or playoffs_week is excluded from this list entirely - not merely
+     * given empty slots, but genuinely absent, exactly as if it didn't
+     * exist for solving purposes (round-index-based soft criteria like
+     * FullCycleSpacingCriterion naturally treat the remaining rounds as
+     * contiguous, with no gap for the skipped week). Note this only
+     * controls what the SOLVER considers; the Accept flow still clears and
+     * (for included rounds) reassigns matches schedule-wide regardless of
+     * this filter - see generateMatchesAccept()/clearMatchAssignments().
      */
     private function generateAutomaticCandidate(Schedule $schedule): GenerationResult
     {
@@ -449,6 +454,8 @@ class ScheduleController extends Controller
         $activeVenueIds = $association->activeVenues->pluck('id')->flip();
 
         $rounds = $schedule->rounds()->with('matches.venue')->orderBy('start_date')->get()
+            ->reject(fn (Round $round) => $round->off_week || $round->playoffs_week)
+            ->values() // reject() preserves original keys; the generator (e.g. RoundRobinConstructor) indexes this array 0..count-1 and needs it re-keyed contiguously after any rounds are excluded
             ->map(function (Round $round) use ($activeVenueIds) {
                 $slots = $round->matches
                     ->filter(fn (PLMatch $match) => $match->venue_id !== null && $activeVenueIds->has($match->venue_id))

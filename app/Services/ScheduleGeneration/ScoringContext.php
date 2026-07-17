@@ -15,6 +15,14 @@ final class ScoringContext
      * @param array<int, int|null> $homeVenueIdByTeam team id => home venue id
      * @param array<int, string> $teamNameById team id => name
      * @param TeamInput[] $activeTeams
+     * @param int $fullCycleGap number of rounds needed to face every other active team exactly once (a single
+     *   round-robin cycle's length, activeTeamCount - 1) - the target gap FullCycleSpacingCriterion measures
+     *   rematches against, so "ideal" means literally "every other team faced before a rematch," not merely
+     *   "not too soon"
+     * @param array<int, int[]> $ownerTeamIdsByVenue venue id => active team id(s) whose home venue this is
+     *   (usually 0 or 1 team, but a venue may legitimately be shared by more than one active team) - used by
+     *   HomeTeamAtAnotherTeamsVenueConstraint to check a match's home team against whoever actually owns its venue,
+     *   not merely against the two teams playing in it
      */
     public function __construct(
         public readonly array $activeTeamIds,
@@ -22,7 +30,8 @@ final class ScoringContext
         public readonly array $homeVenueIdByTeam,
         public readonly array $teamNameById,
         public readonly array $activeTeams,
-        public readonly int $idealGap,
+        public readonly int $fullCycleGap,
+        public readonly array $ownerTeamIdsByVenue,
     ) {
     }
 
@@ -34,10 +43,15 @@ final class ScoringContext
     {
         $homeVenueIdByTeam = [];
         $teamNameById = [];
+        $ownerTeamIdsByVenue = [];
 
         foreach ($activeTeams as $team) {
             $homeVenueIdByTeam[$team->id] = $team->homeVenueId;
             $teamNameById[$team->id] = $team->name;
+
+            if ($team->homeVenueId !== null) {
+                $ownerTeamIdsByVenue[$team->homeVenueId][] = $team->id;
+            }
         }
 
         $activeTeamCount = count($activeTeams);
@@ -48,7 +62,8 @@ final class ScoringContext
             homeVenueIdByTeam: $homeVenueIdByTeam,
             teamNameById: $teamNameById,
             activeTeams: $activeTeams,
-            idealGap: $activeTeamCount > 0 ? (int) ceil($activeTeamCount / 2) : 0,
+            fullCycleGap: max(0, $activeTeamCount - 1),
+            ownerTeamIdsByVenue: $ownerTeamIdsByVenue,
         );
     }
 

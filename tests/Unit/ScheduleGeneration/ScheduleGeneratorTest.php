@@ -270,6 +270,64 @@ class ScheduleGeneratorTest extends TestCase
         $this->assertTrue($result->report->hardConstraintsSatisfied);
     }
 
+    public function test_a_shared_venue_team_is_never_persisted_away_at_it_even_when_the_only_other_venue_is_exclusively_owned()
+    {
+        // Regression for a real bug: teams 1 and 2 share venue 1, team 3
+        // exclusively owns venue 2 (the only other venue) - when 1 and 2 are
+        // paired against each other, RoundBuilder's own collision-avoidance
+        // MUST route their match away from venue 1 (either would violate H4
+        // by being "away" at their own shared venue), but if the greedy pass
+        // resolves an unrelated pair FIRST and that pair happens to grab
+        // venue 2 (leaving only venue 1, the forbidden one), team 1/2's match
+        // has nowhere safe left to go. Checked across many seeds - this
+        // isn't a single-seed fluke, it reproduced on every seed before the
+        // processing-order fix in RoundBuilder::assignVenuesAndSides().
+        $teams = $this->teamsWithHomeVenues([1 => 1, 2 => 1, 3 => 2, 4 => null, 5 => null, 6 => null]);
+        $venues = $this->venues(1, 2);
+        $rounds = $this->rounds(13, $venues);
+        $homeVenueIdByTeam = [1 => 1, 2 => 1, 3 => 2, 4 => null, 5 => null, 6 => null];
+
+        for ($seed = 1; $seed <= 50; $seed++) {
+            $result = $this->generator($seed)->generate($rounds, $teams, $venues, new GenerationConfig(maxAttempts: 50, timeBudgetMs: 30));
+
+            foreach ($result->candidate->rounds as $round) {
+                foreach ($round->matches as $match) {
+                    $this->assertNotSame(
+                        $homeVenueIdByTeam[$match->awayTeamId],
+                        $match->venueId,
+                        "seed {$seed}: team #{$match->awayTeamId} was away at their own home venue"
+                    );
+                }
+            }
+        }
+    }
+
+    public function test_home_team_is_never_assigned_to_a_different_teams_exclusive_venue_when_every_team_owns_one()
+    {
+        // Regression for a real production bug: with every active team
+        // owning a distinct venue (RoundRobinConstructor's seed is always
+        // perfect here - see test_exclusive_home_venue_seed_is_used_when_it_
+        // reaches_a_perfect_score), the corruption came entirely from the
+        // polish phase's local moves (venueSwap/opponentRecombine in
+        // SimulatedAnnealingOptimizer, which relocate a match's venue or
+        // home team without regard for who owns what) - only a hard
+        // constraint, not a soft one, reliably stops it, since a single
+        // relocation might not even move the needle on the aggregate
+        // home_venue_balance score. A short time budget still lets many
+        // attempts run (this scale is small), enough to exercise those
+        // moves across many seeds.
+        $teams = $this->teamsWithHomeVenues([1 => 100, 2 => 200, 3 => 300, 4 => 400]);
+        $venues = $this->venues(100, 200, 300, 400);
+        $rounds = $this->rounds(10, $venues);
+        $config = new GenerationConfig(maxAttempts: 300, timeBudgetMs: 200);
+
+        for ($seed = 1; $seed <= 50; $seed++) {
+            $result = $this->generator($seed)->generate($rounds, $teams, $venues, $config);
+
+            $this->assertTrue($result->report->hardConstraintsSatisfied, "seed {$seed}: ".implode(' | ', $result->report->hardViolations));
+        }
+    }
+
     public function test_shared_venue_input_is_ineligible_for_the_round_robin_seed_so_behavior_is_unchanged()
     {
         // RoundRobinConstructor declines whenever any team shares its home

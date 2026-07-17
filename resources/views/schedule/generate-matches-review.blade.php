@@ -30,13 +30,36 @@
     @endif
 
     @if (! empty($report->softCriteriaScores))
+        @php
+            // Criteria tied into the same priority tier (see
+            // GenerationConfig::tierWeight()/ChebyshevTieBreak) share the
+            // IDENTICAL weight value and are always emitted adjacently (tier
+            // order) - grouping consecutive same-weight entries is a
+            // reliable, purely report-driven way to detect a tie-group
+            // without needing GenerationConfig's own tier structure here.
+            $criteriaGroups = [];
+            foreach ($report->softCriteriaScores as $criterion) {
+                $lastGroup = count($criteriaGroups) - 1;
+
+                if ($lastGroup >= 0 && $criteriaGroups[$lastGroup][0]['weight'] === $criterion['weight']) {
+                    $criteriaGroups[$lastGroup][] = $criterion;
+                } else {
+                    $criteriaGroups[] = [$criterion];
+                }
+            }
+        @endphp
         <div class="row mb-3">
             <div class="col">
                 <div class="alert alert-info">
                     <strong>Soft criteria scores:</strong>
                     <ul class="mb-0">
-                        @foreach ($report->softCriteriaScores as $criterion)
-                            <li>{{ $criterion['label'] }} (instance score {{ $criterion['weight'] }}): {{ $criterion['score'] }}</li>
+                        @foreach ($criteriaGroups as $group)
+                            <li>
+                                @foreach ($group as $criterion)
+                                    {{ $criterion['label'] }}: {{ $criterion['score'] }}@if (! $loop->last), @endif
+                                @endforeach
+                                (instance score {{ $group[0]['weight'] }})
+                            </li>
                         @endforeach
                     </ul>
                 </div>
@@ -69,7 +92,7 @@
 
     <div class="mb-3">
         <div class="table-responsive">
-            <table class="table">
+            <table class="table table-striped">
                 <thead>
                     <tr>
                         <th>Round</th>

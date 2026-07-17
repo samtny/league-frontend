@@ -33,6 +33,9 @@ class RoundsController extends Controller
         $validatedData = $request->validate([
             'name' => 'required|max:255',
             'start_date' => 'required|date',
+            'off_week' => 'prohibits:playoffs_week',
+        ], [
+            'off_week.prohibits' => 'A round cannot be both an Off Week and a Playoffs Week.',
         ]);
 
         $round = new Round;
@@ -43,6 +46,8 @@ class RoundsController extends Controller
         $round->schedule_id = $schedule->id;
         $round->start_date = $request->start_date;
         $round->end_date = $request->end_date;
+        $round->off_week = isset($request->off_week);
+        $round->playoffs_week = isset($request->playoffs_week);
 
         $round->save();
 
@@ -70,12 +75,17 @@ class RoundsController extends Controller
         $validatedData = $request->validate([
             'name' => 'required|max:255',
             'start_date' => 'required|date',
+            'off_week' => 'prohibits:playoffs_week',
+        ], [
+            'off_week.prohibits' => 'A round cannot be both an Off Week and a Playoffs Week.',
         ]);
 
         $round->name = $request->name;
         $round->start_date = $request->start_date;
         $round->end_date = $request->end_date;
         $round->scores_closed = isset($request->scores_closed);
+        $round->off_week = isset($request->off_week);
+        $round->playoffs_week = isset($request->playoffs_week);
 
         $round->save();
 

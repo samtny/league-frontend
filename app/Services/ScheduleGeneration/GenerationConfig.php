@@ -3,34 +3,52 @@
 namespace App\Services\ScheduleGeneration;
 
 use App\Association;
+use App\Services\ScheduleGeneration\SoftCriteria\SoftCriterionRegistry;
 
 /**
- * softCriteria is a list of soft-criterion keys, highest priority first -
- * and, critically, ALSO the set of which criteria run at all: a criterion
- * whose key is omitted from this list is never instantiated, never scored,
- * and never contributes a message to the review screen (see
- * SoftCriterionRegistry). tierWeight() converts a key's rank within this
- * list into a dominance ("big-M") weight: each rank's weight is
- * DOMINANCE_BASE times the one below it, so a one-unit improvement in a
- * higher-ranked criterion always outweighs the maximum possible sum of
- * every lower-ranked criterion combined, while the whole thing still
- * collapses into one smooth scalar objective (required for simulated
+ * softCriteria is a list of tiers, highest priority first - and, critically,
+ * ALSO the set of which criteria run at all: a criterion whose key doesn't
+ * appear anywhere in this list is never instantiated, never scored, and
+ * never contributes a message to the review screen (see
+ * SoftCriterionRegistry). Each tier element is EITHER a bare string (a
+ * single criterion holding that rank alone, the common case) OR an array of
+ * 2+ strings (a "tie-group" - co-equal criteria sharing that rank). See
+ * tiers() for the normalized array<int, string[]> view every other consumer
+ * uses.
+ *
+ * tierWeight() converts a key's TIER INDEX into a dominance ("big-M")
+ * weight: each rank's weight is DOMINANCE_BASE times the one below it, so a
+ * one-unit improvement in a higher-ranked tier always outweighs the maximum
+ * possible sum of every lower-ranked tier combined, while the whole thing
+ * still collapses into one smooth scalar objective (required for simulated
  * annealing's probabilistic accept/reject, which can't compare on a strict
- * per-tier basis). Each SoftCriterion normalizes its own raw penalty to a
- * small, roughly scale-invariant range before this weight is applied, so
- * the same priority ordering behaves consistently whether the league has 4
- * teams or 16.
+ * per-tier basis) - every member of the SAME tier gets the identical
+ * weight, by construction. Each SoftCriterion normalizes its own raw
+ * penalty to a small, roughly scale-invariant range before this weight is
+ * applied, so the same priority ordering behaves consistently whether the
+ * league has 4 teams or 16.
+ *
+ * A tie-group's members are NOT combined via this additive weighted sum
+ * among themselves, though - EpsilonConstraintOptimizer resolves them
+ * jointly via ChebyshevTieBreak (minimax on normalized regret from each
+ * member's own best-achievable value) instead, precisely so neither member
+ * can be freely traded away for the other at an arbitrary ratio the way a
+ * plain sum would allow. See ChebyshevTieBreak's own docblock for why
+ * Chebyshev/minimax was chosen and what alternative (goal programming) is
+ * worth exploring later.
  */
 final class GenerationConfig
 {
     public const DOMINANCE_BASE = 100;
 
     public const DEFAULT_SOFT_CRITERIA = [
+        ['home_cycle_spacing', 'away_cycle_spacing'],
         'equal_matches_played',
         'home_away_balance',
         'home_venue_balance',
         'repeat_opponent_consecutive_rounds',
-        'opponent_recency',
+        'full_cycle_spacing',
+        'rematch_home_away_reversal',
         'home_away_break',
         'consecutive_venue',
     ];
@@ -77,9 +95,10 @@ final class GenerationConfig
      * synchronously inside an HTTP request and a bigger league shouldn't
      * mean a slower page load.
      *
-     * @param string[] $softCriteria soft-criterion keys, highest priority first - a key's ABSENCE disables that
-     *   criterion entirely, it is not merely deprioritized. May be a proper subset of the known keys, or even an
-     *   empty array (hard constraints only, no soft scoring at all).
+     * @param array<int, string|string[]> $softCriteria tiers, highest priority first - a bare string is a
+     *   singleton tier, an array of 2+ strings is a co-equal tie-group (see class docblock). A key's ABSENCE
+     *   anywhere in this structure disables that criterion entirely, it is not merely deprioritized. May cover a
+     *   proper subset of the known keys, or even an empty array (hard constraints only, no soft scoring at all).
      * @param string[] $excludedFromObjective soft-criterion keys to zero out of tierWeight() entirely - used by
      *   EpsilonConstraintOptimizer to remove already-fixed tiers from a pass's objective without disturbing the
      *   relative dominance exponents of the remaining tiers (which stay derived from the full $softCriteria order)
@@ -93,23 +112,53 @@ final class GenerationConfig
     ) {
     }
 
+    /**
+     * Normalizes $softCriteria so every tier is a string[] of one or more
+     * co-equal keys, even a plain-string singleton tier (the common case) -
+     * the uniform view every other consumer (tierWeight(), flatSoftCriteria(),
+     * EpsilonConstraintOptimizer) actually works with.
+     *
+     * @return array<int, string[]>
+     */
+    public function tiers(): array
+    {
+        return array_map(fn ($tier) => is_array($tier) ? $tier : [$tier], $this->softCriteria);
+    }
+
+    /**
+     * Every enabled key across every tier, flattened in tier order
+     * (tie-group members keep their given relative order) - what
+     * ScheduleScorer actually needs to know which SoftCriterion instances
+     * to build.
+     *
+     * @return string[]
+     */
+    public function flatSoftCriteria(): array
+    {
+        $tiers = $this->tiers();
+
+        return $tiers === [] ? [] : array_merge(...$tiers);
+    }
+
     public function tierWeight(string $key): float
     {
         if (in_array($key, $this->excludedFromObjective, true)) {
             return 0.0;
         }
 
-        $rank = array_search($key, $this->softCriteria, true);
+        $tiers = $this->tiers();
 
-        if ($rank === false) {
-            // Dead in normal flow: ScheduleScorer only ever calls weight()
-            // on a criterion it built from $config->softCriteria itself, so
-            // its key is always found above. Kept as a safety net for a
-            // hand-built SoftCriterion used outside ScheduleScorer::score().
-            return 1.0;
+        foreach ($tiers as $rank => $tierKeys) {
+            if (in_array($key, $tierKeys, true)) {
+                return (float) (self::DOMINANCE_BASE ** (count($tiers) - 1 - $rank));
+            }
         }
 
-        return (float) (self::DOMINANCE_BASE ** (count($this->softCriteria) - 1 - $rank));
+        // Dead in normal flow: ScheduleScorer only ever calls weight() on a
+        // criterion it built from $config->flatSoftCriteria() itself, so its
+        // key is always found above. Kept as a safety net for a hand-built
+        // SoftCriterion used outside ScheduleScorer::score().
+        return 1.0;
     }
 
     public static function fromConfig(): self
@@ -153,15 +202,20 @@ final class GenerationConfig
     }
 
     /**
-     * Accepts any duplicate-free subset of the known soft-criterion keys,
-     * in the given order - including an explicit empty array, which means
-     * "no soft criteria, hard constraints only" rather than "malformed."
-     * Falls back to $fallback whenever the value isn't an array, or
-     * contains an unknown key, or contains a duplicate.
+     * Accepts any duplicate-free set of the known soft-criterion keys, in
+     * the given tier order - a tier element may be a bare string (singleton)
+     * or a non-empty array of 2+ unique strings (a tie-group) - including an
+     * explicit empty array, which means "no soft criteria, hard constraints
+     * only" rather than "malformed." Falls back to $fallback whenever the
+     * value isn't an array; a tier element is neither a string nor a
+     * non-empty array of strings; the FLATTENED set of every key (across
+     * every tier, including inside tie-groups) contains an unknown key; or
+     * that flattened set contains a duplicate (whether within one tie-group
+     * or across two different tiers).
      *
      * @param mixed $softCriteria
-     * @param string[] $fallback
-     * @return string[]
+     * @param array<int, string|string[]> $fallback
+     * @return array<int, string|string[]>
      */
     private static function sanitizeSoftCriteria($softCriteria, array $fallback = self::DEFAULT_SOFT_CRITERIA): array
     {
@@ -169,16 +223,37 @@ final class GenerationConfig
             return $fallback;
         }
 
-        $values = array_values($softCriteria);
+        $tiers = array_values($softCriteria);
+        $flatKeys = [];
 
-        if (count($values) !== count(array_unique($values))) {
+        foreach ($tiers as $tier) {
+            if (is_string($tier)) {
+                $flatKeys[] = $tier;
+
+                continue;
+            }
+
+            if (! is_array($tier) || $tier === []) {
+                return $fallback;
+            }
+
+            foreach ($tier as $memberKey) {
+                if (! is_string($memberKey)) {
+                    return $fallback;
+                }
+
+                $flatKeys[] = $memberKey;
+            }
+        }
+
+        if (count($flatKeys) !== count(array_unique($flatKeys))) {
             return $fallback;
         }
 
-        if (array_diff($values, self::DEFAULT_SOFT_CRITERIA) !== []) {
+        if (array_diff($flatKeys, SoftCriterionRegistry::knownKeys()) !== []) {
             return $fallback;
         }
 
-        return $values;
+        return $tiers;
     }
 }

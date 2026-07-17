@@ -118,7 +118,7 @@ class ScheduleScorerTest extends TestCase
         // Both pairs repeat their round-1 matchup in round 2 (1v2 and 3v4
         // each meet again immediately) - two occurrences total, out of 4
         // matches observed (matchCount=4), so normalized = 2/4 = 0.5.
-        // tierWeight('repeat_opponent_consecutive_rounds') is 100^3 = 1e6
+        // tierWeight('repeat_opponent_consecutive_rounds') is 100^4 = 1e8
         // under the default priority order (see GenerationConfig).
         $candidate = new ScheduleCandidate([
             new RoundCandidate($this->date('2026-07-06'), [
@@ -134,7 +134,7 @@ class ScheduleScorerTest extends TestCase
         $report = (new ScheduleScorer)->score($candidate, $teams, $venues, new GenerationConfig);
 
         $this->assertTrue($report->hardConstraintsSatisfied);
-        $this->assertEqualsWithDelta(500_000.0, $this->criterionScore($report, 'repeat_opponent_consecutive_rounds'), 0.01);
+        $this->assertEqualsWithDelta(50_000_000.0, $this->criterionScore($report, 'repeat_opponent_consecutive_rounds'), 0.01);
         $this->assertArrayHasKey('repeat_opponent_consecutive_rounds', $report->softViolationsByCriterion);
         $this->assertCount(2, $report->softViolationsByCriterion['repeat_opponent_consecutive_rounds']);
         $messages = implode(' ', $report->softViolationsByCriterion['repeat_opponent_consecutive_rounds']);
@@ -333,9 +333,9 @@ class ScheduleScorerTest extends TestCase
 
         $this->assertTrue($report->hardConstraintsSatisfied);
         // Teams 1/2 played 2 matches, teams 3/4 played 1 -> spread of 1,
-        // over 3 rounds seen -> normalized = 1/3. tierWeight is 100^6 = 1e12
+        // over 3 rounds seen -> normalized = 1/3. tierWeight is 100^7 = 1e14
         // (equal_matches_played is highest priority in the default order).
-        $this->assertEqualsWithDelta(1_000_000_000_000 * (1 / 3), $this->criterionScore($report, 'equal_matches_played'), 0.01);
+        $this->assertEqualsWithDelta(100_000_000_000_000 * (1 / 3), $this->criterionScore($report, 'equal_matches_played'), 0.01);
         $this->assertArrayHasKey('equal_matches_played', $report->softViolationsByCriterion);
     }
 
@@ -355,12 +355,12 @@ class ScheduleScorerTest extends TestCase
 
         // Team 1: 3 home / 0 away -> |diff|=3, over the ±1 tolerance by 2.
         // Team 2: 0 home / 3 away -> same imbalance from the other side.
-        // totalOver=4, teamCount=2, normalized=2; tierWeight is 100^5 = 1e10
+        // totalOver=4, teamCount=2, normalized=2; tierWeight is 100^6 = 1e12
         // (home_away_balance is 2nd-highest priority in the default order).
         // Checked via the criterion's own score, not the report total, since
         // this candidate (same match repeated 3 rounds) also triggers other
         // criteria now that every criterion has a real, nonzero weight.
-        $this->assertSame(20_000_000_000.0, $this->criterionScore($report, 'home_away_balance'));
+        $this->assertSame(2_000_000_000_000.0, $this->criterionScore($report, 'home_away_balance'));
         $this->assertArrayHasKey('home_away_balance', $report->softViolationsByCriterion);
         $this->assertCount(2, $report->softViolationsByCriterion['home_away_balance']);
     }
@@ -389,6 +389,75 @@ class ScheduleScorerTest extends TestCase
         ));
     }
 
+    public function test_home_team_assigned_at_a_different_teams_exclusive_venue_is_a_hard_violation()
+    {
+        // Team 2's home venue is 200. A match at venue 200 with team 3 on
+        // the home side (team 2 not even involved in this match) violates
+        // "home team must be at their own venue, if they have one" - the
+        // mirror image of H4, and the real bug this constraint exists to
+        // catch: a simulated-annealing venueSwap move relocating a match's
+        // venue while leaving its home team unchanged.
+        $teams = $this->teamsWithHomeVenues([1 => null, 2 => 200, 3 => null]);
+        $venues = $this->venues(200);
+
+        $candidate = new ScheduleCandidate([
+            new RoundCandidate($this->date('2026-07-06'), [
+                new MatchCandidate(200, 'Venue 200', 3, 1),
+            ], [2]),
+        ]);
+
+        $report = (new ScheduleScorer)->score($candidate, $teams, $venues, new GenerationConfig);
+
+        $this->assertFalse($report->hardConstraintsSatisfied);
+        $this->assertNotEmpty(array_filter(
+            $report->hardViolations,
+            fn (string $v) => str_contains($v, "Team 2's home venue"),
+        ));
+    }
+
+    public function test_home_team_at_a_venue_shared_by_two_other_teams_is_not_a_hard_violation()
+    {
+        // Teams 1 and 2 both call venue 100 home (a real, supported case -
+        // see ScheduleGeneratorTest::test_two_teams_sharing_a_home_venue_
+        // still_produce_a_valid_schedule). Team 3 (owns nothing) plays team
+        // 4 (owns nothing) at venue 100 while neither team 1 nor team 2 is
+        // even in this match - not flagged, because a SHARED venue can
+        // become genuinely uncapturable by either of its own co-owners in a
+        // given round (they might be paired against each other, or byed),
+        // so it isn't given the same absolute protection as an exclusively-
+        // owned venue, which is always avoidable by construction.
+        $teams = $this->teamsWithHomeVenues([1 => 100, 2 => 100, 3 => null, 4 => null]);
+        $venues = $this->venues(100);
+
+        $candidate = new ScheduleCandidate([
+            new RoundCandidate($this->date('2026-07-06'), [
+                new MatchCandidate(100, 'Venue 100', 3, 4),
+            ], [1, 2]),
+        ]);
+
+        $report = (new ScheduleScorer)->score($candidate, $teams, $venues, new GenerationConfig);
+
+        $this->assertTrue($report->hardConstraintsSatisfied);
+    }
+
+    public function test_home_team_at_a_genuinely_neutral_venue_is_not_a_hard_violation()
+    {
+        // Venue 300 belongs to no active team at all - always a safe,
+        // unrestricted choice for either side.
+        $teams = $this->teamsWithHomeVenues([1 => null, 2 => null]);
+        $venues = $this->venues(300);
+
+        $candidate = new ScheduleCandidate([
+            new RoundCandidate($this->date('2026-07-06'), [
+                new MatchCandidate(300, 'Venue 300', 1, 2),
+            ], []),
+        ]);
+
+        $report = (new ScheduleScorer)->score($candidate, $teams, $venues, new GenerationConfig);
+
+        $this->assertTrue($report->hardConstraintsSatisfied);
+    }
+
     public function test_never_playing_at_ones_own_home_venue_is_a_soft_penalty()
     {
         $teams = $this->teamsWithHomeVenues([1 => 100, 2 => null, 3 => null, 4 => null]);
@@ -411,12 +480,12 @@ class ScheduleScorerTest extends TestCase
         $this->assertTrue($report->hardConstraintsSatisfied);
         // Team 1: 0 home-venue appearances out of 4 matches -> diff=4, over
         // the ±1 tolerance by 3 -> totalOver=3, teamCount=4, normalized=0.75.
-        // tierWeight is 100^4 = 1e8 (home_venue_balance is 3rd-highest
+        // tierWeight is 100^5 = 1e10 (home_venue_balance is 3rd-highest
         // priority in the default order). Checked via the criterion's own
         // score, not the report total, since team 1 also racks up
         // consecutive_venue and home_away_break occurrences here (always
         // sent to the same neutral venue in the same away role).
-        $this->assertSame(75_000_000.0, $this->criterionScore($report, 'home_venue_balance'));
+        $this->assertSame(7_500_000_000.0, $this->criterionScore($report, 'home_venue_balance'));
         $this->assertArrayHasKey('home_venue_balance', $report->softViolationsByCriterion);
         $this->assertCount(1, $report->softViolationsByCriterion['home_venue_balance']);
     }
@@ -636,12 +705,13 @@ class ScheduleScorerTest extends TestCase
         $this->assertEqualsWithDelta(1 / 4, $this->criterionEpsilonUnit($report, 'home_venue_balance'), 0.0001);
     }
 
-    public function test_opponent_recency_raw_and_epsilon_unit_are_normalized_by_match_count_times_ideal_gap()
+    public function test_full_cycle_spacing_raw_and_epsilon_unit_are_normalized_by_match_count_times_full_cycle_gap()
     {
         // Same candidate as test_back_to_back_opponent_repeat_is_a_soft_penalty:
-        // both pairs rematch after a gap of 1 round. idealGap for 4 active
-        // teams is ceil(4/2)=2, so each pair's shortfall is max(0,2-1)=1,
-        // shortfallTotal=2. matchCount=4, divisor=4*2=8.
+        // both pairs rematch after a gap of 1 round. fullCycleGap for 4
+        // active teams is 4-1=3 (must face the other 3 teams before a
+        // rematch), so each pair's shortfall is max(0,3-1)=2,
+        // shortfallTotal=4. matchCount=4, divisor=4*3=12.
         $teams = $this->teams(1, 2, 3, 4);
         $venues = $this->venues(10, 20);
 
@@ -658,8 +728,230 @@ class ScheduleScorerTest extends TestCase
 
         $report = (new ScheduleScorer)->score($candidate, $teams, $venues, new GenerationConfig);
 
-        $this->assertEqualsWithDelta(2 / 8, $this->criterionRaw($report, 'opponent_recency'), 0.0001);
-        $this->assertEqualsWithDelta(1 / 8, $this->criterionEpsilonUnit($report, 'opponent_recency'), 0.0001);
+        $this->assertEqualsWithDelta(4 / 12, $this->criterionRaw($report, 'full_cycle_spacing'), 0.0001);
+        $this->assertEqualsWithDelta(1 / 12, $this->criterionEpsilonUnit($report, 'full_cycle_spacing'), 0.0001);
+    }
+
+    public function test_home_cycle_spacing_is_a_soft_penalty_when_a_team_re_hosts_before_hosting_everyone_else()
+    {
+        // Team 1 hosts team 2 in round 1, then hosts team 2 again in round
+        // 2 without hosting anyone else at home in between - a violation.
+        // Team 3 hosting team 4 both rounds is irrelevant noise (checked via
+        // the criterion's own violation messages, not the report total).
+        $teams = $this->teams(1, 2, 3, 4);
+        $venues = $this->venues(10, 20);
+
+        $candidate = new ScheduleCandidate([
+            new RoundCandidate($this->date('2026-07-06'), [
+                new MatchCandidate(10, 'Venue 10', 1, 2),
+                new MatchCandidate(20, 'Venue 20', 3, 4),
+            ], []),
+            new RoundCandidate($this->date('2026-07-13'), [
+                new MatchCandidate(10, 'Venue 10', 1, 2),
+                new MatchCandidate(20, 'Venue 20', 4, 3),
+            ], []),
+        ]);
+
+        $report = (new ScheduleScorer)->score($candidate, $teams, $venues, new GenerationConfig(softCriteria: ['home_cycle_spacing']));
+
+        $this->assertArrayHasKey('home_cycle_spacing', $report->softViolationsByCriterion);
+        $this->assertCount(1, $report->softViolationsByCriterion['home_cycle_spacing']);
+        $messages = implode(' ', $report->softViolationsByCriterion['home_cycle_spacing']);
+        $this->assertStringContainsString('Team 1 hosted Team 2', $messages);
+        $this->assertStringContainsString('before hosting everyone else', $messages);
+    }
+
+    public function test_home_cycle_spacing_scores_zero_when_a_team_hosts_everyone_else_before_re_hosting()
+    {
+        // 4 active teams -> fullCycleGap = 3. Team 1 hosts 2, 3, 4 in turn
+        // (a full cycle) before hosting 2 again in round 4 - no shortfall.
+        $teams = $this->teams(1, 2, 3, 4);
+        $venues = $this->venues(10);
+
+        $candidate = new ScheduleCandidate([
+            new RoundCandidate($this->date('2026-07-06'), [new MatchCandidate(10, 'Venue 10', 1, 2)], [3, 4]),
+            new RoundCandidate($this->date('2026-07-13'), [new MatchCandidate(10, 'Venue 10', 1, 3)], [2, 4]),
+            new RoundCandidate($this->date('2026-07-20'), [new MatchCandidate(10, 'Venue 10', 1, 4)], [2, 3]),
+            new RoundCandidate($this->date('2026-07-27'), [new MatchCandidate(10, 'Venue 10', 1, 2)], [3, 4]),
+        ]);
+
+        $report = (new ScheduleScorer)->score($candidate, $teams, $venues, new GenerationConfig(softCriteria: ['home_cycle_spacing']));
+
+        $this->assertArrayNotHasKey('home_cycle_spacing', $report->softViolationsByCriterion);
+        $this->assertEqualsWithDelta(0.0, $this->criterionRaw($report, 'home_cycle_spacing'), 0.0001);
+    }
+
+    public function test_home_cycle_spacing_raw_and_epsilon_unit_are_normalized_by_home_match_count_times_full_cycle_gap()
+    {
+        // Same candidate as test_home_cycle_spacing_is_a_soft_penalty_when_a_team_re_hosts_before_hosting_everyone_else:
+        // fullCycleGap=3 (4 teams), team 1's re-host of team 2 has gap=1
+        // (hosted nobody else in between), shortfall=max(0,3-1)=2.
+        // homeMatchCount=4 (2 matches/round x 2 rounds), divisor=4*3=12.
+        $teams = $this->teams(1, 2, 3, 4);
+        $venues = $this->venues(10, 20);
+
+        $candidate = new ScheduleCandidate([
+            new RoundCandidate($this->date('2026-07-06'), [
+                new MatchCandidate(10, 'Venue 10', 1, 2),
+                new MatchCandidate(20, 'Venue 20', 3, 4),
+            ], []),
+            new RoundCandidate($this->date('2026-07-13'), [
+                new MatchCandidate(10, 'Venue 10', 1, 2),
+                new MatchCandidate(20, 'Venue 20', 4, 3),
+            ], []),
+        ]);
+
+        $report = (new ScheduleScorer)->score($candidate, $teams, $venues, new GenerationConfig(softCriteria: ['home_cycle_spacing']));
+
+        $this->assertEqualsWithDelta(2 / 12, $this->criterionRaw($report, 'home_cycle_spacing'), 0.0001);
+        $this->assertEqualsWithDelta(1 / 12, $this->criterionEpsilonUnit($report, 'home_cycle_spacing'), 0.0001);
+    }
+
+    public function test_home_cycle_spacing_ignores_away_matches()
+    {
+        // Team 1 is AWAY at team 2 in both rounds (never hosts at all) -
+        // home_cycle_spacing has nothing to observe for team 1 (it only
+        // tracks who a team HOSTS), so it scores zero despite the identical
+        // opponent repeating immediately - that's full_cycle_spacing's and
+        // rematch_home_away_reversal's job, not this criterion's.
+        $teams = $this->teams(1, 2);
+        $venues = $this->venues(10);
+
+        $candidate = new ScheduleCandidate([
+            new RoundCandidate($this->date('2026-07-06'), [new MatchCandidate(10, 'Venue 10', 2, 1)], []),
+            new RoundCandidate($this->date('2026-07-13'), [new MatchCandidate(10, 'Venue 10', 2, 1)], []),
+        ]);
+
+        $report = (new ScheduleScorer)->score($candidate, $teams, $venues, new GenerationConfig(softCriteria: ['home_cycle_spacing']));
+
+        $this->assertArrayNotHasKey('home_cycle_spacing', $report->softViolationsByCriterion);
+        $this->assertEqualsWithDelta(0.0, $this->criterionRaw($report, 'home_cycle_spacing'), 0.0001);
+    }
+
+    public function test_away_cycle_spacing_is_a_soft_penalty_when_a_team_revisits_before_visiting_everyone_else()
+    {
+        // Team 1 plays away at team 2 in both rounds without visiting
+        // anyone else away in between - a violation.
+        $teams = $this->teams(1, 2, 3, 4);
+        $venues = $this->venues(10, 20);
+
+        $candidate = new ScheduleCandidate([
+            new RoundCandidate($this->date('2026-07-06'), [
+                new MatchCandidate(10, 'Venue 10', 2, 1),
+                new MatchCandidate(20, 'Venue 20', 4, 3),
+            ], []),
+            new RoundCandidate($this->date('2026-07-13'), [
+                new MatchCandidate(10, 'Venue 10', 2, 1),
+                new MatchCandidate(20, 'Venue 20', 3, 4),
+            ], []),
+        ]);
+
+        $report = (new ScheduleScorer)->score($candidate, $teams, $venues, new GenerationConfig(softCriteria: ['away_cycle_spacing']));
+
+        $this->assertArrayHasKey('away_cycle_spacing', $report->softViolationsByCriterion);
+        $this->assertCount(1, $report->softViolationsByCriterion['away_cycle_spacing']);
+        $messages = implode(' ', $report->softViolationsByCriterion['away_cycle_spacing']);
+        $this->assertStringContainsString('Team 1 played away at Team 2', $messages);
+        $this->assertStringContainsString('before visiting everyone else', $messages);
+    }
+
+    public function test_away_cycle_spacing_raw_and_epsilon_unit_are_normalized_by_away_match_count_times_full_cycle_gap()
+    {
+        // Same candidate as test_away_cycle_spacing_is_a_soft_penalty_when_a_team_revisits_before_visiting_everyone_else:
+        // fullCycleGap=3, team 1's revisit of team 2 has gap=1, shortfall=2.
+        // awayMatchCount=4, divisor=4*3=12.
+        $teams = $this->teams(1, 2, 3, 4);
+        $venues = $this->venues(10, 20);
+
+        $candidate = new ScheduleCandidate([
+            new RoundCandidate($this->date('2026-07-06'), [
+                new MatchCandidate(10, 'Venue 10', 2, 1),
+                new MatchCandidate(20, 'Venue 20', 4, 3),
+            ], []),
+            new RoundCandidate($this->date('2026-07-13'), [
+                new MatchCandidate(10, 'Venue 10', 2, 1),
+                new MatchCandidate(20, 'Venue 20', 3, 4),
+            ], []),
+        ]);
+
+        $report = (new ScheduleScorer)->score($candidate, $teams, $venues, new GenerationConfig(softCriteria: ['away_cycle_spacing']));
+
+        $this->assertEqualsWithDelta(2 / 12, $this->criterionRaw($report, 'away_cycle_spacing'), 0.0001);
+        $this->assertEqualsWithDelta(1 / 12, $this->criterionEpsilonUnit($report, 'away_cycle_spacing'), 0.0001);
+    }
+
+    public function test_rematch_hosted_by_the_same_team_again_is_a_soft_penalty()
+    {
+        // Team 1 hosts team 2 in both meetings (no reversal - a violation);
+        // team 3/4's rematch DOES reverse (3 hosted first, 4 hosts second -
+        // no violation). One violation out of two rematches.
+        $teams = $this->teams(1, 2, 3, 4);
+        $venues = $this->venues(10, 20);
+
+        $candidate = new ScheduleCandidate([
+            new RoundCandidate($this->date('2026-07-06'), [
+                new MatchCandidate(10, 'Venue 10', 1, 2),
+                new MatchCandidate(20, 'Venue 20', 3, 4),
+            ], []),
+            new RoundCandidate($this->date('2026-07-13'), [
+                new MatchCandidate(10, 'Venue 10', 1, 2),
+                new MatchCandidate(20, 'Venue 20', 4, 3),
+            ], []),
+        ]);
+
+        $report = (new ScheduleScorer)->score($candidate, $teams, $venues, new GenerationConfig);
+
+        $this->assertArrayHasKey('rematch_home_away_reversal', $report->softViolationsByCriterion);
+        $this->assertCount(1, $report->softViolationsByCriterion['rematch_home_away_reversal']);
+        $messages = implode(' ', $report->softViolationsByCriterion['rematch_home_away_reversal']);
+        $this->assertStringContainsString('Team 1', $messages);
+        $this->assertStringContainsString('without reversing', $messages);
+    }
+
+    public function test_rematch_home_away_reversal_only_compares_against_the_immediately_prior_meeting()
+    {
+        // Team 1 hosts (round 1), team 2 hosts (round 2, reversed - fine),
+        // team 1 hosts again (round 3) - same as round 1's role, but that's
+        // irrelevant: round 3 is only judged against round 2 (reversed from
+        // it), so this is NOT a violation. Two rematches (round2-vs-round1,
+        // round3-vs-round2), zero violations.
+        $teams = $this->teams(1, 2);
+        $venues = $this->venues(10);
+
+        $candidate = new ScheduleCandidate([
+            new RoundCandidate($this->date('2026-07-06'), [new MatchCandidate(10, 'Venue 10', 1, 2)], []),
+            new RoundCandidate($this->date('2026-07-13'), [new MatchCandidate(10, 'Venue 10', 2, 1)], []),
+            new RoundCandidate($this->date('2026-07-20'), [new MatchCandidate(10, 'Venue 10', 1, 2)], []),
+        ]);
+
+        $report = (new ScheduleScorer)->score($candidate, $teams, $venues, new GenerationConfig);
+
+        $this->assertArrayNotHasKey('rematch_home_away_reversal', $report->softViolationsByCriterion);
+        $this->assertEqualsWithDelta(0.0, $this->criterionRaw($report, 'rematch_home_away_reversal'), 0.0001);
+    }
+
+    public function test_rematch_home_away_reversal_raw_and_epsilon_unit_are_normalized_by_rematch_count()
+    {
+        // Same candidate as test_rematch_hosted_by_the_same_team_again_is_a_soft_penalty:
+        // 2 rematches total (first meetings don't count), 1 not reversed.
+        $teams = $this->teams(1, 2, 3, 4);
+        $venues = $this->venues(10, 20);
+
+        $candidate = new ScheduleCandidate([
+            new RoundCandidate($this->date('2026-07-06'), [
+                new MatchCandidate(10, 'Venue 10', 1, 2),
+                new MatchCandidate(20, 'Venue 20', 3, 4),
+            ], []),
+            new RoundCandidate($this->date('2026-07-13'), [
+                new MatchCandidate(10, 'Venue 10', 1, 2),
+                new MatchCandidate(20, 'Venue 20', 4, 3),
+            ], []),
+        ]);
+
+        $report = (new ScheduleScorer)->score($candidate, $teams, $venues, new GenerationConfig);
+
+        $this->assertEqualsWithDelta(1 / 2, $this->criterionRaw($report, 'rematch_home_away_reversal'), 0.0001);
+        $this->assertEqualsWithDelta(1 / 2, $this->criterionEpsilonUnit($report, 'rematch_home_away_reversal'), 0.0001);
     }
 
     public function test_home_away_break_raw_and_epsilon_unit_are_normalized_by_two_times_match_count()
@@ -715,7 +1007,7 @@ class ScheduleScorerTest extends TestCase
         // Same candidate as test_back_to_back_opponent_repeat_is_a_soft_penalty
         // (both pairs immediately rematch), which under the default config
         // triggers BOTH repeat_opponent_consecutive_rounds and
-        // opponent_recency - but softCriteria here only enables
+        // full_cycle_spacing - but softCriteria here only enables
         // home_away_balance, so neither of those two should be evaluated at
         // all, not merely scored at zero.
         $teams = $this->teams(1, 2, 3, 4);
@@ -737,7 +1029,7 @@ class ScheduleScorerTest extends TestCase
 
         $this->assertSame(['home_away_balance'], array_column($report->softCriteriaScores, 'key'));
         $this->assertArrayNotHasKey('repeat_opponent_consecutive_rounds', $report->softViolationsByCriterion);
-        $this->assertArrayNotHasKey('opponent_recency', $report->softViolationsByCriterion);
+        $this->assertArrayNotHasKey('full_cycle_spacing', $report->softViolationsByCriterion);
     }
 
     public function test_an_unknown_key_in_soft_criteria_is_silently_skipped_rather_than_erroring()

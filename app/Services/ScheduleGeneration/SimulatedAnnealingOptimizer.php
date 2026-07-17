@@ -35,6 +35,10 @@ final class SimulatedAnnealingOptimizer
      * @param VenueInput[] $activeVenues
      * @param array<string, float> $fixedTierThresholds criterion key => max allowed raw penalty; any candidate
      *   exceeding a threshold is rejected the same way a hard-constraint violation is
+     * @param ?callable(GenerationReport): float $tieBreakObjective when given, the scalar this pass minimizes
+     *   instead of the plain GenerationReport::score - used by ChebyshevTieBreak to swap in a Chebyshev/minimax
+     *   combination for a tied tier's members without touching every other line of accept/reject/best-tracking
+     *   logic below. Every existing caller omits this, so every singleton-tier pass is completely unaffected.
      * @return array{candidate: ScheduleCandidate, report: GenerationReport, iterations: int}
      */
     public function optimize(
@@ -46,7 +50,10 @@ final class SimulatedAnnealingOptimizer
         GenerationConfig $config,
         float $startedAt,
         array $fixedTierThresholds = [],
+        ?callable $tieBreakObjective = null,
     ): array {
+        $objectiveOf = $tieBreakObjective ?? static fn (GenerationReport $r): float => $r->score;
+
         $best = $initial;
         $bestReport = $initialReport;
 
@@ -57,7 +64,7 @@ final class SimulatedAnnealingOptimizer
         $current = $initial;
         $currentReport = $initialReport;
 
-        $t0 = $this->initialTemperature($current, $currentReport, $rounds, $activeTeams, $activeVenues, $config, $fixedTierThresholds);
+        $t0 = $this->initialTemperature($current, $currentReport, $rounds, $activeTeams, $activeVenues, $config, $fixedTierThresholds, $tieBreakObjective);
         $temperature = $t0;
         $epochSize = max(1, SlotCount::total($rounds));
         $iterations = 0;
@@ -72,14 +79,14 @@ final class SimulatedAnnealingOptimizer
                 continue;
             }
 
-            $delta = $report->score - $currentReport->score;
+            $delta = $objectiveOf($report) - $objectiveOf($currentReport);
             $accept = $delta <= 0.0 || $this->rng->nextFloat() < exp(-$delta / max($temperature, 1e-9));
 
             if ($accept) {
                 $current = $candidate;
                 $currentReport = $report;
 
-                if ($currentReport->score < $bestReport->score) {
+                if ($objectiveOf($currentReport) < $objectiveOf($bestReport)) {
                     $best = $current;
                     $bestReport = $currentReport;
                     $temperature = $t0;
@@ -114,6 +121,8 @@ final class SimulatedAnnealingOptimizer
      * @param VenueInput[] $activeVenues
      * @param array<string, float> $fixedTierThresholds see optimize() - the probe must use the same gate as the
      *   main loop, or T0 gets calibrated against worsening deltas the main loop would never actually accept
+     * @param ?callable(GenerationReport): float $tieBreakObjective see optimize() - must match what the main loop
+     *   will actually use, or T0 gets calibrated against a different objective's deltas
      */
     private function initialTemperature(
         ScheduleCandidate $candidate,
@@ -123,7 +132,9 @@ final class SimulatedAnnealingOptimizer
         array $activeVenues,
         GenerationConfig $config,
         array $fixedTierThresholds = [],
+        ?callable $tieBreakObjective = null,
     ): float {
+        $objectiveOf = $tieBreakObjective ?? static fn (GenerationReport $r): float => $r->score;
         $positiveDeltas = [];
         $probe = $candidate;
         $probeReport = $report;
@@ -136,7 +147,7 @@ final class SimulatedAnnealingOptimizer
                 continue;
             }
 
-            $delta = $nextReport->score - $probeReport->score;
+            $delta = $objectiveOf($nextReport) - $objectiveOf($probeReport);
 
             if ($delta > 0.0) {
                 $positiveDeltas[] = $delta;

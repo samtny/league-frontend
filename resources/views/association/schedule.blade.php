@@ -22,6 +22,7 @@
                 <?php foreach ($schedule->rounds
                     ->where('start_date','>=', date('Y-m-d', strtotime('-1 week')))
                     ->where('start_date', '<=', date('Y-m-d', strtotime("+2 weeks")))
+                    ->where('off_week', false)
                     ->sortBy('start_date') as $round): ?>
 
                     <h3><?php echo $round->name; ?> - <?php echo date('l, F j, Y', strtotime($round->start_date)); ?></h3>

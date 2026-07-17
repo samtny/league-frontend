@@ -29,26 +29,44 @@ return [
 
     // System-wide default list of which soft criteria are evaluated, and in
     // what priority order (highest priority first). A criterion runs ONLY if
-    // its key appears in this list - omitting a key disables it entirely: it
-    // is never scored, contributes no messages to the review screen, and has
-    // no effect on the search. May be any subset of the known soft-criterion
-    // keys (see SoftCriterionRegistry), including an empty array to run hard
-    // constraints only. Included keys are converted into a dominance-scaled
-    // ("big-M") weight per criterion by GenerationConfig::tierWeight() - a
-    // one-unit improvement in a higher-ranked criterion always outweighs the
-    // maximum possible sum of every lower-ranked criterion combined. An
-    // Association can override this list via its
+    // its key appears somewhere in this list - omitting a key disables it
+    // entirely: it is never scored, contributes no messages to the review
+    // screen, and has no effect on the search. May cover any subset of the
+    // known soft-criterion keys (see SoftCriterionRegistry), including an
+    // empty array to run hard constraints only.
+    //
+    // Each element is EITHER a bare string key (a single criterion holding
+    // that rank alone - the common case) OR an array of 2+ string keys (a
+    // "tie-group" of co-equal criteria sharing that rank), e.g.:
+    //   ['home_cycle_spacing', 'away_cycle_spacing'],  // tied - see below
+    //   'equal_matches_played',                        // singleton
+    // A singleton key is converted into a dominance-scaled ("big-M") weight
+    // by GenerationConfig::tierWeight() - a one-unit improvement in a
+    // higher-ranked tier always outweighs the maximum possible sum of every
+    // lower-ranked tier combined. A tie-group's members share that SAME
+    // weight (equally ranked against each other) but are NOT simply summed
+    // together - EpsilonConstraintOptimizer resolves them jointly via
+    // ChebyshevTieBreak (minimax on normalized regret from each member's own
+    // best-achievable value), so improving one can't come at the other's
+    // expense past the point where the other becomes the bottleneck. See
+    // ChebyshevTieBreak's own docblock for the reasoning and a documented
+    // future alternative (goal programming).
+    //
+    // An Association can override this list via its
     // schedule_generation_settings.soft_criteria column; see
-    // GenerationConfig::forAssociation(). An invalid override (not an array,
-    // an unknown key, or a duplicate key) falls back silently to this default.
+    // GenerationConfig::forAssociation(). An invalid override (not an array;
+    // an unknown key; a duplicate key, whether within one tie-group or across
+    // two different tiers; or a tier element that's neither a string nor a
+    // non-empty array of strings) falls back silently to this default.
     'soft_criteria' => [
-        'opponent_recency',
+        ['home_cycle_spacing', 'away_cycle_spacing'],
         'home_away_break',
-        
-        'equal_matches_played',
-        'home_away_balance',
-        'home_venue_balance',
-        'repeat_opponent_consecutive_rounds',              
+        'repeat_opponent_consecutive_rounds',
+        'rematch_home_away_reversal',
         'consecutive_venue',
+        'home_away_balance', # seems already solved / overlap w / less good than home_away_break
+        #'full_cycle_spacing',
+        #'equal_matches_played',
+        #'home_venue_balance',
     ],
 ];

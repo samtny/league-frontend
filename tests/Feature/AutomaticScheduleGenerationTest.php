@@ -95,6 +95,34 @@ class AutomaticScheduleGenerationTest extends TestCase
         $review->assertSee('Discard');
     }
 
+    public function test_off_week_and_playoffs_week_rounds_are_excluded_from_generation()
+    {
+        ['association' => $association, 'schedule' => $schedule] = $this->buildFixture();
+
+        $rounds = Round::where('schedule_id', $schedule->id)->orderBy('start_date')->get();
+        $offWeekRound = $rounds[2];
+        $offWeekRound->update(['off_week' => true]);
+        $playoffsRound = $rounds[5];
+        $playoffsRound->update(['playoffs_week' => true]);
+
+        $this->post(route('schedule.generate-matches.store', ['association' => $association, 'schedule' => $schedule]), [
+            'generate' => 'random',
+        ]);
+
+        $candidateData = session("schedule_generation.{$schedule->id}.candidate");
+        $this->assertNotNull($candidateData);
+
+        $roundIdsInCandidate = collect($candidateData['rounds'])->pluck('round_id');
+
+        $this->assertNotContains($offWeekRound->id, $roundIdsInCandidate);
+        $this->assertNotContains($playoffsRound->id, $roundIdsInCandidate);
+
+        // Every OTHER round is still present - this isn't merely "the
+        // flagged rounds are missing," it's specifically only those two.
+        $expectedIncludedIds = $rounds->pluck('id')->diff([$offWeekRound->id, $playoffsRound->id])->sort()->values();
+        $this->assertEqualsCanonicalizing($expectedIncludedIds->all(), $roundIdsInCandidate->all());
+    }
+
     public function test_accepting_persists_a_fully_valid_schedule()
     {
         ['association' => $association, 'schedule' => $schedule, 'inactiveVenue' => $inactiveVenue] = $this->buildFixture();

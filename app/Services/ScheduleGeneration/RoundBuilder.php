@@ -50,7 +50,7 @@ final class RoundBuilder
 
         $pairs = $this->pairTeams($playingTeams, $lastMeetingRoundByPair, $roundIndex);
 
-        $matches = $this->assignVenuesAndSides($pairs, $round->slots, $lastVenueByTeam, $homeCountByTeam, $awayCountByTeam, $homeVenueAppearancesByTeam);
+        $matches = $this->assignVenuesAndSides($pairs, $round->slots, $lastVenueByTeam, $homeCountByTeam, $awayCountByTeam, $homeVenueAppearancesByTeam, $activeTeams);
 
         foreach ($matches as $match) {
             $lastVenueByTeam[$match->homeTeamId] = $match->venueId;
@@ -108,6 +108,9 @@ final class RoundBuilder
      * @param array<int, int> $homeCountByTeam
      * @param array<int, int> $awayCountByTeam
      * @param array<int, int> $homeVenueAppearancesByTeam
+     * @param TeamInput[] $activeTeams the full active roster (not just this round's playing teams) - a team sitting
+     *   out this round on a bye still owns its venue, which is just as off-limits for another pair's neutral
+     *   fallback as a playing team's is
      * @return MatchCandidate[]
      */
     private function assignVenuesAndSides(
@@ -117,9 +120,57 @@ final class RoundBuilder
         array &$homeCountByTeam,
         array &$awayCountByTeam,
         array &$homeVenueAppearancesByTeam,
+        array $activeTeams,
     ): array {
         $remainingVenues = array_values($this->rng->shuffle($slots));
         $pairs = $this->rng->shuffle($pairs);
+
+        // Every EXCLUSIVELY-owned venue (exactly one active team, whether
+        // playing, byed, or in another pair this round, calls it home) is
+        // off-limits as a "neutral" choice below -
+        // HomeTeamAtAnotherTeamsVenueConstraint rejects a team being marked
+        // home at a venue owned by a different team, not just the two teams
+        // actually playing in that match. A SHARED venue (2+ owners) is
+        // deliberately left out of this set - it's still preferred as a
+        // fallback if avoidable, but not protected as strictly, since two
+        // co-owners can leave their own shared slot uncapturable by either
+        // of them in a given round (see the constraint's own docblock).
+        $ownerCountByVenueId = [];
+
+        foreach ($activeTeams as $team) {
+            if ($team->homeVenueId !== null) {
+                $ownerCountByVenueId[$team->homeVenueId] = ($ownerCountByVenueId[$team->homeVenueId] ?? 0) + 1;
+            }
+        }
+
+        $ownedVenueIds = array_filter($ownerCountByVenueId, fn (int $count) => $count === 1);
+
+        // Pairs that MUST draw from the shared/neutral pool below - either
+        // neither team has a currently-available own venue at all, or both
+        // do but it's the same (shared) venue, which is always routed to
+        // the pool anyway (see the collision check below) - are processed
+        // BEFORE any pair that can self-supply its own distinct venue.
+        // Self-supplying pairs never compete for the pool (their own venue
+        // was never a genuinely neutral option for anyone else), so there's
+        // nothing to gain by rushing them first; a pool-dependent pair,
+        // though, has NO fallback if a self-supplying pair's claim happens
+        // to be the only safe neutral venue left by the time it's its turn -
+        // exactly the scenario that forced a shared-venue pair onto its own
+        // (mutually forbidden) venue when this used to run in shuffle order.
+        $remainingVenueIds = array_map(fn (MatchSlotInput $slot) => $slot->venueId, $remainingVenues);
+        $needsPool = function (array $pair) use ($remainingVenueIds) {
+            [$teamA, $teamB] = $pair;
+            $aHas = $teamA->homeVenueId !== null && in_array($teamA->homeVenueId, $remainingVenueIds, true);
+            $bHas = $teamB->homeVenueId !== null && in_array($teamB->homeVenueId, $remainingVenueIds, true);
+
+            if ($aHas && $bHas) {
+                return $teamA->homeVenueId === $teamB->homeVenueId;
+            }
+
+            return ! $aHas && ! $bHas;
+        };
+        usort($pairs, fn (array $a, array $b) => ($needsPool($b) ? 1 : 0) <=> ($needsPool($a) ? 1 : 0));
+
         $matches = [];
 
         foreach ($pairs as [$teamA, $teamB]) {
@@ -179,21 +230,28 @@ final class RoundBuilder
                 $homeVenueAppearancesByTeam[$home->id] = ($homeVenueAppearancesByTeam[$home->id] ?? 0) + 1;
             } else {
                 // Neither team has an eligible home venue free this round -
-                // fall back to the generic pool, preferring a venue that is
-                // neither team's own home venue (never safe - whoever ends
-                // up away there would violate H4) nor either team's last-
-                // played venue; relaxing the last-played preference first if
-                // no venue satisfies both, and only accepting a team's own
-                // venue as an absolute last resort when literally no other
-                // slot remains this round.
+                // fall back to the generic pool. "Either of THIS pair's own
+                // venue" is excluded in every tier except the absolute last
+                // resort (never safe - whoever ends up away there violates
+                // H4, including the shared-venue collision case routed here
+                // above, where venue1 IS one of this pair's own venues even
+                // though it's excluded from $ownedVenueIds). Decreasing
+                // order of preference: (1) not this pair's own venue, not
+                // owned by any OTHER active team, not either team's
+                // last-played venue; (2) relax the last-played preference;
+                // (3) if every remaining venue is owned by some active team,
+                // at least still avoid this pair's own two venues (some
+                // OTHER team's venue is now unavoidable and will trigger
+                // HomeTeamAtAnotherTeamsVenueConstraint, but there's truly
+                // nothing better left); (4) only as an absolute last resort,
+                // whatever slot remains, including this pair's own.
                 $chosenIndex = null;
                 $aLast = $lastVenueByTeam[$teamA->id] ?? null;
                 $bLast = $lastVenueByTeam[$teamB->id] ?? null;
+                $isEitherTeamsOwnVenue = fn (MatchSlotInput $slot) => $slot->venueId === $teamA->homeVenueId || $slot->venueId === $teamB->homeVenueId;
 
                 foreach ($remainingVenues as $index => $candidateSlot) {
-                    $isEitherTeamsOwnVenue = $candidateSlot->venueId === $teamA->homeVenueId || $candidateSlot->venueId === $teamB->homeVenueId;
-
-                    if (! $isEitherTeamsOwnVenue && $candidateSlot->venueId !== $aLast && $candidateSlot->venueId !== $bLast) {
+                    if (! $isEitherTeamsOwnVenue($candidateSlot) && ! isset($ownedVenueIds[$candidateSlot->venueId]) && $candidateSlot->venueId !== $aLast && $candidateSlot->venueId !== $bLast) {
                         $chosenIndex = $index;
                         break;
                     }
@@ -201,7 +259,16 @@ final class RoundBuilder
 
                 if ($chosenIndex === null) {
                     foreach ($remainingVenues as $index => $candidateSlot) {
-                        if ($candidateSlot->venueId !== $teamA->homeVenueId && $candidateSlot->venueId !== $teamB->homeVenueId) {
+                        if (! $isEitherTeamsOwnVenue($candidateSlot) && ! isset($ownedVenueIds[$candidateSlot->venueId])) {
+                            $chosenIndex = $index;
+                            break;
+                        }
+                    }
+                }
+
+                if ($chosenIndex === null) {
+                    foreach ($remainingVenues as $index => $candidateSlot) {
+                        if (! $isEitherTeamsOwnVenue($candidateSlot)) {
                             $chosenIndex = $index;
                             break;
                         }
