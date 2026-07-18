@@ -521,3 +521,30 @@ The corrected design: `RoundRobinConstructor` now takes an `Rng` (previously non
 - **Odd `N` with a shared pair was checked for safe-pair existence (`N=3` through `N=21`, always found at least one) but not stress-tested at production scale the way `N=14` was** (500-seed sweep). Low risk in practice (seed+polish's non-regression guarantee still holds even if some odd-`N` shared-pair shape turned out imperfect), but worth a similar stress test if a real odd-`N` shared-venue case shows up.
 - **Two separate shared pairs, or a venue shared by 3+, remain unsolved** - same "no textbook answer, out of scope" reasoning as the original single-pair case, revisit if real demand appears.
 - **The "safe pairs are every-other-adjacent-pair-starting-at-0" shape was observed, not proven** - it held for every `N` checked (3-21) but wasn't derived from first principles the way the `N-2` break-minimum bound was. `findSafeSlotPairs()` doesn't rely on this shape (it re-derives the actual safe set at runtime for whatever `N` it's given), so this is a curiosity, not a correctness risk.
+
+---
+
+# TODO (not started) — Configurable pass-boundary strategy: "Flip" vs "Invert"
+
+## Status
+
+**Not started - exploratory, paused by product request.** Raised via a product conversation questioning why `RoundRobinConstructor`'s multi-pass seam (see "Seam between passes/leftover" in §8 above) always concentrates breaks/home-venue-streaks on 2 of the teams rather than spreading them evenly. Directly verified during that conversation (not just discussed abstractly):
+
+- Current "flip" behavior (repeat the same cycle-round order every pass, invert H/A globally) on a 4-team/6-round exclusive-venue case: 2 of 4 teams alternate perfectly (0 breaks), the other 2 each get a 3-round same-role streak spanning the seam (e.g. `A,H,H,H,A,A`) - 3 `home_away_break` violations apiece, concentrated. `ScheduleScorer` total: **4166.83**.
+- An alternative hand-built schedule using **palindrome pairing order** (week *i* and week *(2C+1-i)* use the same pairing, i.e. reverse the cycle-round order for the second pass instead of repeating it) spreads the break evenly - every team gets exactly 1 `consecutive_venue` violation instead of 2 teams getting 0 and the other 2 getting up to 2 each. But reversing the order forces the two weeks straddling the exact center of the season to use the *same pairing*, which are adjacent rounds - i.e. it forces an immediate opponent rematch at the seam. Scored through the real `ScheduleScorer`: `repeat_opponent_consecutive_rounds` and `full_cycle_spacing` (tiers 4-5 of 10 in the big-M priority order) fire, and the total score explodes to **1,677,781,111** - the current scoring config treats "no immediate rematch" as effectively non-negotiable, far above home/away balance.
+
+Product's stated take: for a small enough league, an immediate rematch at the seam (with home/away reversed) may read as **less** bad to admins/players than one team getting stuck playing 3 rounds in a row at the same venue - i.e. the current hard-coded priority ordering (rematch avoidance always beats break distribution) isn't obviously the right default for every league size, and both options should be available rather than picking one globally.
+
+## Proposed shape (to be designed properly when this is picked back up)
+
+- A **radio group** somewhere in the Generate Matches flow (or an Association-level `schedule_generation_settings` entry, same place the soft-criteria weights already live - see `GenerationConfig::forAssociation()`) with two options:
+  - **"Flip" (default)** - today's behavior, unchanged. Repeats the same cycle-round order every pass, inverts H/A globally per pass.
+  - **"Invert"** - flips H/A the same way, but *also reverses the cycle-round order* for the pass after the seam (the palindrome construction verified above). Trades one immediate opponent rematch at the seam for a much more even break/home-venue-streak distribution across all teams.
+- **Not just a `RoundRobinConstructor` change.** Selecting "Invert" and expecting its output to actually get chosen requires the scorer/config to know the seam rematch is an *accepted, intentional* exception in that mode - otherwise `repeat_opponent_consecutive_rounds`/`full_cycle_spacing`'s current big-M weighting will treat the invert-mode seed as catastrophically bad (see the 1.68-billion score above) and the generator will silently discard it in favor of greedy or the "flip" seed, defeating the whole point. Needs either: (a) a config-driven exception so the seam-adjacent rematch isn't penalized (or is penalized much more lightly) when "Invert" is selected, or (b) reframing those two criteria to be seam-aware in general. Needs product input on exactly how lenient that exception should be (all leagues? only leagues below some team-count? explicit opt-in only, as proposed here?).
+- Only matters for schedules whose round count spans more than one cycle (`R > N-1`); no-op otherwise.
+
+## Open questions
+
+- Does "Invert" generalize cleanly beyond the N=4/exactly-2-passes case verified above (e.g. 3+ passes, or a pass-plus-leftover shape)? Not yet checked.
+- Exact mechanism for exempting the seam rematch from `repeat_opponent_consecutive_rounds`/`full_cycle_spacing` when "Invert" is active - not designed yet.
+- Where the radio group actually lives in the UI (per-generation choice in the wizard vs. a persisted per-Association default) - not decided.
