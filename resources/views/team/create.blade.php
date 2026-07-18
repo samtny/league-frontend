@@ -37,6 +37,16 @@
                 </select>
             </div>
 
+            <div class="mb-3">
+                <label for="division_id">Division</label>
+                <select class="form-control" id="division_id" name="division_id">
+                    <option value="">- No Division -</option>
+                    <?php foreach($association->divisions->sortBy('sequence') as $division): ?>
+                    <option value="<?php echo $division->id; ?>"><?php echo $division->name; ?></option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+
             <div class="mb-3 form-check">
                 <input id="active" type="checkbox" class="form-check-input" name="active" value="1" {{ old('active', true) ? 'checked' : '' }}>
                 <label for="active" class="form-check-label">Active</label>

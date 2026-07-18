@@ -41,6 +41,16 @@
                 </select>
             </div>
 
+            <div class="mb-3">
+                <label for="division_id">Division</label>
+                <select class="form-control" id="division_id" name="division_id">
+                    <option value="">- No Division -</option>
+                    <?php foreach($team->association->divisions->sortBy('sequence') as $division): ?>
+                    <option value="<?php echo $division->id; ?>"<?php echo $team->division_id == $division->id ? ' selected' : ''; ?>><?php echo $division->name; ?></option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+
             <div class="row mb-3">
                 <div class="col">
                     <div class="list-group">

@@ -9,11 +9,16 @@ class Team extends Model
 {
     use SoftDeletes;
 
-    protected $fillable = ['name', 'venue_id', 'association_id', 'active'];
+    protected $fillable = ['name', 'venue_id', 'association_id', 'active', 'division_id'];
 
     public function association()
     {
         return $this->belongsTo('App\Association');
+    }
+
+    public function division()
+    {
+        return $this->belongsTo('App\Division');
     }
 
     public function captains()
