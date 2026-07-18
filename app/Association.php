@@ -140,7 +140,11 @@ class Association extends Model
     {
         return $this->rounds()
             ->where('rounds.start_date', '>=', date('Y-m-d', strtotime('today -7 days')))
-            ->where('rounds.start_date', '<=', date('Y-m-d', strtotime('now +7 days')));
+            ->where('rounds.start_date', '<=', date('Y-m-d', strtotime('now +7 days')))
+            ->where(function ($query) {
+                $query->where('schedules.archived', '!=', 1)
+                    ->orWhereNull('schedules.archived');
+            });
     }
 
     public function users()

@@ -10,8 +10,8 @@
     <h1>Schedules</h1>
     <div class="row venues mb-3">
         <div class="col">
-        <?php $schedulesByDivision = $series->schedules->sortBy('sequence')->groupBy(function ($schedule) { return $schedule->division ? $schedule->division->id : 0; }); ?>
-        <?php if (!empty($series->schedules)): ?>
+        <?php $schedulesByDivision = $series->activeSchedules->sortBy('sequence')->groupBy(function ($schedule) { return $schedule->division ? $schedule->division->id : 0; }); ?>
+        <?php if (!empty($series->activeSchedules)): ?>
             <?php foreach ($series->association->divisions->sortBy('sequence') as $division): ?>
                 <?php if ($schedulesByDivision->has($division->id)): ?>
                     <h2 class="text-muted"><?php echo $division->name; ?></h2>
@@ -37,6 +37,14 @@
         <?php else: ?>
             <div class="message">
                 No schedules.
+            </div>
+        <?php endif; ?>
+        <?php if (!$series->archivedSchedules->isEmpty()): ?>
+            <h2 class="text-muted mt-3">Archived</h2>
+            <div class="list-group">
+                <a class="list-group-item list-group-item-action" href="{{ route('series.schedules.archived', ['association' => $association, 'series' => $series]) }}">
+                    View
+                </a>
             </div>
         <?php endif; ?>
         </div>

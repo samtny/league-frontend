@@ -79,18 +79,37 @@ class AssociationFrontendController extends AssociationAwareController
 
     public function roster()
     {
+        $teams = $this->association->teams()
+            ->where('active', true)
+            ->with('homeVenue', 'division.schedules')
+            ->get()
+            ->filter(function ($team) {
+                return ! empty($team->division) && $team->division->schedules->contains(fn ($schedule) => $schedule->archived != 1);
+            });
+
         return view('association.roster', [
             'association' => $this->association,
-            'teams' => $this->association->teams->where('active', true)->load('homeVenue'),
+            'teams' => $teams,
         ]);
     }
 
     public function venues(PinballMapClient $pinballMap)
     {
+        $activeSchedules = $this->association->activeSchedules;
+
         $venues = $this->association->venues()
             ->where('active', true)
+            ->with('divisions')
             ->orderBy('name')
-            ->get();
+            ->get()
+            ->filter(function ($venue) use ($activeSchedules) {
+                return $activeSchedules->contains(function ($schedule) use ($venue) {
+                    return $schedule->division_id === null
+                        ? $venue->divisions->isEmpty()
+                        : $venue->divisions->contains('id', $schedule->division_id);
+                });
+            })
+            ->values();
 
         $venues->each(function ($venue) use ($pinballMap) {
             $venue->games = $pinballMap->machinesForLocation($venue->pinballmap_id);

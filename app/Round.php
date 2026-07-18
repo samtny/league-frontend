@@ -43,15 +43,24 @@ class Round extends Model
     }
 
     /**
-     * Create one match per venue in this round's association, using the
-     * parent schedule as the source of truth for series/division/association.
+     * Create one match per eligible venue in this round's association, using
+     * the parent schedule as the source of truth for series/division/
+     * association. A venue is eligible when it shares the schedule's
+     * division - or, for a divisionless schedule, when the venue itself has
+     * no divisions assigned.
      */
     public function createMatches(): void
     {
         $schedule = $this->schedule;
         $association = $schedule->association;
 
-        foreach ($association->activeVenues as $venue) {
+        $eligibleVenues = $association->activeVenues->filter(function ($venue) use ($schedule) {
+            return $schedule->division_id === null
+                ? $venue->divisions->isEmpty()
+                : $venue->divisions->contains('id', $schedule->division_id);
+        });
+
+        foreach ($eligibleVenues as $venue) {
             $match = new PLMatch;
 
             $match->name = $venue->name.' – '.$this->start_date->format('m-d-Y');

@@ -9,7 +9,9 @@ class Schedule extends Model
 {
     use SoftDeletes;
 
-    protected $fillable = ['name', 'association_id', 'series_id', 'division_id', 'start_date', 'end_date', 'weekday', 'sequence', 'archived' => 0];
+    protected $fillable = ['name', 'association_id', 'series_id', 'division_id', 'start_date', 'end_date', 'weekday', 'sequence', 'archived', 'venues_configured'];
+
+    protected $casts = ['venues_configured' => 'boolean'];
 
     /**
      * Schedule is soft-deleted, but Round is not - a soft delete alone never
@@ -50,6 +52,11 @@ class Schedule extends Model
     public function matches()
     {
         return $this->hasMany('App\PLMatch');
+    }
+
+    public function venues()
+    {
+        return $this->hasMany('App\Venue');
     }
 
     public function resultSubmissions()
