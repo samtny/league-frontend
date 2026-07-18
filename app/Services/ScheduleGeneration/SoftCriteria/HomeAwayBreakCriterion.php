@@ -21,6 +21,8 @@ use App\Services\ScheduleGeneration\ScoringContext;
  */
 final class HomeAwayBreakCriterion implements SoftCriterion
 {
+    use RecordsRoundViolations;
+
     private const SEVERE_STREAK_THRESHOLD = 3;
 
     private const SEVERE_STREAK_MULTIPLIER = 3.0;
@@ -57,13 +59,13 @@ final class HomeAwayBreakCriterion implements SoftCriterion
     {
         $roundNumber = $roundIndex + 1;
 
-        $this->recordRole($match->homeTeamId, true, $roundNumber);
-        $this->recordRole($match->awayTeamId, false, $roundNumber);
+        $this->recordRole($match->homeTeamId, true, $roundIndex, $roundNumber);
+        $this->recordRole($match->awayTeamId, false, $roundIndex, $roundNumber);
 
         $this->matchCount++;
     }
 
-    private function recordRole(int $teamId, bool $isHome, int $roundNumber): void
+    private function recordRole(int $teamId, bool $isHome, int $roundIndex, int $roundNumber): void
     {
         if (($this->lastRoleByTeam[$teamId] ?? null) !== $isHome) {
             $this->streakLengthByTeam[$teamId] = 1;
@@ -85,6 +87,8 @@ final class HomeAwayBreakCriterion implements SoftCriterion
             $this->rawUnits += 1.0;
             $this->messages[] = "{$this->context->teamLabel($teamId)} played {$roleLabel} in consecutive rounds around round {$roundNumber}.";
         }
+
+        $this->flagRoundViolation($roundIndex, $teamId);
     }
 
     public function observeBye(int $roundIndex, int $teamId): void

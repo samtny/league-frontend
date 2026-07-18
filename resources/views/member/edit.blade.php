@@ -27,7 +27,7 @@
             <div class="mb-3">
                 <label for="team_id">Team</label>
                 <select class="form-control" id="team_id" name="team_id">
-                    <?php foreach ($teams->sortBy('name') as $team): ?>
+                    <?php foreach ($teams->sortBy('sortName') as $team): ?>
                     <option value="<?php echo $team->id; ?>"<?php echo $member->team_id == $team->id ? ' selected' : ''; ?>><?php echo $team->name; ?></option>
                     <?php endforeach; ?>
                 </select>

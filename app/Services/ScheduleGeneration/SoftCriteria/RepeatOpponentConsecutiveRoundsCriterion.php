@@ -14,6 +14,8 @@ use App\Services\ScheduleGeneration\ScoringContext;
  */
 final class RepeatOpponentConsecutiveRoundsCriterion implements SoftCriterion
 {
+    use RecordsRoundViolations;
+
     /** @var array<int, int|null> team id => opponent in the immediately preceding round */
     private array $lastOpponentByTeam = [];
 
@@ -48,6 +50,7 @@ final class RepeatOpponentConsecutiveRoundsCriterion implements SoftCriterion
             $roundNumber = $roundIndex + 1;
             $this->repeatCount++;
             $this->messages[] = "{$this->context->teamLabel($home)} and {$this->context->teamLabel($away)} played each other in consecutive rounds around round {$roundNumber}.";
+            $this->flagRoundViolation($roundIndex, $home, $away);
         }
 
         $this->lastOpponentByTeam[$home] = $away;

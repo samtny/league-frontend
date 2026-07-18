@@ -18,6 +18,8 @@ use App\Services\ScheduleGeneration\ScoringContext;
  */
 final class AwayCycleSpacingCriterion implements SoftCriterion
 {
+    use RecordsRoundViolations;
+
     /** @var array<string, int> DirectedPairKey(visitor,host) => visitor's own away-game count at last visiting */
     private array $lastVisitIndexByDirectedPair = [];
 
@@ -62,6 +64,7 @@ final class AwayCycleSpacingCriterion implements SoftCriterion
             if ($shortfall > 0) {
                 $this->shortfallTotal += $shortfall;
                 $this->messages[] = "{$this->context->teamLabel($visitor)} played away at {$this->context->teamLabel($host)} again in round {$roundNumber} after playing away at only {$gap} other team(s), before visiting everyone else (needs {$this->context->fullCycleGap}+).";
+                $this->flagRoundViolation($roundIndex, $visitor, $host);
             }
         }
 

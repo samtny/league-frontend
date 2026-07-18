@@ -14,7 +14,7 @@
         <div class="col">
             <?php if (!$association->inactiveTeams->isEmpty()): ?>
                 <div class="list-group">
-                <?php foreach ($association->inactiveTeams->sortBy('name') as $item): ?>
+                <?php foreach ($association->inactiveTeams->sortBy('sortName') as $item): ?>
                     <a class="list-group-item list-group-item-action" href="{{ route('team.edit', ['association' => $association, 'team' => $item]) }}">
                         <?php echo ('<div class="team">' . $item->name . '</div>'); ?>
                     </a>

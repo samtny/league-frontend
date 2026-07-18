@@ -15,6 +15,8 @@ use App\Services\ScheduleGeneration\ScoringContext;
  */
 final class RematchHomeAwayReversalCriterion implements SoftCriterion
 {
+    use RecordsRoundViolations;
+
     /** @var array<string, int> pair key => home team id at the most recent meeting */
     private array $lastHomeTeamByPair = [];
 
@@ -54,6 +56,7 @@ final class RematchHomeAwayReversalCriterion implements SoftCriterion
             if ($previousHome === $home) {
                 $this->notReversedCount++;
                 $this->messages[] = "{$this->context->teamLabel($home)} hosted {$this->context->teamLabel($away)} again in round {$roundNumber} without reversing home/away role from their last meeting.";
+                $this->flagRoundViolation($roundIndex, $home, $away);
             }
         }
 

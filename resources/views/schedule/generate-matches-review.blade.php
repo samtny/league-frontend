@@ -90,38 +90,110 @@
         </div>
     @endif
 
+    @php
+        // Filter dropdown options are scoped to venues/teams that actually
+        // appear in this candidate, not every venue/team on the association -
+        // picking an option always yields at least one visible row.
+        $filterVenueNames = collect();
+        $filterTeamIds = collect();
+        foreach ($candidate->rounds as $round) {
+            foreach ($round->matches as $match) {
+                $filterVenueNames->push($match->venueName);
+                $filterTeamIds->push($match->homeTeamId);
+                $filterTeamIds->push($match->awayTeamId);
+            }
+            foreach ($round->byeTeamIds as $byeTeamId) {
+                $filterTeamIds->push($byeTeamId);
+            }
+        }
+        $filterVenueNames = $filterVenueNames->unique()->sort(SORT_STRING | SORT_FLAG_CASE)->values();
+        $filterTeamOptions = $filterTeamIds->unique()
+            ->mapWithKeys(fn ($id) => [$id => $teamNames[$id] ?? "#$id"])
+            ->sortBy(fn ($name) => preg_replace('/^the\s+/i', '', $name));
+    @endphp
+
+    <div class="row mb-3">
+        <div class="col-md-4">
+            <label for="filter-venue" class="form-label">Filter by Venue</label>
+            <select id="filter-venue" class="form-control">
+                <option value="">All Venues</option>
+                @foreach ($filterVenueNames as $venueName)
+                    <option value="{{ $venueName }}">{{ $venueName }}</option>
+                @endforeach
+            </select>
+        </div>
+        <div class="col-md-4">
+            <label for="filter-team" class="form-label">Filter by Team</label>
+            <select id="filter-team" class="form-control">
+                <option value="">All Teams</option>
+                @foreach ($filterTeamOptions as $teamId => $teamName)
+                    <option value="{{ $teamId }}">{{ $teamName }}</option>
+                @endforeach
+            </select>
+        </div>
+    </div>
+
     <div class="mb-3">
         <div class="table-responsive">
-            <table class="table table-striped">
+            <table class="table table-striped" id="generated-matches-table">
                 <thead>
                     <tr>
                         <th>Round</th>
                         <th>Venue</th>
                         <th>Home</th>
                         <th>Away</th>
+                        <th>Rematch</th>
                     </tr>
                 </thead>
                 <tbody>
+                    @php
+                        // Meeting count is scoped to this candidate alone (rounds
+                        // as previewed here, in order), not any previously
+                        // committed matches for this schedule/series/association.
+                        $pairMeetingCounts = [];
+                    @endphp
                     @foreach ($candidate->rounds as $index => $round)
                         @php $roundLabel = 'Round '.($index + 1).' - '.$round->date->format('m-d-Y'); @endphp
                         @if (empty($round->matches))
-                            <tr>
+                            <tr data-round="{{ $index }}" data-round-label="{{ $roundLabel }}" data-teams="{{ implode(',', $round->byeTeamIds) }}">
                                 <th scope="row">{{ $roundLabel }}</th>
-                                <td colspan="3">No matches (bye: {{ collect($round->byeTeamIds)->map(fn ($id) => $teamNames[$id] ?? "#$id")->implode(', ') }})</td>
+                                <td colspan="4">No matches (bye: {{ collect($round->byeTeamIds)->map(fn ($id) => $teamNames[$id] ?? "#$id")->implode(', ') }})</td>
                             </tr>
                         @else
                             @foreach ($round->matches as $matchIndex => $match)
-                                <tr>
+                                @php
+                                    $pairKey = min($match->homeTeamId, $match->awayTeamId).'-'.max($match->homeTeamId, $match->awayTeamId);
+                                    $pairMeetingCounts[$pairKey] = ($pairMeetingCounts[$pairKey] ?? 0) + 1;
+                                    $meetingNumber = $pairMeetingCounts[$pairKey];
+                                    $homeViolations = $report->softTeamViolationsByRound[$index][$match->homeTeamId] ?? [];
+                                    $awayViolations = $report->softTeamViolationsByRound[$index][$match->awayTeamId] ?? [];
+                                @endphp
+                                <tr data-round="{{ $index }}" data-round-label="{{ $roundLabel }}" data-venue="{{ $match->venueName }}" data-teams="{{ $match->homeTeamId }},{{ $match->awayTeamId }}">
                                     <th scope="row">{{ $matchIndex === 0 ? $roundLabel : '' }}</th>
                                     <td>{{ $match->venueName }}</td>
-                                    <td>{{ $teamNames[$match->homeTeamId] ?? "#{$match->homeTeamId}" }}</td>
-                                    <td>{{ $teamNames[$match->awayTeamId] ?? "#{$match->awayTeamId}" }}</td>
+                                    <td data-team="{{ $match->homeTeamId }}">
+                                        {{ $teamNames[$match->homeTeamId] ?? "#{$match->homeTeamId}" }}
+                                        @if (! empty($homeViolations))
+                                            <span class="badge bg-warning text-dark rounded-pill" title="{{ implode(', ', $homeViolations) }}">{{ count($homeViolations) }}</span>
+                                        @endif
+                                    </td>
+                                    <td data-team="{{ $match->awayTeamId }}">
+                                        {{ $teamNames[$match->awayTeamId] ?? "#{$match->awayTeamId}" }}
+                                        @if (! empty($awayViolations))
+                                            <span class="badge bg-warning text-dark rounded-pill" title="{{ implode(', ', $awayViolations) }}">{{ count($awayViolations) }}</span>
+                                        @endif
+                                    </td>
+                                    <td>
+                                        @if ($meetingNumber > 1)
+                                            <span class="badge bg-primary rounded-pill">{{ $meetingNumber }}</span>
+                                        @endif
+                                    </td>
                                 </tr>
                             @endforeach
                             @if (! empty($round->byeTeamIds))
-                                <tr>
+                                <tr data-round="{{ $index }}" data-round-label="{{ $roundLabel }}" data-teams="{{ implode(',', $round->byeTeamIds) }}">
                                     <th scope="row"></th>
-                                    <td colspan="3">Bye: {{ collect($round->byeTeamIds)->map(fn ($id) => $teamNames[$id] ?? "#$id")->implode(', ') }}</td>
+                                    <td colspan="4">Bye: {{ collect($round->byeTeamIds)->map(fn ($id) => $teamNames[$id] ?? "#$id")->implode(', ') }}</td>
                                 </tr>
                             @endif
                         @endif
@@ -151,3 +223,45 @@
         </div>
     </div>
 @endsection
+
+@section('page-js')
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        var venueSelect = document.getElementById('filter-venue');
+        var teamSelect = document.getElementById('filter-team');
+        var rows = document.querySelectorAll('#generated-matches-table tbody tr');
+
+        function applyFilters() {
+            var venue = venueSelect.value;
+            var team = teamSelect.value;
+            var labeledRounds = {};
+
+            rows.forEach(function (row) {
+                var rowVenue = row.dataset.venue || '';
+                var rowTeams = (row.dataset.teams || '').split(',').filter(Boolean);
+
+                var venueMatch = !venue || rowVenue === venue;
+                var teamMatch = !team || rowTeams.indexOf(team) !== -1;
+                var visible = venueMatch && teamMatch;
+
+                row.style.display = visible ? '' : 'none';
+
+                if (visible) {
+                    var round = row.dataset.round;
+                    var labelCell = row.querySelector('th[scope="row"]');
+
+                    labelCell.textContent = labeledRounds[round] ? '' : row.dataset.roundLabel;
+                    labeledRounds[round] = true;
+                }
+
+                row.querySelectorAll('td[data-team]').forEach(function (cell) {
+                    cell.classList.toggle('table-info', !!team && cell.dataset.team === team);
+                });
+            });
+        }
+
+        venueSelect.addEventListener('change', applyFilters);
+        teamSelect.addEventListener('change', applyFilters);
+    });
+</script>
+@stop

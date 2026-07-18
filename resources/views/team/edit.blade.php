@@ -28,7 +28,14 @@
                 <label for="venue_id">Home Venue</label>
                 <select class="form-control" id="venue_id" name="venue_id">
                     <option value="">- No Venue -</option>
-                    <?php foreach($team->association->venues->sortBy('name') as $venue): ?>
+                    <?php
+                        $venues = $team->association->activeVenues;
+                        if ($team->venue_id && !$venues->contains('id', $team->venue_id)) {
+                            $venues = $venues->push($team->homeVenue);
+                        }
+                        $venues = $venues->sortBy('name');
+                    ?>
+                    <?php foreach($venues as $venue): ?>
                     <option value="<?php echo $venue->id; ?>"<?php echo $team->venue_id == $venue->id ? ' selected' : ''; ?>><?php echo $venue->name; ?></option>
                     <?php endforeach; ?>
                 </select>

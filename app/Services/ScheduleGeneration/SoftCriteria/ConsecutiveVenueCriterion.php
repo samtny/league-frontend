@@ -21,6 +21,8 @@ use App\Services\ScheduleGeneration\ScoringContext;
  */
 final class ConsecutiveVenueCriterion implements SoftCriterion
 {
+    use RecordsRoundViolations;
+
     /** @var array<int, int|null> team id => venue played at in the immediately preceding round */
     private array $lastVenueByTeam = [];
 
@@ -59,6 +61,7 @@ final class ConsecutiveVenueCriterion implements SoftCriterion
                 // of whether it ends up costing score points below.
                 $this->venueStreakCountByTeam[$teamId] = ($this->venueStreakCountByTeam[$teamId] ?? 0) + 1;
                 $this->messages[] = "{$this->context->teamLabel($teamId)} played consecutive rounds at the same venue ({$match->venueName}) around round {$roundNumber}.";
+                $this->flagRoundViolation($roundIndex, $teamId);
             }
         }
 

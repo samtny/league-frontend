@@ -88,4 +88,11 @@ final class EqualMatchesPlayedCriterion implements SoftCriterion
     {
         return $this->messages;
     }
+
+    public function roundViolations(): array
+    {
+        // A whole-schedule spread across all teams, not attributable to any
+        // single round or team.
+        return [];
+    }
 }

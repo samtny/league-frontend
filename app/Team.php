@@ -35,4 +35,9 @@ class Team extends Model
     {
         return $this->hasMany('App\Member');
     }
+
+    public function getSortNameAttribute()
+    {
+        return preg_replace('/^the\s+/i', '', $this->name);
+    }
 }

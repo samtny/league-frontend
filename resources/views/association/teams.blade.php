@@ -15,9 +15,10 @@
             <h2 class="text-muted">Active</h2>
             <?php if (!$association->activeTeams->isEmpty()): ?>
                 <div class="list-group">
-                <?php foreach ($association->activeTeams->sortBy('name') as $item): ?>
+                <?php foreach ($association->activeTeams->sortBy('sortName') as $item): ?>
+                    <?php $label = ($item->homeVenue && $item->homeVenue->name !== $item->name) ? $item->name . ' - ' . $item->homeVenue->name : $item->name; ?>
                     <a class="list-group-item list-group-item-action" href="{{ route('team.edit', ['association' => $association, 'team' => $item]) }}">
-                        <?php echo ('<div class="team">' . $item->name . '</div>'); ?>
+                        <?php echo ('<div class="team">' . $label . '</div>'); ?>
                     </a>
                 <?php endforeach; ?>
                 </div>

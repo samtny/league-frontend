@@ -8,6 +8,7 @@ final class GenerationReport
      * @param string[] $hardViolations
      * @param array<string, string[]> $softViolationsByCriterion
      * @param array<int, array{key: string, label: string, score: float, weight: float, raw: float, epsilonUnit: float}> $softCriteriaScores every EVALUATED soft criterion's (i.e. present in GenerationConfig::$softCriteria) individual score, per-instance weight, config-independent raw penalty, and epsilon-constraint tolerance unit, in fixed order, regardless of whether it has any violation messages
+     * @param array<int, array<int, string[]>> $softTeamViolationsByRound round index => team id => labels of soft criteria that flagged that team in that round. Only criteria with single-round attribution contribute here (see SoftCriterion::roundViolations()) - whole-schedule aggregates never appear.
      */
     public function __construct(
         public readonly bool $hardConstraintsSatisfied,
@@ -17,6 +18,7 @@ final class GenerationReport
         public readonly bool $degenerate,
         public readonly ?string $degenerateReason = null,
         public readonly array $softCriteriaScores = [],
+        public readonly array $softTeamViolationsByRound = [],
     ) {
     }
 
@@ -30,6 +32,7 @@ final class GenerationReport
             'degenerate' => $this->degenerate,
             'degenerate_reason' => $this->degenerateReason,
             'soft_criteria_scores' => $this->softCriteriaScores,
+            'soft_team_violations_by_round' => $this->softTeamViolationsByRound,
         ];
     }
 
@@ -57,6 +60,7 @@ final class GenerationReport
             $data['degenerate'],
             $data['degenerate_reason'] ?? null,
             $data['soft_criteria_scores'] ?? [],
+            $data['soft_team_violations_by_round'] ?? [],
         );
     }
 }

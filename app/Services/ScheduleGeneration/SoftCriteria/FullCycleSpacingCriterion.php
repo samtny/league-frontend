@@ -21,6 +21,8 @@ use App\Services\ScheduleGeneration\ScoringContext;
  */
 final class FullCycleSpacingCriterion implements SoftCriterion
 {
+    use RecordsRoundViolations;
+
     /** @var array<string, int> pair key => round index of last meeting */
     private array $lastMeetingRoundByPair = [];
 
@@ -61,6 +63,7 @@ final class FullCycleSpacingCriterion implements SoftCriterion
             if ($shortfall > 0) {
                 $this->shortfallTotal += $shortfall;
                 $this->messages[] = "{$this->context->teamLabel($home)} and {$this->context->teamLabel($away)} rematched in round {$roundNumber} after only {$gap} round(s), before facing every other team (needs {$this->context->fullCycleGap}+).";
+                $this->flagRoundViolation($roundIndex, $home, $away);
             }
         }
 

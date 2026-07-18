@@ -117,4 +117,11 @@ final class BalancedOpponentsCriterion implements SoftCriterion
     {
         return $this->messages;
     }
+
+    public function roundViolations(): array
+    {
+        // Excess-meeting count for a pair is computed once, over the whole
+        // schedule, in finalize() - no single round is "the" violating one.
+        return [];
+    }
 }

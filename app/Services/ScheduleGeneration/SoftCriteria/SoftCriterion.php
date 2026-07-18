@@ -65,4 +65,15 @@ interface SoftCriterion
      * @return string[]
      */
     public function messages(): array;
+
+    /**
+     * Which team(s) this criterion flagged a violation for, in which round -
+     * only meaningful for criteria whose violations are tied to a single
+     * round (contrast e.g. EqualMatchesPlayedCriterion, whose penalty is a
+     * whole-schedule aggregate with no single round to blame). Criteria
+     * without round-level attribution return [].
+     *
+     * @return array<int, int[]> round index => distinct team IDs flagged in that round
+     */
+    public function roundViolations(): array;
 }

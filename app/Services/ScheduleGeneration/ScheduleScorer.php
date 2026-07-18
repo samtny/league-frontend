@@ -77,6 +77,7 @@ final class ScheduleScorer
         $score = 0.0;
         $softViolationsByCriterion = [];
         $softCriteriaScores = [];
+        $softTeamViolationsByRound = [];
 
         foreach ($softCriteria as $criterion) {
             $criterionScore = $criterion->penalty($config);
@@ -96,6 +97,12 @@ final class ScheduleScorer
             if (! empty($messages)) {
                 $softViolationsByCriterion[$criterion->key()] = $messages;
             }
+
+            foreach ($criterion->roundViolations() as $roundIndex => $teamIds) {
+                foreach ($teamIds as $teamId) {
+                    $softTeamViolationsByRound[$roundIndex][$teamId][] = $criterion->label();
+                }
+            }
         }
 
         return new GenerationReport(
@@ -105,6 +112,7 @@ final class ScheduleScorer
             score: $score,
             degenerate: false,
             softCriteriaScores: $softCriteriaScores,
+            softTeamViolationsByRound: $softTeamViolationsByRound,
         );
     }
 }

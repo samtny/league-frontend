@@ -81,7 +81,7 @@
                                     <td>
                                         <select id="match_<?php echo $match->id; ?>__home_team_id" name="match_<?php echo $match->id; ?>__home_team_id">
                                             <option value="">- No team -</option>
-                                            <?php foreach($schedule->association->teams->sortBy('name') as $team): ?>
+                                            <?php foreach($schedule->association->teams->sortBy('sortName') as $team): ?>
                                             <option value="<?php echo $team->id; ?>"<?php if($match->home_team_id == $team->id) echo ' selected'; ?>><?php echo $team->name; ?><?php if (!$team->active) echo ' (inactive)'; ?></option>
                                             <?php endforeach; ?>
                                         </select>
@@ -89,7 +89,7 @@
                                     <td>
                                         <select id="match_<?php echo $match->id; ?>__away_team_id" name="match_<?php echo $match->id; ?>__away_team_id">
                                             <option value="">- No team -</option>
-                                            <?php foreach($schedule->association->teams->sortBy('name') as $team): ?>
+                                            <?php foreach($schedule->association->teams->sortBy('sortName') as $team): ?>
                                             <option value="<?php echo $team->id; ?>"<?php if($match->away_team_id == $team->id) echo ' selected'; ?>><?php echo $team->name; ?><?php if (!$team->active) echo ' (inactive)'; ?></option>
                                             <?php endforeach; ?>
                                         </select>

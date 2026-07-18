@@ -96,4 +96,11 @@ final class HomeVenueBalanceCriterion implements SoftCriterion
     {
         return $this->messages;
     }
+
+    public function roundViolations(): array
+    {
+        // A team's season-long home-venue-appearance ratio, not
+        // attributable to any single round.
+        return [];
+    }
 }

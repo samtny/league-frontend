@@ -23,6 +23,8 @@ use App\Services\ScheduleGeneration\ScoringContext;
  */
 final class HomeCycleSpacingCriterion implements SoftCriterion
 {
+    use RecordsRoundViolations;
+
     /** @var array<string, int> DirectedPairKey(host,opponent) => host's own home-game count at last hosting */
     private array $lastHostIndexByDirectedPair = [];
 
@@ -67,6 +69,7 @@ final class HomeCycleSpacingCriterion implements SoftCriterion
             if ($shortfall > 0) {
                 $this->shortfallTotal += $shortfall;
                 $this->messages[] = "{$this->context->teamLabel($host)} hosted {$this->context->teamLabel($opponent)} again in round {$roundNumber} after hosting only {$gap} other team(s) at home, before hosting everyone else (needs {$this->context->fullCycleGap}+).";
+                $this->flagRoundViolation($roundIndex, $host, $opponent);
             }
         }
 
