@@ -58,15 +58,16 @@ return [
     // an unknown key; a duplicate key, whether within one tie-group or across
     // two different tiers; or a tier element that's neither a string nor a
     // non-empty array of strings) falls back silently to this default.
+    // TODO: something better for small leagues e.g. 4 team 6 round.
     'soft_criteria' => [
         'full_cycle_spacing',
-        //['home_cycle_spacing', 'away_cycle_spacing'],
         'home_away_break',
-        'balanced_opponents',
-        'repeat_opponent_consecutive_rounds',
-        'rematch_home_away_reversal',
-        'consecutive_venue',
-        'home_away_balance', // seems already solved / overlap w / less good than home_away_break
+        //'rematch_home_away_reversal',
+        //'consecutive_venue',
+        //'balanced_opponents',
+        //'repeat_opponent_consecutive_rounds',
+        //['home_cycle_spacing', 'away_cycle_spacing'],
+        //'home_away_balance', // seems already solved / overlap w / less good than home_away_break
         //'equal_matches_played',
         //'home_venue_balance',
     ],
