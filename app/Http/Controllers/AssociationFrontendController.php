@@ -79,9 +79,17 @@ class AssociationFrontendController extends AssociationAwareController
 
     public function roster()
     {
+        $teams = $this->association->teams()
+            ->where('active', true)
+            ->with('homeVenue', 'division.schedules')
+            ->get()
+            ->filter(function ($team) {
+                return ! empty($team->division) && $team->division->schedules->contains(fn ($schedule) => $schedule->archived != 1);
+            });
+
         return view('association.roster', [
             'association' => $this->association,
-            'teams' => $this->association->teams->where('active', true)->load('homeVenue'),
+            'teams' => $teams,
         ]);
     }
 

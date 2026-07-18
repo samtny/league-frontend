@@ -21,4 +21,24 @@ class Division extends Model
     {
         return $this->belongsToMany('App\Venue');
     }
+
+    public function schedules()
+    {
+        return $this->hasMany('App\Schedule');
+    }
+
+    public function activeSchedules()
+    {
+        return $this->schedules()
+            ->where(function ($query) {
+                $query->where('archived', '!=', 1)
+                    ->orWhereNull('archived');
+            });
+    }
+
+    public function archivedSchedules()
+    {
+        return $this->schedules()
+            ->where('archived', '=', 1);
+    }
 }
