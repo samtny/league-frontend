@@ -13,15 +13,32 @@
     <div class="teams row mb-3">
         <div class="col">
             <h2 class="text-muted">Active</h2>
+            <?php $teamsByDivision = $association->activeTeams->sortBy('sortName')->groupBy(function ($team) { return $team->division ? $team->division->id : 0; }); ?>
             <?php if (!$association->activeTeams->isEmpty()): ?>
-                <div class="list-group">
-                <?php foreach ($association->activeTeams->sortBy('sortName') as $item): ?>
-                    <?php $label = ($item->homeVenue && $item->homeVenue->name !== $item->name) ? $item->name . ' - ' . $item->homeVenue->name : $item->name; ?>
-                    <a class="list-group-item list-group-item-action" href="{{ route('team.edit', ['association' => $association, 'team' => $item]) }}">
-                        <?php echo ('<div class="team">' . $label . '</div>'); ?>
-                    </a>
+                <?php foreach ($association->divisions->sortBy('sequence') as $division): ?>
+                    <?php if ($teamsByDivision->has($division->id)): ?>
+                        <h3 class="text-muted"><?php echo $division->name; ?></h3>
+                        <div class="list-group mb-3">
+                        <?php foreach ($teamsByDivision[$division->id] as $item): ?>
+                            <?php $label = ($item->homeVenue && $item->homeVenue->name !== $item->name) ? $item->name . ' - ' . $item->homeVenue->name : $item->name; ?>
+                            <a class="list-group-item list-group-item-action" href="{{ route('team.edit', ['association' => $association, 'team' => $item]) }}">
+                                <?php echo ('<div class="team">' . $label . '</div>'); ?>
+                            </a>
+                        <?php endforeach; ?>
+                        </div>
+                    <?php endif; ?>
                 <?php endforeach; ?>
-                </div>
+                <?php if ($teamsByDivision->has(0)): ?>
+                    <h3 class="text-muted">(no division)</h3>
+                    <div class="list-group mb-3">
+                    <?php foreach ($teamsByDivision[0] as $item): ?>
+                        <?php $label = ($item->homeVenue && $item->homeVenue->name !== $item->name) ? $item->name . ' - ' . $item->homeVenue->name : $item->name; ?>
+                        <a class="list-group-item list-group-item-action" href="{{ route('team.edit', ['association' => $association, 'team' => $item]) }}">
+                            <?php echo ('<div class="team">' . $label . '</div>'); ?>
+                        </a>
+                    <?php endforeach; ?>
+                    </div>
+                <?php endif; ?>
             <?php else: ?>
                 <div class="message">
                     No teams for this association.

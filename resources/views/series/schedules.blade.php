@@ -10,14 +10,30 @@
     <h1>Schedules</h1>
     <div class="row venues mb-3">
         <div class="col">
+        <?php $schedulesByDivision = $series->schedules->sortBy('sequence')->groupBy(function ($schedule) { return $schedule->division ? $schedule->division->id : 0; }); ?>
         <?php if (!empty($series->schedules)): ?>
-        <div class="list-group">
-            <?php foreach ($series->schedules as $index => $item): ?>
-                <a class="list-group-item list-group-action" href="{{ route('schedule.view', ['association' => $series->association, 'schedule' => $item ])}}">
-                    {{ $item->name }}
-                </a>
+            <?php foreach ($series->association->divisions->sortBy('sequence') as $division): ?>
+                <?php if ($schedulesByDivision->has($division->id)): ?>
+                    <h2 class="text-muted"><?php echo $division->name; ?></h2>
+                    <div class="list-group mb-3">
+                    <?php foreach ($schedulesByDivision[$division->id] as $item): ?>
+                        <a class="list-group-item list-group-action" href="{{ route('schedule.view', ['association' => $series->association, 'schedule' => $item ])}}">
+                            {{ $item->name }}
+                        </a>
+                    <?php endforeach; ?>
+                    </div>
+                <?php endif; ?>
             <?php endforeach; ?>
-        </div>
+            <?php if ($schedulesByDivision->has(0)): ?>
+                <h2 class="text-muted">(no division)</h2>
+                <div class="list-group mb-3">
+                <?php foreach ($schedulesByDivision[0] as $item): ?>
+                    <a class="list-group-item list-group-action" href="{{ route('schedule.view', ['association' => $series->association, 'schedule' => $item ])}}">
+                        {{ $item->name }}
+                    </a>
+                <?php endforeach; ?>
+                </div>
+            <?php endif; ?>
         <?php else: ?>
             <div class="message">
                 No schedules.

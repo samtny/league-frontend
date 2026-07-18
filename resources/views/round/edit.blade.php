@@ -63,6 +63,12 @@
                             </tr>
                         </thead>
                         <tbody>
+                            <?php $divisionTeams = $schedule->association->teams->filter(function ($team) use ($schedule) { return $team->division_id == $schedule->division_id; }); ?>
+                            <?php $teamOptionsFor = function ($selectedTeamId) use ($divisionTeams) {
+                                return $divisionTeams->filter(function ($team) use ($selectedTeamId) {
+                                    return $team->active || $team->id == $selectedTeamId;
+                                })->sortBy([['active', 'desc'], ['sortName', 'asc']]);
+                            }; ?>
                             <?php foreach ($schedule->series->association->venues->sortBy('name') as $venue): ?>
                                 <?php $match = \App\PLMatch::where([
                                         'schedule_id' => $schedule->id,
@@ -74,24 +80,34 @@
                                 <?php if (!$venue->active && empty($match)): ?>
                                     <?php continue; ?>
                                 <?php endif; ?>
-                            <tr>
+                                <?php
+                                    $homeInvalid = !empty($match) && !empty($match->home_team_id) && optional($match->homeTeam)->division_id != $schedule->division_id;
+                                    $awayInvalid = !empty($match) && !empty($match->away_team_id) && optional($match->awayTeam)->division_id != $schedule->division_id;
+                                ?>
+                            <tr<?php if ($homeInvalid || $awayInvalid): ?> class="table-warning"<?php endif; ?>>
                                 <th scope="row"<?php if (!$venue->active): ?> class="text-muted"<?php endif; ?>><?php echo $venue->name ?></th>
 
                                 <?php if (!empty($match)): ?>
-                                    <td>
+                                    <td<?php if ($homeInvalid): ?> title="This team's division does not match the schedule's division."<?php endif; ?>>
                                         <select id="match_<?php echo $match->id; ?>__home_team_id" name="match_<?php echo $match->id; ?>__home_team_id">
                                             <option value="">- No team -</option>
-                                            <?php foreach($schedule->association->teams->sortBy('sortName') as $team): ?>
+                                            <?php foreach($teamOptionsFor($match->home_team_id) as $team): ?>
                                             <option value="<?php echo $team->id; ?>"<?php if($match->home_team_id == $team->id) echo ' selected'; ?>><?php echo $team->name; ?><?php if (!$team->active) echo ' (inactive)'; ?></option>
                                             <?php endforeach; ?>
+                                            <?php if ($homeInvalid): ?>
+                                            <option value="<?php echo $match->home_team_id; ?>" selected><?php echo $match->homeTeam->name; ?> (wrong division)</option>
+                                            <?php endif; ?>
                                         </select>
                                     </td>
-                                    <td>
+                                    <td<?php if ($awayInvalid): ?> title="This team's division does not match the schedule's division."<?php endif; ?>>
                                         <select id="match_<?php echo $match->id; ?>__away_team_id" name="match_<?php echo $match->id; ?>__away_team_id">
                                             <option value="">- No team -</option>
-                                            <?php foreach($schedule->association->teams->sortBy('sortName') as $team): ?>
+                                            <?php foreach($teamOptionsFor($match->away_team_id) as $team): ?>
                                             <option value="<?php echo $team->id; ?>"<?php if($match->away_team_id == $team->id) echo ' selected'; ?>><?php echo $team->name; ?><?php if (!$team->active) echo ' (inactive)'; ?></option>
                                             <?php endforeach; ?>
+                                            <?php if ($awayInvalid): ?>
+                                            <option value="<?php echo $match->away_team_id; ?>" selected><?php echo $match->awayTeam->name; ?> (wrong division)</option>
+                                            <?php endif; ?>
                                         </select>
                                     </td>
                                 <?php else: ?>
