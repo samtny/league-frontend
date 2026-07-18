@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Association;
+use App\Division;
 use App\Venue;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Http;
@@ -12,9 +13,22 @@ class VenuesDirectoryTest extends TestCase
 {
     use RefreshDatabase;
 
+    /**
+     * Gives a venue an unarchived, divisionless schedule - the minimal setup
+     * that makes a divisionless venue eligible under the new "has an active
+     * schedule for an eligible division" rule.
+     */
+    private function makeEligible(Association $association): void
+    {
+        $association->schedules()->create([
+            'name' => 'Schedule', 'start_date' => now()->subDay(), 'end_date' => now()->addWeek(),
+        ]);
+    }
+
     public function test_only_active_venues_are_listed_ordered_by_name()
     {
         $association = Association::factory()->create(['subdomain' => 'venues-active']);
+        $this->makeEligible($association);
 
         Venue::create(['name' => 'Zebra Lanes', 'association_id' => $association->id, 'active' => true]);
         Venue::create(['name' => 'Alpha Arcade', 'association_id' => $association->id, 'active' => true]);
@@ -27,9 +41,85 @@ class VenuesDirectoryTest extends TestCase
         $response->assertDontSee('Hidden Hideout');
     }
 
+    public function test_venue_is_hidden_when_it_has_no_active_schedule_for_an_eligible_division()
+    {
+        $association = Association::factory()->create(['subdomain' => 'venues-no-schedule']);
+
+        Venue::create(['name' => 'Lonely Lanes', 'association_id' => $association->id, 'active' => true]);
+
+        $response = $this->get('http://venues-no-schedule.pinballleague.org/venues');
+
+        $response->assertStatus(200);
+        $response->assertDontSee('Lonely Lanes');
+    }
+
+    public function test_venue_is_hidden_when_its_only_matching_schedule_is_archived()
+    {
+        $association = Association::factory()->create(['subdomain' => 'venues-archived-schedule']);
+        $association->schedules()->create([
+            'name' => 'Old Schedule', 'start_date' => now()->subMonth(), 'end_date' => now()->subWeek(), 'archived' => 1,
+        ]);
+
+        Venue::create(['name' => 'Retired Rec Room', 'association_id' => $association->id, 'active' => true]);
+
+        $response = $this->get('http://venues-archived-schedule.pinballleague.org/venues');
+
+        $response->assertStatus(200);
+        $response->assertDontSee('Retired Rec Room');
+    }
+
+    public function test_venue_is_shown_when_eligible_for_a_divisions_active_schedule()
+    {
+        $association = Association::factory()->create(['subdomain' => 'venues-division-match']);
+
+        $division = new Division(['name' => 'Division Alpha']);
+        $division->association_id = $association->id;
+        $division->save();
+
+        $association->schedules()->create([
+            'name' => 'Division Schedule', 'division_id' => $division->id,
+            'start_date' => now()->subDay(), 'end_date' => now()->addWeek(),
+        ]);
+
+        $venue = Venue::create(['name' => 'Division Diner', 'association_id' => $association->id, 'active' => true]);
+        $venue->divisions()->attach($division->id);
+
+        $response = $this->get('http://venues-division-match.pinballleague.org/venues');
+
+        $response->assertStatus(200);
+        $response->assertSee('Division Diner');
+    }
+
+    public function test_venue_is_hidden_when_not_eligible_for_any_active_schedules_division()
+    {
+        $association = Association::factory()->create(['subdomain' => 'venues-division-mismatch']);
+
+        $divisionA = new Division(['name' => 'Division Alpha']);
+        $divisionA->association_id = $association->id;
+        $divisionA->save();
+
+        $divisionB = new Division(['name' => 'Division Bravo']);
+        $divisionB->association_id = $association->id;
+        $divisionB->save();
+
+        $association->schedules()->create([
+            'name' => 'Division A Schedule', 'division_id' => $divisionA->id,
+            'start_date' => now()->subDay(), 'end_date' => now()->addWeek(),
+        ]);
+
+        $venue = Venue::create(['name' => 'Wrong Division Warehouse', 'association_id' => $association->id, 'active' => true]);
+        $venue->divisions()->attach($divisionB->id);
+
+        $response = $this->get('http://venues-division-mismatch.pinballleague.org/venues');
+
+        $response->assertStatus(200);
+        $response->assertDontSee('Wrong Division Warehouse');
+    }
+
     public function test_page_attributes_game_data_to_pinball_map()
     {
         $association = Association::factory()->create(['subdomain' => 'venues-attribution']);
+        $this->makeEligible($association);
 
         $response = $this->get('http://venues-attribution.pinballleague.org/venues');
 
@@ -48,6 +138,7 @@ class VenuesDirectoryTest extends TestCase
         ]);
 
         $association = Association::factory()->create(['subdomain' => 'venues-games']);
+        $this->makeEligible($association);
         Venue::create(['name' => 'Arcade One', 'association_id' => $association->id, 'active' => true, 'pinballmap_id' => '874']);
 
         $response = $this->get('http://venues-games.pinballleague.org/venues');
@@ -68,6 +159,7 @@ class VenuesDirectoryTest extends TestCase
         ]);
 
         $association = Association::factory()->create(['subdomain' => 'venues-refs']);
+        $this->makeEligible($association);
         Venue::create(['name' => 'Arcade Five', 'association_id' => $association->id, 'active' => true, 'pinballmap_id' => '874']);
 
         $response = $this->get('http://venues-refs.pinballleague.org/venues');
@@ -94,6 +186,7 @@ class VenuesDirectoryTest extends TestCase
         Http::fake();
 
         $association = Association::factory()->create(['subdomain' => 'venues-no-id']);
+        $this->makeEligible($association);
         Venue::create(['name' => 'Arcade Two', 'association_id' => $association->id, 'active' => true]);
 
         $response = $this->get('http://venues-no-id.pinballleague.org/venues');
@@ -110,6 +203,7 @@ class VenuesDirectoryTest extends TestCase
         ]);
 
         $association = Association::factory()->create(['subdomain' => 'venues-failing']);
+        $this->makeEligible($association);
         Venue::create(['name' => 'Arcade Three', 'association_id' => $association->id, 'active' => true, 'pinballmap_id' => '999999']);
 
         $response = $this->get('http://venues-failing.pinballleague.org/venues');
@@ -126,6 +220,7 @@ class VenuesDirectoryTest extends TestCase
         ]);
 
         $association = Association::factory()->create(['subdomain' => 'venues-cached']);
+        $this->makeEligible($association);
         Venue::create(['name' => 'Arcade Four', 'association_id' => $association->id, 'active' => true, 'pinballmap_id' => '874']);
 
         $this->get('http://venues-cached.pinballleague.org/venues')->assertStatus(200);

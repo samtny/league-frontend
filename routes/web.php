@@ -88,6 +88,7 @@ Route::prefix('admin')->middleware('admin')->group(function () {
         Route::get('{association}/series/{series}/delete', 'SeriesController@deleteConfirm')->name('series.deleteConfirm');
         Route::post('{association}/series/{series}/delete', 'SeriesController@delete')->name('series.delete');
         Route::get('{association}/series/{series}/schedules', 'SeriesController@schedules')->name('series.schedules');
+        Route::get('{association}/series/{series}/schedules/archived', 'SeriesController@schedulesArchived')->name('series.schedules.archived');
         Route::get('{association}/series/{series}/schedule/create', 'ScheduleController@create')->name('schedule.create');
         Route::post('{association}/series/{series}/schedule/create', 'ScheduleController@store');
 

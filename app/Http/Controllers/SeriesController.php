@@ -103,6 +103,11 @@ class SeriesController extends Controller
         return view('series.schedules', ['association' => $association, 'series' => $series]);
     }
 
+    public function schedulesArchived(Association $association, Series $series)
+    {
+        return view('series.schedules_archived', ['association' => $association, 'series' => $series]);
+    }
+
     public function deleteConfirm(Association $association, Series $series)
     {
         return view('series.delete', ['association' => $association, 'series' => $series]);

@@ -43,16 +43,19 @@ class AutomaticScheduleGenerationTest extends TestCase
 
         // 6 active teams + 2 inactive (must never be scheduled).
         $activeTeams = collect(range(1, 6))->map(
-            fn ($i) => Team::create(['name' => "Team {$i}", 'association_id' => $association->id, 'active' => true])
+            fn ($i) => Team::create(['name' => "Team {$i}", 'association_id' => $association->id, 'active' => true, 'division_id' => $division->id])
         );
-        Team::create(['name' => 'Inactive Team A', 'association_id' => $association->id, 'active' => false]);
-        Team::create(['name' => 'Inactive Team B', 'association_id' => $association->id, 'active' => false]);
+        Team::create(['name' => 'Inactive Team A', 'association_id' => $association->id, 'active' => false, 'division_id' => $division->id]);
+        Team::create(['name' => 'Inactive Team B', 'association_id' => $association->id, 'active' => false, 'division_id' => $division->id]);
 
         // 2 active venues + 1 inactive (must never receive a match).
         $activeVenues = collect(range(1, 2))->map(
             fn ($i) => Venue::create(['name' => "Venue {$i}", 'association_id' => $association->id, 'active' => true])
         );
         $inactiveVenue = Venue::create(['name' => 'Inactive Venue', 'association_id' => $association->id, 'active' => false]);
+
+        $activeVenues->each(fn ($venue) => $venue->divisions()->attach($division->id));
+        $inactiveVenue->divisions()->attach($division->id);
 
         \Bouncer::allow('superadmin')->everything();
         $admin = User::factory()->create();
@@ -258,10 +261,12 @@ class AutomaticScheduleGenerationTest extends TestCase
         // 2 active teams but 2 active venues: capacity is min(1, 2) = 1, so
         // only one of the round's two Match rows is ever touched by a
         // candidate - the other is a stale leftover from a previous run.
-        $teamA = Team::create(['name' => 'Team A', 'association_id' => $association->id, 'active' => true]);
-        $teamB = Team::create(['name' => 'Team B', 'association_id' => $association->id, 'active' => true]);
-        Venue::create(['name' => 'Venue 1', 'association_id' => $association->id, 'active' => true]);
-        Venue::create(['name' => 'Venue 2', 'association_id' => $association->id, 'active' => true]);
+        $teamA = Team::create(['name' => 'Team A', 'association_id' => $association->id, 'active' => true, 'division_id' => $division->id]);
+        $teamB = Team::create(['name' => 'Team B', 'association_id' => $association->id, 'active' => true, 'division_id' => $division->id]);
+        $venue1 = Venue::create(['name' => 'Venue 1', 'association_id' => $association->id, 'active' => true]);
+        $venue2 = Venue::create(['name' => 'Venue 2', 'association_id' => $association->id, 'active' => true]);
+        $venue1->divisions()->attach($division->id);
+        $venue2->divisions()->attach($division->id);
 
         \Bouncer::allow('superadmin')->everything();
         $admin = User::factory()->create();

@@ -12,14 +12,32 @@
     </div>
     <div class="row">
         <div class="col-md-6 mb-3">
-            <h2 class="text-muted">Administer</h2>
-            <div class="list-group">
-                <a class="list-group-item list-group-item-action" href="{{ route('association.edit', ['association' => $association]) }}">Edit Details</a>
-                <a class="list-group-item list-group-item-action" href="{{ route('association.divisions', ['association' => $association]) }}">Divisions</a>
-                <a class="list-group-item list-group-item-action" href="{{ route('association.teams', ['association' => $association]) }}">Teams</a>
-                <a class="list-group-item list-group-item-action" href="{{ route('association.venues', ['association' => $association]) }}">Venues</a>
-                <a class="list-group-item list-group-item-action" href="{{ route('association.series', ['association' => $association]) }}">Series</a>
-                <a class="list-group-item list-group-item-action" href="{{ route('association.users', ['association' => $association]) }}">Users</a>
+            <div class="row">
+                <div class="col mb-3">
+                    <h2 class="text-muted">Administer</h2>
+                    <div class="list-group">
+                        <a class="list-group-item list-group-item-action" href="{{ route('association.edit', ['association' => $association]) }}">Edit Details</a>
+                        <a class="list-group-item list-group-item-action" href="{{ route('association.divisions', ['association' => $association]) }}">Divisions</a>
+                        <a class="list-group-item list-group-item-action" href="{{ route('association.teams', ['association' => $association]) }}">Teams</a>
+                        <a class="list-group-item list-group-item-action" href="{{ route('association.venues', ['association' => $association]) }}">Venues</a>
+                        <a class="list-group-item list-group-item-action" href="{{ route('association.series', ['association' => $association]) }}">Series</a>
+                        <a class="list-group-item list-group-item-action" href="{{ route('association.users', ['association' => $association]) }}">Users</a>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col mb-3">
+                    <h2 class="text-muted">Active Schedules</h2>
+                    <div class="list-group">
+                    @forelse ($association->activeSchedules->sortBy([['series.name', 'asc'], ['name', 'asc']]) as $schedule)
+                    <a class="list-group-item list-group-item-action" href="{{ route('schedule.edit', ['association' => $association, 'schedule' => $schedule]) }}">
+                        <?php echo !empty($schedule->series) ? $schedule->series->name : '[no series]'; ?> - <?php echo $schedule->name; ?>
+                    </a>
+                    @empty
+                    There are no active schedules.
+                    @endforelse
+                    </div>
+                </div>
             </div>
         </div>
         <div class="col-md-6 mb-3">

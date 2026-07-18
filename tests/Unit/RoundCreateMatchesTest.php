@@ -27,6 +27,9 @@ class RoundCreateMatchesTest extends TestCase
         $division->association_id = $association->id;
         $division->save();
 
+        $activeVenue->divisions()->attach($division->id);
+        $inactiveVenue->divisions()->attach($division->id);
+
         $series = Series::create(['name' => 'Series', 'association_id' => $association->id]);
         $schedule = $association->schedules()->create([
             'name' => 'Schedule', 'series_id' => $series->id, 'division_id' => $division->id,

@@ -9,7 +9,7 @@ class Schedule extends Model
 {
     use SoftDeletes;
 
-    protected $fillable = ['name', 'association_id', 'series_id', 'division_id', 'start_date', 'end_date', 'weekday', 'sequence', 'archived' => 0, 'venues_configured'];
+    protected $fillable = ['name', 'association_id', 'series_id', 'division_id', 'start_date', 'end_date', 'weekday', 'sequence', 'archived', 'venues_configured'];
 
     protected $casts = ['venues_configured' => 'boolean'];
 

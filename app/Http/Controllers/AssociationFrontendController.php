@@ -87,10 +87,21 @@ class AssociationFrontendController extends AssociationAwareController
 
     public function venues(PinballMapClient $pinballMap)
     {
+        $activeSchedules = $this->association->activeSchedules;
+
         $venues = $this->association->venues()
             ->where('active', true)
+            ->with('divisions')
             ->orderBy('name')
-            ->get();
+            ->get()
+            ->filter(function ($venue) use ($activeSchedules) {
+                return $activeSchedules->contains(function ($schedule) use ($venue) {
+                    return $schedule->division_id === null
+                        ? $venue->divisions->isEmpty()
+                        : $venue->divisions->contains('id', $schedule->division_id);
+                });
+            })
+            ->values();
 
         $venues->each(function ($venue) use ($pinballMap) {
             $venue->games = $pinballMap->machinesForLocation($venue->pinballmap_id);

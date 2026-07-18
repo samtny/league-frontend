@@ -13,10 +13,11 @@ class ScoreSubmissionController extends AssociationAwareController
     public function step1(Request $request)
     {
         if (! empty($this->association)) {
-            // get schedules with start_date < today, end_date > today
+            // get schedules with start_date < today, end_date > today, not archived
             $schedules = $this->association->schedules
                 ->where('start_date', '<=', date('Y-m-d', strtotime('today')))
-                ->where('end_date', '>=', date('Y-m-d', strtotime('today')));
+                ->where('end_date', '>=', date('Y-m-d', strtotime('today')))
+                ->filter(fn ($schedule) => $schedule->archived != 1);
 
             // get rounds with start_date < today, but greater than today - 1 week
             $rounds = Round::whereIn('schedule_id', $schedules->pluck('id'))
@@ -45,11 +46,12 @@ class ScoreSubmissionController extends AssociationAwareController
         if (! empty($this->association)) {
             $division = Division::find($request->division_id);
 
-            // get schedules with start_date < today, end_date > today, matching division
+            // get schedules with start_date < today, end_date > today, matching division, not archived
             $schedules = $this->association->schedules
                 ->where('start_date', '<=', date('Y-m-d', strtotime('today')))
                 ->where('end_date', '>=', date('Y-m-d', strtotime('today')))
-                ->where('division_id', $division->id);
+                ->where('division_id', $division->id)
+                ->filter(fn ($schedule) => $schedule->archived != 1);
 
             // get rounds with start_date < today, but greater than today - 1 week, not closed
             $rounds = Round::whereIn('schedule_id', $schedules->pluck('id'))

@@ -210,6 +210,11 @@ Breadcrumbs::for('series.schedules', function ($trail, $series) {
     $trail->push(__('Schedules'), route('series.schedules', ['association' => $series->association, 'series' => $series]));
 });
 
+Breadcrumbs::for('series.schedules.archived', function ($trail, $series) {
+    $trail->parent('series.schedules', $series);
+    $trail->push(__('Archived Schedules'), route('series.schedules.archived', ['association' => $series->association, 'series' => $series]));
+});
+
 Breadcrumbs::for('schedule.create', function ($trail, $series) {
     $trail->parent('series.schedules', $series);
     $trail->push(__('Create'), route('schedule.create', ['association' => $series->association, 'series' => $series]));
