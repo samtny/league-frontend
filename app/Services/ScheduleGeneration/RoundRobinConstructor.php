@@ -4,7 +4,9 @@ namespace App\Services\ScheduleGeneration;
 
 /**
  * Deterministic classical round-robin construction for the exclusive-home-
- * venue case: every active team owns a distinct active venue. Used by
+ * venue case (every active team owns a distinct active venue), plus one
+ * narrow extension: exactly one active venue may be shared by exactly two
+ * active teams (every other team's venue must still be exclusive). Used by
  * InitialSolutionBuilder as the construction phase's seed whenever eligible
  * - see plan.md, "Optimal Round-Robin Construction for the Exclusive-Home-
  * Venue Case", for the theory behind it. This class never returns an
@@ -23,9 +25,43 @@ namespace App\Services\ScheduleGeneration;
  * to reproduce the theoretical N-2 minimum-breaks bound for every even N
  * tested from 4 to 100, with at most a +/-1 home/away imbalance per team,
  * in O(N) rounds x O(N) work per round.
+ *
+ * Single-shared-venue-pair support: when two teams share a venue, they
+ * can't simply be placed on ANY adjacent pair of slots - computationally
+ * checking every adjacent pair (not just a handful) showed roughly half of
+ * them still leave the pair simultaneously "home" (a real double-booking of
+ * the shared venue) at some round, and even the ones that avoid that can
+ * fail once a later multi-cycle pass flips every role (simultaneously
+ * "away" pre-flip becomes simultaneously "home" post-flip). findSafeSlotPairs()
+ * computes, directly from the actual built cycle, exactly which adjacent
+ * slot pairs are safe in BOTH orientations - not a hardcoded formula, since
+ * the safe set's shape (every other adjacent pair, starting at slot 0) was
+ * only discovered by checking, not derived a priori, and re-deriving it at
+ * runtime is cheap and keeps it correct if the tie-break logic above ever
+ * changes. Their own head-to-head round is simply a normal match at the
+ * shared venue (whichever of the two the canonical pattern makes "home"
+ * that round hosts) - AwayTeamAtOwnVenueConstraint has a matching exception
+ * for exactly this case. This does NOT generalize to more than one shared
+ * venue, or to a venue shared by 3+ teams - isEligible() declines both.
+ *
+ * Slot assignment is randomized (via the injected Rng), NOT input order:
+ * the break-minimal pattern this class produces is inherently unequal
+ * (some slots are break-free, most carry exactly one break - see above),
+ * so a fixed, deterministic team-to-slot mapping would hand the "lucky"
+ * break-free slots to the same teams every single generation - a real
+ * fairness bug, found via real usage, not theoretical. A shared-venue pair
+ * (if any) is exempted from this randomization only insofar as which SAFE
+ * slot pair they land on is itself randomly chosen (see assignTeamsToSlots())
+ * - everyone else, and which of the two co-owners takes which of the two
+ * chosen slots, is still randomized.
  */
 final class RoundRobinConstructor
 {
+    public function __construct(
+        private readonly Rng $rng,
+    ) {
+    }
+
     /**
      * @param TeamInput[] $activeTeams
      * @param VenueInput[] $activeVenues
@@ -37,25 +73,134 @@ final class RoundRobinConstructor
         }
 
         $activeVenueIds = array_flip(array_map(fn (VenueInput $v) => $v->id, $activeVenues));
-        $seenVenueIds = [];
+        $teamIdsByVenue = [];
 
         foreach ($activeTeams as $team) {
             if ($team->homeVenueId === null) {
                 return false;
             }
 
-            if (isset($seenVenueIds[$team->homeVenueId])) {
-                return false;
-            }
-
-            $seenVenueIds[$team->homeVenueId] = true;
-
             if (! isset($activeVenueIds[$team->homeVenueId])) {
                 return false;
             }
+
+            $teamIdsByVenue[$team->homeVenueId][] = $team->id;
         }
 
-        return true;
+        $sharedVenueCount = 0;
+
+        foreach ($teamIdsByVenue as $teamIds) {
+            if (count($teamIds) > 2) {
+                return false;
+            }
+
+            if (count($teamIds) === 2) {
+                $sharedVenueCount++;
+            }
+        }
+
+        return $sharedVenueCount <= 1;
+    }
+
+    /**
+     * The two teams sharing a venue, if any (isEligible() already
+     * guarantees at most one such venue, with exactly 2 owners).
+     *
+     * @param TeamInput[] $activeTeams
+     * @return array{0: TeamInput, 1: TeamInput}|null
+     */
+    private function findSharedVenuePair(array $activeTeams): ?array
+    {
+        $teamsByVenue = [];
+
+        foreach ($activeTeams as $team) {
+            $teamsByVenue[$team->homeVenueId][] = $team;
+        }
+
+        foreach ($teamsByVenue as $teams) {
+            if (count($teams) === 2) {
+                return $teams;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Which adjacent slot pairs never leave a shared-venue pair's roles
+     * simultaneously equal (both home OR both away, since a later
+     * multi-cycle pass flips everyone), checked directly against the
+     * built cycle - see class docblock for why this is computed rather
+     * than assumed. Only pairs entirely within the real-team range
+     * (0..realTeamCount-2 for the lower slot) are candidates - the odd-team
+     * phantom's slot is never eligible for the shared pair.
+     *
+     * @param array<int, array{pairs: array<int, array{0: int, 1: int}>, role: array<int, int>}> $cycle
+     * @return array<int, array{0: int, 1: int}>
+     */
+    private function findSafeSlotPairs(array $cycle, int $realTeamCount): array
+    {
+        $safe = [];
+
+        for ($slotA = 0; $slotA < $realTeamCount - 1; $slotA++) {
+            $slotB = $slotA + 1;
+            $everEqual = false;
+
+            foreach ($cycle as $cycleRound) {
+                if ($cycleRound['role'][$slotA] === $cycleRound['role'][$slotB]) {
+                    $everEqual = true;
+
+                    break;
+                }
+            }
+
+            if (! $everEqual) {
+                $safe[] = [$slotA, $slotB];
+            }
+        }
+
+        return $safe;
+    }
+
+    /**
+     * Slot assignment is randomized (see class docblock). With no shared
+     * venue, every team is simply shuffled. With one, a safe slot pair is
+     * chosen at random from findSafeSlotPairs(), the two co-owners are
+     * randomly assigned between its two slots, and everyone else is
+     * shuffled into the remaining slots.
+     *
+     * @param TeamInput[] $activeTeams
+     * @param array<int, array{pairs: array<int, array{0: int, 1: int}>, role: array<int, int>}> $cycle
+     * @return array<int, TeamInput>
+     */
+    private function assignTeamsToSlots(array $activeTeams, array $cycle): array
+    {
+        $sharedPair = $this->findSharedVenuePair($activeTeams);
+
+        if ($sharedPair === null) {
+            return $this->rng->shuffle($activeTeams);
+        }
+
+        [$first, $second] = $this->rng->shuffle($sharedPair);
+        $others = array_values(array_filter($activeTeams, fn (TeamInput $t) => $t->id !== $first->id && $t->id !== $second->id));
+        $shuffledOthers = $this->rng->shuffle($others);
+
+        $safePairs = $this->findSafeSlotPairs($cycle, count($activeTeams));
+        [$slotA, $slotB] = $this->rng->shuffle($safePairs)[0];
+
+        $slots = array_fill(0, count($activeTeams), null);
+        $slots[$slotA] = $first;
+        $slots[$slotB] = $second;
+
+        $otherIndex = 0;
+
+        foreach ($slots as $slot => $team) {
+            if ($team === null) {
+                $slots[$slot] = $shuffledOthers[$otherIndex++];
+            }
+        }
+
+        return $slots;
     }
 
     /**
@@ -75,25 +220,30 @@ final class RoundRobinConstructor
 
         $n = count($activeTeams);
         $isOdd = $n % 2 === 1;
+        $slotCount = $n + ($isOdd ? 1 : 0);
 
-        // Slots 0..n-1 are the real teams, in input order (deterministic).
-        // For an odd team count a phantom occupies the final slot; whoever
-        // is drawn against the phantom in a given round takes that round's
-        // bye instead of playing.
-        $slotTeams = $activeTeams;
+        // The cycle's abstract role-per-slot pattern depends only on
+        // slotCount, never on which team occupies which slot - build it
+        // first so a shared-venue pair's safe slots (see
+        // findSafeSlotPairs()) can be computed before team assignment.
+        $cycle = $this->buildSingleCycle($slotCount);
+
+        // Slots 0..n-1 are the real teams, randomized (see class docblock,
+        // and findSafeSlotPairs()/assignTeamsToSlots() for a shared-venue
+        // pair's placement specifically). For an odd team count a phantom
+        // occupies the final slot; whoever is drawn against the phantom in
+        // a given round takes that round's bye instead of playing.
+        $slotTeams = $this->assignTeamsToSlots($activeTeams, $cycle);
 
         if ($isOdd) {
             $slotTeams[] = null;
         }
-
-        $slotCount = count($slotTeams);
 
         $venueLookup = [];
         foreach ($activeVenues as $venue) {
             $venueLookup[$venue->id] = $venue;
         }
 
-        $cycle = $this->buildSingleCycle($slotCount);
         $roundCount = count($rounds);
 
         $roundCandidates = [];

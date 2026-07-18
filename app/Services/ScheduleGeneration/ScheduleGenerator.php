@@ -15,8 +15,10 @@ final class ScheduleGenerator
     /**
      * Bounded feasibility retries for the construction phase only - see the
      * comment at its call site. RoundRobinConstructor never needs more than
-     * one (it's deterministic and always hard-valid); this budget exists for
-     * the greedy fallback path on tightly venue-constrained inputs.
+     * one (its team-to-slot assignment is randomized for fairness - see its
+     * own docblock - but every arrangement it can produce is always hard-
+     * valid by construction); this budget exists for the greedy fallback
+     * path on tightly venue-constrained inputs.
      */
     private const MAX_SEED_ATTEMPTS = 20;
 
@@ -66,9 +68,10 @@ final class ScheduleGenerator
         $best = null;
         $bestReport = null;
 
-        // Construction phase: a strong deterministic seed when every active
-        // team owns a distinct home venue (RoundRobinConstructor) - always
-        // hard-valid by construction, so this never needs a second try.
+        // Construction phase: a strong break-minimal seed when every active
+        // team owns a distinct home venue (RoundRobinConstructor, team-to-
+        // slot assignment randomized for fairness but always hard-valid by
+        // construction), so this never needs a second try.
         // Otherwise a single greedy pass, which is hard-valid for almost any
         // input but can occasionally fail on a tightly venue-constrained one
         // (e.g. very few active venues shared across teams) - bounded retries

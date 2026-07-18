@@ -328,18 +328,47 @@ class ScheduleGeneratorTest extends TestCase
         }
     }
 
-    public function test_shared_venue_input_is_ineligible_for_the_round_robin_seed_so_behavior_is_unchanged()
+    public function test_partial_null_venue_input_is_ineligible_for_the_round_robin_seed_so_behavior_is_unchanged()
     {
-        // RoundRobinConstructor declines whenever any team shares its home
-        // venue with another team (see RoundRobinConstructorTest), so this
-        // exact input - taken from test_two_teams_sharing_a_home_venue_
-        // still_produce_a_valid_schedule() above - never reaches it, and
+        // RoundRobinConstructor requires EVERY active team to have a home
+        // venue at all (a single shared pair is fine - see
+        // RoundRobinConstructorTest and test_single_shared_venue_pair_
+        // below - but a team with no venue is not). This exact input -
+        // taken from test_two_teams_sharing_a_home_venue_still_produce_a_
+        // valid_schedule() above - stays ineligible because of teams 3-6's
+        // null venues, not because 1 and 2 share one, so
         // ScheduleGenerator::generate() falls straight through to the
         // unchanged greedy loop exactly as it did before this enhancement.
         $teams = $this->teamsWithHomeVenues([1 => 500, 2 => 500, 3 => null, 4 => null, 5 => null, 6 => null]);
         $venues = $this->venues(500, 600);
 
-        $this->assertFalse((new RoundRobinConstructor())->isEligible($teams, $venues));
+        $this->assertFalse((new RoundRobinConstructor(new SeededRng(1)))->isEligible($teams, $venues));
+    }
+
+    public function test_single_shared_venue_pair_is_eligible_and_reaches_the_construction_seed()
+    {
+        // Unlike the fixture above, every team here owns SOME home venue -
+        // teams 1 and 2 share venue 500, every other team owns a distinct
+        // venue - so this is now eligible for RoundRobinConstructor's seed
+        // (see RoundRobinConstructorTest for the underlying mechanics: the
+        // shared pair is placed on adjacent slots, which keeps their roles
+        // complementary all cycle, and their own head-to-head match is a
+        // normal match at the shared venue).
+        $teams = $this->teamsWithHomeVenues([1 => 500, 2 => 500, 3 => 600, 4 => 700, 5 => 800, 6 => 900]);
+        $venues = $this->venues(500, 600, 700, 800, 900);
+
+        $this->assertTrue((new RoundRobinConstructor(new SeededRng(1)))->isEligible($teams, $venues));
+
+        // Only 2 rounds - short enough that the construction's single-cycle
+        // prefix hasn't reached its first unavoidable break yet (mirrors
+        // test_exclusive_home_venue_seed_is_used_when_it_reaches_a_perfect_score
+        // below), so this is a genuine 0-score seed and should short-circuit.
+        $result = $this->generator(1)->generate($this->rounds(2, $venues), $teams, $venues, new GenerationConfig);
+
+        $this->assertFalse($result->report->degenerate);
+        $this->assertTrue($result->report->hardConstraintsSatisfied, implode(' | ', $result->report->hardViolations));
+        $this->assertSame(0.0, $result->report->score);
+        $this->assertSame(0, $result->attemptsUsed, 'a perfect seed should short-circuit before any randomized attempts');
     }
 
     public function test_exclusive_home_venue_seed_is_used_when_it_reaches_a_perfect_score()
@@ -412,7 +441,7 @@ class ScheduleGeneratorTest extends TestCase
         $rounds = $this->rounds(15, $venues); // Exactly one single cycle (R = N-1 = 15 rounds).
         $config = new GenerationConfig;
 
-        $seed = (new RoundRobinConstructor())->construct($rounds, $teams, $venues);
+        $seed = (new RoundRobinConstructor(new SeededRng(1)))->construct($rounds, $teams, $venues);
         $seedReport = (new ScheduleScorer)->score($seed, $teams, $venues, $config);
 
         $greedyOnly = (new InitialSolutionBuilder(new SeededRng(1)))->greedyPass($rounds, $teams);

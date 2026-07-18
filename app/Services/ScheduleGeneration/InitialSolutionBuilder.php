@@ -5,9 +5,10 @@ namespace App\Services\ScheduleGeneration;
 /**
  * The construction phase: builds exactly one hard-valid ScheduleCandidate to
  * seed the polish phase that runs afterward. Uses RoundRobinConstructor's
- * deterministic, break-minimal circle-method construction whenever eligible
- * (every active team owns a distinct active home venue); otherwise falls
- * back to a single greedy pass through RoundBuilder. Either path is
+ * break-minimal circle-method construction whenever eligible (every active
+ * team owns a distinct active home venue, with at most one venue shared by
+ * exactly two teams - see RoundRobinConstructor::isEligible()); otherwise
+ * falls back to a single greedy pass through RoundBuilder. Either path is
  * guaranteed hard-valid by construction (see RoundBuilder/HardConstraints),
  * so no restart-for-feasibility is needed here - only the polish phase's
  * restart-for-quality.
@@ -26,7 +27,7 @@ final class InitialSolutionBuilder
      */
     public function build(array $rounds, array $activeTeams, array $activeVenues): ScheduleCandidate
     {
-        $seed = (new RoundRobinConstructor())->construct($rounds, $activeTeams, $activeVenues);
+        $seed = (new RoundRobinConstructor($this->rng))->construct($rounds, $activeTeams, $activeVenues);
 
         return $seed ?? $this->greedyPass($rounds, $activeTeams);
     }
@@ -34,8 +35,9 @@ final class InitialSolutionBuilder
     /**
      * A single randomized greedy pass (no restart) - also used directly by
      * ScheduleGenerator's polish loop, which wants a fresh randomized
-     * attempt each iteration rather than the deterministic RoundRobinConstructor
-     * seed repeated pointlessly.
+     * attempt each iteration rather than repeating RoundRobinConstructor's
+     * seed pointlessly (its break-minimal structure doesn't improve by
+     * re-rolling, only who gets which slot changes).
      *
      * @param RoundInput[] $rounds
      * @param TeamInput[] $activeTeams

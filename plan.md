@@ -398,7 +398,7 @@ Let `R = count($roundDates)` and `C = N-1` (one cycle). Generate passes lazily a
 `RoundRobinConstructor::isEligible(array $activeTeams, array $activeVenues): bool` returns true iff **all** of:
 1. `count($activeTeams) >= 3` (2 teams always face each other every round → violates H1; let the existing degenerate path handle it).
 2. Every `TeamInput::$homeVenueId !== null`.
-3. All `homeVenueId` values are pairwise distinct (no sharing).
+3. `homeVenueId` values are pairwise distinct, **with one exception**: at most one venue may be shared by exactly two teams (no venue may have 3+ owners, and no more than one venue may be shared at all) - see "Single Shared-Venue-Pair Extension" below for the mechanics and rationale. This was originally "no sharing at all"; the single-pair case was solved later.
 4. Every `homeVenueId` is the id of a venue present in `$activeVenues`.
 
 Notes:
@@ -473,7 +473,7 @@ Integration / benchmark:
 - **Benchmark expectation is an estimate.** The ≈10 predicted score for schedule 6 is reasoning, not measurement; Phase 3 replaces it with the observed value. The hard guarantee is only `<= 15.0`.
 - **Seam between passes/leftover.** Sole in-scope place H1 or an extra break can appear; mitigated entirely by the existing scorer re-check + fallback, but worth an explicit seam-focused assertion in Phase 1.
 - **Determinism vs. the polish loop.** The constructor is deterministic (no `Rng`); the polish loop remains seeded. Confirm the seeded end-to-end test stays reproducible with the seed injected as `best` before the loop runs.
-- **Out of scope, stated plainly:** shared-venue and missing-venue teams have no textbook construction and are deliberately left on the greedy path; `n=2`; and any cross-schedule venue contention (already out of scope for the whole feature).
+- **Out of scope, stated plainly:** missing-venue teams have no textbook construction and are deliberately left on the greedy path; `n=2`; and any cross-schedule venue contention (already out of scope for the whole feature). The single-shared-venue-pair case originally listed here as out of scope was later solved - see "Single Shared-Venue-Pair Extension" below.
 
 ### Critical Files for Implementation (this section)
 - /Users/sthompson/Documents/league-frontend/app/Services/ScheduleGeneration/RoundRobinConstructor.php (new)
@@ -481,3 +481,43 @@ Integration / benchmark:
 - /Users/sthompson/Documents/league-frontend/app/Services/ScheduleGeneration/ScheduleScorer.php
 - /Users/sthompson/Documents/league-frontend/app/Services/ScheduleGeneration/MatchCandidate.php
 - /Users/sthompson/Documents/league-frontend/tests/Unit/ScheduleGeneration/RoundRobinConstructorTest.php (new)
+
+---
+
+# Single Shared-Venue-Pair Extension to RoundRobinConstructor (post-launch enhancement)
+
+## Status
+
+**Implemented.** Motivated by a real production case: association 2 / schedule 11, 14 active teams, 10 rounds, `home_away_break` the only enabled soft criterion - Team 20 and Team 27 both list venue 16 as their home venue. That single collision made `isEligible()` decline unconditionally (the "no sharing" rule from §3 above), so every generation fell back to `RoundBuilder`'s greedy pass. Measured directly against the real data: greedy averaged ~30-36 total breaks (0-2 teams break-free out of 14) whether or not the collision was even present - the collision's real cost wasn't degrading greedy further, it was permanently blocking access to the deterministic seed, which reaches the true 10-break/4-perfect-team optimum for this shape (verified below) with zero polish needed.
+
+**Two candidate approaches were floated and evaluated before landing on the shipped design:**
+
+1. *"Decide once, let alternation self-solve."* Checked directly against the real teams' actual input-order slots (20 and 27 landed on slots 5 and 12): their roles do NOT stay complementary for the whole cycle - both-home collisions occurred at rounds 4, 6, and 8 of a 13-round cycle, both-away at rounds 3/5/7/9, complementary elsewhere. The per-round "global flip" mechanism's occasional per-slot "hold" (see the class docblock) can desync any arbitrary pair of slots multiple times per cycle, so this doesn't hold for an arbitrary slot pair - the pair needs to land on a specifically SAFE slot pair, not just any adjacent one (see the "Fairness correction" subsection below - the first shipped version of this got that distinction wrong).
+2. *"Give one co-owner a synthetic distinct venue, solve normally, swap back, retry until valid."* Rejected: at the time, `RoundRobinConstructor` had no `Rng` dependency at all (fully deterministic by design) - there was nothing to vary between "retries" of the same input, so this would either always succeed or always fail, never probabilistically improve. (This reasoning was later overtaken by events - see "Fairness correction," which added an `Rng` dependency for a different reason - but the retry idea itself remained unnecessary even after that, since safe slot pairs are now found deterministically, not searched for by chance.)
+
+## Design
+
+- **`RoundRobinConstructor::isEligible()`**: relaxed from "every `homeVenueId` pairwise distinct" to "every venue has at most 2 owners, and at most one venue may have exactly 2." Three or more teams sharing a venue, or two separate shared-venue pairs, both still decline (no textbook/verified construction for either - out of scope, same reasoning as the original "no sharing" rule).
+- **`findSafeSlotPairs()` / `assignTeamsToSlots()`** (new, private - see "Fairness correction" below for why this isn't simply "any adjacent pair"): when exactly one shared pair exists, computes which adjacent slot pairs are safe directly from the built cycle, then places the pair on one of them.
+- **`AwayTeamAtOwnVenueConstraint`**: gained one exception - an away team being at "their own venue" is not a violation when the home team ALSO co-owns that same venue (i.e. the two co-tenants playing each other at their shared venue - a completely normal match, not an error). Without this, the pair's own head-to-head round would be unsatisfiable under the old absolute rule, since literally no genuinely neutral venue exists in a fully-packed venue roster (every venue owned by someone) - confirmed this is exactly the real association-2 shape (14 teams, 13 venues, all 13 claimed). `HomeTeamAtAnotherTeamsVenueConstraint` already permitted any team at a 2+-owner venue (its `count($owners) === 1` check), so it needed no change.
+- `RoundBuilder`'s own greedy-path collision-avoidance (routing a shared pair's head-to-head match away from their venue) is now unnecessarily conservative given the relaxed constraint, but was left as-is - a missed optimization on the path this feature doesn't target, not a correctness issue.
+
+**Verified end to end against the real association-2/schedule-11 data:** `isEligible()` now returns `true`; the seed alone (no polish) reaches exactly 10 total breaks / 4 perfect teams (score 0.0714) versus the previously-accepted schedule's 24 breaks / 4 perfect teams (score 0.2) and the greedy-only baseline's 30-36 breaks / 0-2 perfect teams - matching the theoretical optimum computed for the collision-free hypothetical case exactly.
+
+### Fairness correction (found via real usage, not theoretical - same day as initial ship)
+
+The first shipped version placed the shared pair on *whichever* adjacent slots they happened to land on after a plain `input order` team-to-slot mapping - i.e. team-to-slot assignment was fully deterministic (no `Rng` at all), and the docblock claimed (from an incomplete check that only sampled a handful of the 91 possible slot-pairs, not all of them) that *any* adjacent pair was collision-free. Both halves of this were wrong, reported directly by the user after real use: (1) the same ~4 teams got the break-free slots on every single generation, since slot assignment never varied at all; (2) once slot assignment WAS randomized to fix that, a proper exhaustive check (all 13 possible adjacent pairs for `N=14`, using the raw per-slot role data rather than inferring from one incidental run) showed only about half of them are actually collision-free - e.g. slots (9,10) has a real both-home collision at round 4. A 500-seed stress test of the "randomize freely + pull adjacent" approach found real double-booking failures in 219/500 seeds (44%).
+
+The corrected design: `RoundRobinConstructor` now takes an `Rng` (previously none) and randomizes team-to-slot assignment on every `construct()` call, for fairness - this alone fixes issue (1) for the no-shared-venue case. For a shared pair specifically, `findSafeSlotPairs()` computes, directly from the built cycle, exactly which adjacent slot pairs never leave the pair's roles simultaneously equal - checked in BOTH orientations (unflipped AND flipped, since a later multi-cycle pass flips every role, and a pair safe only in one direction, e.g. (11,12), would still collide once a flipped pass is reached). The safe set turned out to have a clean, consistent shape once checked properly - `(0,1), (2,3), (4,5), ...` (every other adjacent pair starting at slot 0) - verified for `N` from 3 to 21 (odd and even), always at least one safe pair. This is computed at runtime rather than hardcoded, matching how the rest of this class treats its break-minimal pattern (verified computationally, not assumed) - cheap (`O(n)`) and stays correct if `buildSingleCycle()`'s tie-break logic ever changes. `assignTeamsToSlots()` then picks one safe pair at random, randomly assigns the two co-owners between its two slots, and shuffles everyone else into the remaining slots. Re-ran the 500-seed stress test against the corrected implementation: 0 failures, and which teams end up "perfect" is now reasonably even across all 14 teams (12-17% each per seed, no team ever excluded or dominant).
+
+## Testing
+
+- `RoundRobinConstructorTest`: `test_accepts_exactly_one_shared_venue_pair`, `test_declines_when_three_teams_share_a_home_venue`, `test_declines_when_two_separate_venues_are_each_shared_by_a_pair`, `test_shared_venue_pair_never_both_marked_home_the_same_round_across_many_seeds_and_a_double_cycle` (30 seeds x a 26-round double cycle, specifically to catch the flip-safety bug), `test_team_to_slot_placement_varies_across_generations`, and `test_shared_venue_pair_placement_varies_across_generations` (both assert placement isn't pinned to one outcome across 30 seeds - the actual fairness bug report).
+- `ScheduleGeneratorTest`: `test_single_shared_venue_pair_is_eligible_and_reaches_the_construction_seed` (end-to-end short-circuit at 0 attempts/0 score for a short enough schedule); the pre-existing `test_shared_venue_input_is_ineligible_for_the_round_robin_seed_so_behavior_is_unchanged` was renamed to `test_partial_null_venue_input_is_ineligible_...` and its comment corrected - that fixture's ineligibility was always caused by teams 3-6 having no venue at all, not by teams 1/2 sharing one, so its assertion didn't need to change, only its stale name/rationale.
+- All `RoundRobinConstructor` call sites (production and tests) updated to inject an `Rng` - `SeededRng` in tests, for reproducibility.
+
+## Open questions / risks
+
+- **Odd `N` with a shared pair was checked for safe-pair existence (`N=3` through `N=21`, always found at least one) but not stress-tested at production scale the way `N=14` was** (500-seed sweep). Low risk in practice (seed+polish's non-regression guarantee still holds even if some odd-`N` shared-pair shape turned out imperfect), but worth a similar stress test if a real odd-`N` shared-venue case shows up.
+- **Two separate shared pairs, or a venue shared by 3+, remain unsolved** - same "no textbook answer, out of scope" reasoning as the original single-pair case, revisit if real demand appears.
+- **The "safe pairs are every-other-adjacent-pair-starting-at-0" shape was observed, not proven** - it held for every `N` checked (3-21) but wasn't derived from first principles the way the `N-2` break-minimum bound was. `findSafeSlotPairs()` doesn't rely on this shape (it re-derives the actual safe set at runtime for whatever `N` it's given), so this is a curiosity, not a correctness risk.

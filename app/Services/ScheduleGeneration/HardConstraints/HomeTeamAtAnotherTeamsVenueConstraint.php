@@ -13,17 +13,17 @@ use App\Services\ScheduleGeneration\ScoringContext;
  * active team, or by the home team itself) is unaffected.
  *
  * Scoped to exclusive ownership (exactly one active team calling a venue
- * home) rather than "owned by anyone at all": when two+ active teams share
- * the same home venue, that shared slot can become genuinely uncapturable by
- * either owner in a given round (e.g. they're paired against each other that
- * round - neither can be "away" there without tripping H4, so RoundBuilder
- * routes their match elsewhere, leaving the physical slot needing SOME other
- * pair to use it) - a real, demonstrated case (see RoundBuilderTest) where an
- * absolute hard rule has no satisfying assignment at all. Shared-venue
- * scheduling keeps its existing best-effort/soft-only treatment (see
- * HomeVenueBalanceCriterion); only the unambiguous exclusive-ownership case,
- * which is always satisfiable by construction (see RoundRobinConstructor),
- * is enforced as hard.
+ * home) rather than "owned by anyone at all": a venue with 2+ owners is
+ * never flagged here regardless of who's marked home, since ANY of its
+ * owners (or, on the greedy path, any other team routed there as a neutral
+ * choice) hosting there is fine. The two-owner case specifically - the co-
+ * owners playing each other at their shared venue - is a genuinely normal
+ * match, not an edge case to route around; see the matching exception in
+ * AwayTeamAtOwnVenueConstraint and RoundRobinConstructor's single-shared-
+ * venue-pair support. RoundBuilder's greedy path still conservatively avoids
+ * assigning a co-owned pair's own shared venue to their own match (see
+ * assignVenuesAndSides()) even though it's no longer required to - that's a
+ * missed-optimization, not a correctness issue, and wasn't in scope here.
  */
 final class HomeTeamAtAnotherTeamsVenueConstraint implements HardConstraint
 {
