@@ -8,6 +8,7 @@ use App\PLMatch;
 use App\Round;
 use App\Schedule;
 use App\Series;
+use App\Venue;
 use App\Services\ScheduleGeneration\GenerationConfig;
 use App\Services\ScheduleGeneration\GenerationReport;
 use App\Services\ScheduleGeneration\GenerationResult;
@@ -70,6 +71,10 @@ class ScheduleController extends Controller
     {
         $validatedData = $request->validate([
             'name' => 'required|max:255',
+            'division_id' => 'required|exists:divisions,id',
+            'start_date' => 'required|date',
+            'end_date' => 'required|date',
+            'weekday' => 'required|in:sun,mon,tue,wed,thu,fri,sat',
         ]);
 
         $division_id = $request->division_id;
@@ -102,6 +107,8 @@ class ScheduleController extends Controller
     {
         $request->validate([
             'name' => 'required|max:255',
+            'venue_ids' => 'array',
+            'venue_ids.*' => 'integer|exists:venues,id',
         ]);
 
         $pendingValues = [
@@ -111,6 +118,7 @@ class ScheduleController extends Controller
             'end_date' => $request->end_date,
             'weekday' => $request->weekday,
             'archived' => $request->archived,
+            'venue_ids' => $request->input('venue_ids', []),
         ];
 
         $needsRegeneration = $this->roundsNeedRegeneration($schedule, $pendingValues['start_date'], $pendingValues['end_date'], $pendingValues['weekday']);
@@ -181,8 +189,17 @@ class ScheduleController extends Controller
         $schedule->end_date = $values['end_date'];
         $schedule->weekday = $values['weekday'];
         $schedule->archived = $values['archived'];
+        $schedule->venues_configured = true;
 
         $schedule->save();
+
+        $venueIds = $values['venue_ids'] ?? [];
+
+        Venue::where('schedule_id', $schedule->id)->whereNotIn('id', $venueIds)->update(['schedule_id' => null]);
+
+        if (! empty($venueIds)) {
+            Venue::whereIn('id', $venueIds)->update(['schedule_id' => $schedule->id]);
+        }
     }
 
     /**
@@ -225,8 +242,8 @@ class ScheduleController extends Controller
 
     /**
      * Entry point for the Generate Matches wizard. If the schedule is
-     * missing a field generation depends on (start/end date, weekday),
-     * that's caught here before either option is even offered -
+     * missing a field generation depends on (start/end date, weekday,
+     * division), that's caught here before either option is even offered -
      * generateAutomaticCandidate() fails silently (e.g. strtolower(null)
      * never matches a weekday) rather than throwing. If any of this
      * schedule's Matches already have a Home/Away team assigned, a warning
@@ -238,7 +255,7 @@ class ScheduleController extends Controller
      */
     public function generateMatches(Association $association, Schedule $schedule)
     {
-        $missingFields = $this->scheduleGenerationErrors($schedule);
+        $missingFields = $this->generateMatchesErrors($schedule);
 
         if (! empty($missingFields)) {
             return view('schedule.generate-matches-invalid', [
@@ -268,7 +285,7 @@ class ScheduleController extends Controller
      */
     public function generateMatchesSelect(Association $association, Schedule $schedule)
     {
-        $missingFields = $this->scheduleGenerationErrors($schedule);
+        $missingFields = $this->generateMatchesErrors($schedule);
 
         if (! empty($missingFields)) {
             return view('schedule.generate-matches-invalid', [
@@ -290,7 +307,7 @@ class ScheduleController extends Controller
             'generate' => 'required|in:clear,random',
         ]);
 
-        if (! empty($this->scheduleGenerationErrors($schedule))) {
+        if (! empty($this->generateMatchesErrors($schedule))) {
             return redirect()->route('schedule.generate-matches', ['association' => $association, 'schedule' => $schedule]);
         }
 
@@ -362,7 +379,7 @@ class ScheduleController extends Controller
 
     public function generateMatchesRetry(Association $association, Schedule $schedule)
     {
-        if (! empty($this->scheduleGenerationErrors($schedule))) {
+        if (! empty($this->generateMatchesErrors($schedule))) {
             return redirect()->route('schedule.generate-matches', ['association' => $association, 'schedule' => $schedule]);
         }
 
@@ -390,6 +407,27 @@ class ScheduleController extends Controller
 
         if (empty($schedule->weekday)) {
             $missing[] = 'Match Weekday';
+        }
+
+        return $missing;
+    }
+
+    /**
+     * Gate for the Generate Matches wizard specifically: everything
+     * scheduleGenerationErrors() requires, plus a Division - the automatic
+     * generator filters Teams/Venues by the Schedule's Division (see
+     * generateAutomaticCandidate()), so it can't run without one. Kept
+     * separate from scheduleGenerationErrors() itself since that method also
+     * gates regenerateRounds() (Round/Match slot creation), which still
+     * supports a divisionless Schedule via Round::createMatches()'s own
+     * null-matches-null fallback.
+     */
+    private function generateMatchesErrors(Schedule $schedule): array
+    {
+        $missing = $this->scheduleGenerationErrors($schedule);
+
+        if (empty($schedule->division_id)) {
+            $missing[] = 'Division';
         }
 
         return $missing;
@@ -441,9 +479,17 @@ class ScheduleController extends Controller
     {
         $association = $schedule->association;
 
-        $activeTeams = $association->activeTeams->map(fn ($team) => TeamInput::fromModel($team))->all();
-        $activeVenues = $association->activeVenues->map(fn ($venue) => VenueInput::fromModel($venue))->all();
-        $activeVenueIds = $association->activeVenues->pluck('id')->flip();
+        // Both filtered to this Schedule's Division - generateMatchesErrors()
+        // guarantees division_id is set before this runs, so eligibility
+        // here is a plain equality/membership check, no null-matches-null
+        // fallback needed (contrast Round::createMatches(), which still
+        // handles a null division for legacy Schedules).
+        $eligibleTeams = $association->activeTeams->filter(fn ($team) => $team->division_id == $schedule->division_id);
+        $eligibleVenues = $association->activeVenues->filter(fn ($venue) => $venue->divisions->contains('id', $schedule->division_id));
+
+        $activeTeams = $eligibleTeams->map(fn ($team) => TeamInput::fromModel($team))->all();
+        $activeVenues = $eligibleVenues->map(fn ($venue) => VenueInput::fromModel($venue))->all();
+        $activeVenueIds = $eligibleVenues->pluck('id')->flip();
 
         $rounds = $schedule->rounds()->with('matches.venue')->orderBy('start_date')->get()
             ->reject(fn (Round $round) => $round->off_week || $round->playoffs_week)

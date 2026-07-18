@@ -16,4 +16,9 @@ class Division extends Model
     {
         return $this->belongsTo('App\Association');
     }
+
+    public function venues()
+    {
+        return $this->belongsToMany('App\Venue');
+    }
 }

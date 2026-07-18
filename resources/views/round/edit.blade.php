@@ -77,15 +77,25 @@
                                         'sequence' => 1,
                                         ])->first();?>
 
+                                <?php
+                                    $venueEligible = $schedule->division_id === null
+                                        ? $venue->divisions->isEmpty()
+                                        : $venue->divisions->contains('id', $schedule->division_id);
+                                ?>
+
+                                <?php if (!$venueEligible && empty($match)): ?>
+                                    <?php continue; ?>
+                                <?php endif; ?>
                                 <?php if (!$venue->active && empty($match)): ?>
                                     <?php continue; ?>
                                 <?php endif; ?>
                                 <?php
+                                    $venueInvalid = !$venueEligible && !empty($match);
                                     $homeInvalid = !empty($match) && !empty($match->home_team_id) && optional($match->homeTeam)->division_id != $schedule->division_id;
                                     $awayInvalid = !empty($match) && !empty($match->away_team_id) && optional($match->awayTeam)->division_id != $schedule->division_id;
                                 ?>
-                            <tr<?php if ($homeInvalid || $awayInvalid): ?> class="table-warning"<?php endif; ?>>
-                                <th scope="row"<?php if (!$venue->active): ?> class="text-muted"<?php endif; ?>><?php echo $venue->name ?></th>
+                            <tr<?php if ($venueInvalid || $homeInvalid || $awayInvalid): ?> class="table-warning"<?php endif; ?>>
+                                <th scope="row"<?php if (!$venue->active): ?> class="text-muted"<?php endif; ?><?php if ($venueInvalid): ?> title="This venue is not eligible for the schedule's division."<?php endif; ?>><?php echo $venue->name ?><?php if ($venueInvalid): ?> (wrong division)<?php endif; ?></th>
 
                                 <?php if (!empty($match)): ?>
                                     <td<?php if ($homeInvalid): ?> title="This team's division does not match the schedule's division."<?php endif; ?>>

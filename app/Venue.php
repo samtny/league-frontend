@@ -9,7 +9,7 @@ class Venue extends Model
 {
     use SoftDeletes;
 
-    protected $fillable = ['name', 'address', 'association_id', 'pinballmap_id', 'active'];
+    protected $fillable = ['name', 'address', 'association_id', 'pinballmap_id', 'active', 'schedule_id'];
 
     protected $casts = ['active' => 'boolean'];
 
@@ -21,5 +21,15 @@ class Venue extends Model
     public function machines()
     {
         return $this->hasMany('Machine');
+    }
+
+    public function divisions()
+    {
+        return $this->belongsToMany('App\Division');
+    }
+
+    public function schedule()
+    {
+        return $this->belongsTo('App\Schedule');
     }
 }
