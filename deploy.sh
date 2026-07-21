@@ -78,6 +78,11 @@ if [ "$DEPENDENCIES" = true ]; then
 fi
 
 if [ "$CONFIG" = "production" ]; then
+  echo -e "Running database migrations"
+  ssh ${USER}@${HOST} "cd ${DOCROOT} && php artisan migrate --force"
+fi
+
+if [ "$CONFIG" = "production" ]; then
   echo -e "Setting PRODUCTION permissions"
   ssh ${USER}@${HOST} "cd ${DOCROOT} && sudo chown -R ubuntu:www-data storage && sudo chmod -R 0775 storage && sudo chown -R ubuntu:www-data bootstrap/cache && sudo chmod -R 0775 bootstrap/cache"
 fi
