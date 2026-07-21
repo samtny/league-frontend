@@ -13,7 +13,14 @@
             <?php foreach ($schedules->sortBy(['start_date', 'DESC']) as $schedule): ?>
             <div class="standings">
 
-                <?php if (!empty($schedule->division)): ?>
+                <?php if (!empty($schedule->division) && $divisions->count() >= 2): ?>
+                <h2
+                    class="schedule-title division-toggle"
+                    data-division-id="{{ $schedule->division->id }}"
+                    data-selected="{{ (string) $selectedDivision === (string) $schedule->division->id ? 'true' : 'false' }}"
+                    aria-label="{{ $schedule->division->name }}: tap this heading to filter by Division"
+                ><?php echo $schedule->division->name; ?></h2>
+                <?php elseif (!empty($schedule->division)): ?>
                 <h2 class="schedule-title"><?php echo $schedule->division->name; ?></h2>
                 <?php else: ?>
                 <h2 class="schedule-title no-division"><?php echo date('l, M j', strtotime($schedule->start_date)); ?></h2>

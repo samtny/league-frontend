@@ -4,6 +4,10 @@ namespace App\Http\Controllers;
 
 use App\Schedule;
 use App\Services\PinballMapClient;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Cookie;
 
 class AssociationFrontendController extends AssociationAwareController
 {
@@ -45,11 +49,21 @@ class AssociationFrontendController extends AssociationAwareController
         return $response;
     }
 
-    public function standings()
+    public function standings(Request $request)
     {
+        $schedules = $this->activeSchedulesWithDivision();
+        $divisions = $this->availableDivisions($schedules);
+        $filter = $this->resolveDivisionFilter($request, $divisions);
+
+        if ($filter instanceof RedirectResponse) {
+            return $filter;
+        }
+
         return view('association.standings', [
             'association' => $this->association,
-            'schedules' => $this->association->activeSchedules,
+            'schedules' => $this->filterSchedulesByDivision($schedules, $filter),
+            'divisions' => $divisions,
+            'selectedDivision' => $filter,
         ]);
     }
 
@@ -61,11 +75,21 @@ class AssociationFrontendController extends AssociationAwareController
         ]);
     }
 
-    public function schedule()
+    public function schedule(Request $request)
     {
+        $schedules = $this->activeSchedulesWithDivision();
+        $divisions = $this->availableDivisions($schedules);
+        $filter = $this->resolveDivisionFilter($request, $divisions);
+
+        if ($filter instanceof RedirectResponse) {
+            return $filter;
+        }
+
         return view('association.schedule', [
             'association' => $this->association,
-            'schedules' => $this->association->activeSchedules,
+            'schedules' => $this->filterSchedulesByDivision($schedules, $filter),
+            'divisions' => $divisions,
+            'selectedDivision' => $filter,
         ]);
     }
 
@@ -75,6 +99,62 @@ class AssociationFrontendController extends AssociationAwareController
             'association' => $this->association,
             'schedule' => $schedule,
         ]);
+    }
+
+    private function activeSchedulesWithDivision(): Collection
+    {
+        return $this->association->activeSchedules()->with('division')->get();
+    }
+
+    private function availableDivisions(Collection $schedules): Collection
+    {
+        return $schedules->pluck('division')
+            ->filter()
+            ->unique('id')
+            ->sort(fn ($a, $b) => [$a->sequence === null, $a->sequence, $a->name]
+                <=> [$b->sequence === null, $b->sequence, $b->name])
+            ->values();
+    }
+
+    private function resolveDivisionFilter(Request $request, Collection $divisions)
+    {
+        if ($divisions->count() < 2) {
+            return null;
+        }
+
+        $validIds = $divisions->pluck('id')->map(fn ($id) => (string) $id);
+        $fallback = (string) $divisions->first()->id;
+
+        if ($request->has('division')) {
+            $requested = (string) $request->query('division');
+            $value = $requested === 'all' || $validIds->contains($requested)
+                ? $requested
+                : $fallback;
+
+            Cookie::queue('division_filter', $value, 525600);
+
+            return redirect()->to($request->url());
+        }
+
+        $cookieValue = (string) $request->cookie('division_filter');
+        $value = $cookieValue === 'all' || $validIds->contains($cookieValue)
+            ? $cookieValue
+            : $fallback;
+
+        if ($value !== $cookieValue) {
+            Cookie::queue('division_filter', $value, 525600);
+        }
+
+        return $value;
+    }
+
+    private function filterSchedulesByDivision(Collection $schedules, ?string $filter): Collection
+    {
+        if ($filter === null || $filter === 'all') {
+            return $schedules;
+        }
+
+        return $schedules->where('division_id', (int) $filter)->values();
     }
 
     public function roster()
