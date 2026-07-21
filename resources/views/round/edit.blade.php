@@ -158,6 +158,12 @@
                 <div class="alert alert-danger">{{ $message }}</div>
             @enderror
 
+            <div class="mb-3">
+                <label for="message">Message</label>
+                <textarea class="form-control message" id="message" name="message" rows="3">{{ old('message', $round->message) }}</textarea>
+                <small id="messageHelp" class="form-text text-muted">Optional message to display for this round (describe season party for Off Week, or TBD for playoffs etc).</small>
+            </div>
+
             <div class="form-actions">
                 <div class="mb-3">
                     <input id="submit" class="btn btn-primary" type="submit" value="Update"/>
@@ -170,3 +176,19 @@
         </form>
     </div>
 @endsection
+
+@section('page-js')
+<script src="https://cdnjs.cloudflare.com/ajax/libs/tinymce/5.0.11/tinymce.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/tinymce/5.0.11/plugins/link/plugin.min.js"></script>
+<script type="text/javascript">
+    tinymce.init({
+        selector:'textarea.message',
+        plugins: 'link',
+        menubar: 'edit',
+        toolbar: 'undo redo | bold italic | link image',
+        block_formats: 'Paragraph=p',
+        elementpath: false,
+        branding: false
+    });
+</script>
+@stop

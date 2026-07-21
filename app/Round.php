@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class Round extends Model
 {
-    protected $fillable = ['name', 'start_date', 'end_date', 'association_id', 'series_id', 'division_id', 'schedule_id', 'scores_closed', 'off_week', 'playoffs_week'];
+    protected $fillable = ['name', 'start_date', 'end_date', 'association_id', 'series_id', 'division_id', 'schedule_id', 'scores_closed', 'off_week', 'playoffs_week', 'message'];
 
     /**
      * The attributes that should be mutated to dates.

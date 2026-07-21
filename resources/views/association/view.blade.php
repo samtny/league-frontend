@@ -30,7 +30,7 @@
                     <h2 class="text-muted">Active Schedules</h2>
                     <div class="list-group">
                     @forelse ($association->activeSchedules->sortBy([['series.name', 'asc'], ['name', 'asc']]) as $schedule)
-                    <a class="list-group-item list-group-item-action" href="{{ route('schedule.edit', ['association' => $association, 'schedule' => $schedule]) }}">
+                    <a class="list-group-item list-group-item-action" href="{{ route('schedule.view', ['association' => $association, 'schedule' => $schedule]) }}">
                         <?php echo !empty($schedule->series) ? $schedule->series->name : '[no series]'; ?> - <?php echo $schedule->name; ?>
                     </a>
                     @empty

@@ -49,4 +49,43 @@ class RoundUpdateTest extends TestCase
         $response->assertRedirect(route('schedule.view', ['association' => $association, 'schedule' => $schedule]));
         $this->assertSame('Round 1 Updated', $round->fresh()->name);
     }
+
+    public function test_updating_a_round_purifies_the_message()
+    {
+        $association = Association::factory()->create(['subdomain' => 'round-update-b']);
+
+        $division = new Division(['name' => 'Round Update Division']);
+        $division->association_id = $association->id;
+        $division->save();
+
+        $series = Series::create(['name' => 'Round Update Series', 'association_id' => $association->id]);
+        $schedule = $association->schedules()->create([
+            'name' => 'Round Update Schedule', 'series_id' => $series->id, 'division_id' => $division->id,
+        ]);
+
+        $round = new Round(['name' => 'Round 1']);
+        $round->schedule_id = $schedule->id;
+        $round->series_id = $series->id;
+        $round->division_id = $division->id;
+        $round->start_date = now();
+        $round->end_date = now();
+        $round->save();
+
+        \Bouncer::allow('superadmin')->everything();
+        $admin = User::factory()->create();
+        \Bouncer::assign('superadmin')->to($admin);
+        $this->actingAs($admin);
+
+        $this->post(route('round.update', ['association' => $association, 'schedule' => $schedule, 'round' => $round]), [
+            'name' => 'Round 1',
+            'start_date' => $round->start_date,
+            'end_date' => $round->end_date,
+            'message' => '<p>Bring water bottles.</p><script>alert(1)</script>',
+        ]);
+
+        $message = $round->fresh()->message;
+
+        $this->assertStringContainsString('Bring water bottles.', $message);
+        $this->assertStringNotContainsString('<script>', $message);
+    }
 }

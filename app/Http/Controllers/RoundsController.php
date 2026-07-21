@@ -86,6 +86,7 @@ class RoundsController extends Controller
         $round->scores_closed = isset($request->scores_closed);
         $round->off_week = isset($request->off_week);
         $round->playoffs_week = isset($request->playoffs_week);
+        $round->message = \Purifier::clean($request->message, 'round_message');
 
         $round->save();
 

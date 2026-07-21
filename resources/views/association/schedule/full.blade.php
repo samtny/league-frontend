@@ -17,12 +17,14 @@
         <?php endif; ?>
 
         <?php foreach ($schedule->rounds
-            ->where('off_week', false)
+            ->reject(function ($round) { return $round->off_week && empty($round->message); })
             ->sortBy('start_date') as $round): ?>
 
             <h3><?php echo $round->name; ?> - <?php echo date('l, F j, Y', strtotime($round->start_date)); ?></h3>
 
-            <?php if ($round->scheduledMatches->first()): ?>
+            <?php if ($round->off_week): ?>
+                {!! $round->message !!}
+            <?php elseif ($round->scheduledMatches->first()): ?>
                 <table>
                     <thead>
                         <tr>
@@ -67,6 +69,8 @@
                         <?php endforeach; ?>
                     </tbody>
                 </table>
+            <?php elseif ($round->playoffs_week && !empty($round->message)): ?>
+                {!! $round->message !!}
             <?php else: ?>
                 TBD
             <?php endif; ?>
