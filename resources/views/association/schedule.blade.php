@@ -51,7 +51,7 @@
                                     <?php $awayTeam = $match->awayteam; ?>
 
                                     <?php if (!empty($homeTeam) && !empty($awayTeam)): ?>
-                                    <tr>
+                                    <tr class="schedule-row">
                                         <td>
                                             <?php echo $match->awayTeam->name; ?> @ <strong><?php echo $match->homeTeam->name; ?></strong>
                                         </td>

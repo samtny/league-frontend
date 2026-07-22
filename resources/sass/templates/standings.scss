@@ -16,3 +16,10 @@
         }
     }
 }
+
+// Matches the vertical rhythm of .game/.game-name in templates/venues.scss
+// (0.5rem + 0.25rem stacked) - padding has to live on the td since a tr's
+// own padding isn't rendered by browsers.
+.standings-row td {
+    padding: 0.75rem 0;
+}

@@ -45,7 +45,7 @@
                         </thead>
                         <tbody>
                             <?php foreach($teamResults as $teamResult): ?>
-                            <tr>
+                            <tr class="standings-row">
                                 <td><?php echo $teamResult->name; ?></td>
                                 <td><?php echo $teamResult->wins . ' - ' . $teamResult->losses; ?></td>
                                 <td><?php echo $teamResult->points; ?></td>
