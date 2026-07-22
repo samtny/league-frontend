@@ -136,10 +136,16 @@ class AssociationFrontendController extends AssociationAwareController
             return redirect()->to($request->url());
         }
 
-        $cookieValue = (string) $request->cookie('division_filter');
-        $value = $cookieValue === 'all' || $validIds->contains($cookieValue)
-            ? $cookieValue
-            : $fallback;
+        $cookieValue = $request->cookie('division_filter');
+
+        if ($cookieValue === null) {
+            $value = 'all';
+        } else {
+            $cookieValue = (string) $cookieValue;
+            $value = $cookieValue === 'all' || $validIds->contains($cookieValue)
+                ? $cookieValue
+                : $fallback;
+        }
 
         if ($value !== $cookieValue) {
             Cookie::queue('division_filter', $value, 525600);

@@ -47,7 +47,7 @@ class StandingsTest extends TestCase
         $response->assertCookieMissing('division_filter');
     }
 
-    public function test_filter_appears_and_defaults_to_first_division_by_sequence()
+    public function test_filter_appears_and_defaults_to_all_divisions()
     {
         $association = Association::factory()->create(['subdomain' => 'testassoc']);
         $beta = $this->createDivision($association, 'Beta', '1');
@@ -58,13 +58,11 @@ class StandingsTest extends TestCase
         $response = $this->get('http://testassoc.pinballleague.org/standings');
 
         $response->assertStatus(200);
-        // The page defaults to filtering the schedule list down to the
-        // first division by sequence, so only its heading (with a tap-to-
-        // filter aria-label, since multiple divisions are available) shows.
-        $response->assertSee('Beta: tap this heading to filter by Division', false);
-        $response->assertDontSee('Alpha');
-        $response->assertCookie('division_filter', (string) $beta->id);
-        $this->assertSame(1, substr_count($response->getContent(), '<table>'));
+        // With no cookie set yet, the page defaults to showing every
+        // division rather than narrowing down to just one.
+        $response->assertSee('Beta');
+        $response->assertSee('Alpha');
+        $response->assertCookie('division_filter', 'all');
     }
 
     public function test_all_divisions_cookie_shows_every_schedule()

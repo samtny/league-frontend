@@ -1,5 +1,5 @@
         </div><!-- #app -->
-    @vite('resources/js/app.js')
+    @vite('resources/js/admin.js')
     </body>
     @section('page-js')
     @show
