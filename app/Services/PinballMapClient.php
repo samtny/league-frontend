@@ -26,9 +26,11 @@ class PinballMapClient
             config('services.pinballmap.cache_ttl_seconds'),
             function () use ($pinballmapId) {
                 try {
-                    $response = Http::timeout(5)->get(
-                        config('services.pinballmap.base_url')."/locations/{$pinballmapId}/machine_details.json"
-                    );
+                    $response = Http::timeout(5)
+                        ->withHeaders(['X-Api-Token' => config('services.pinballmap.api_token')])
+                        ->get(
+                            config('services.pinballmap.base_url')."/locations/{$pinballmapId}/machine_details.json"
+                        );
 
                     if (! $response->successful()) {
                         Log::warning("Pinball Map lookup failed for location {$pinballmapId}", ['status' => $response->status()]);

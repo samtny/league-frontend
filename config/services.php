@@ -53,6 +53,7 @@ return [
     'pinballmap' => [
         'base_url' => env('PINBALLMAP_BASE_URL', 'https://pinballmap.com/api/v1'),
         'cache_ttl_seconds' => env('PINBALLMAP_CACHE_TTL_SECONDS', 3600),
+        'api_token' => env('PINBALLMAP_API_TOKEN'),
     ],
 
 ];
