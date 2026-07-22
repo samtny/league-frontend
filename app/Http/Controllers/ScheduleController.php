@@ -74,7 +74,7 @@ class ScheduleController extends Controller
             'division_id' => 'required|exists:divisions,id',
             'start_date' => 'required|date',
             'end_date' => 'required|date',
-            'weekday' => 'required|in:sun,mon,tue,wed,thu,fri,sat',
+            'weekday' => 'nullable|in:sun,mon,tue,wed,thu,fri,sat',
         ]);
 
         $division_id = $request->division_id;

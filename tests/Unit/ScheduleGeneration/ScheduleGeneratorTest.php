@@ -88,8 +88,16 @@ class ScheduleGeneratorTest extends TestCase
         $venues = $this->venues(10, 20);
         $rounds = $this->rounds(8, $venues);
 
-        $resultA = $this->generator(42)->generate($rounds, $teams, $venues, new GenerationConfig);
-        $resultB = $this->generator(42)->generate($rounds, $teams, $venues, new GenerationConfig);
+        // timeBudgetMs is deliberately a wall-clock ceiling in production
+        // (see GenerationConfig's docblock), so the default would make the
+        // number of iterations completed before it trips depend on real
+        // elapsed time - not just the seed - and vary run to run. Pinning it
+        // huge here means maxAttempts is the only thing that can end the
+        // search, which is what actually stays deterministic for a fixed seed.
+        $config = new GenerationConfig(timeBudgetMs: 1_000_000_000);
+
+        $resultA = $this->generator(42)->generate($rounds, $teams, $venues, $config);
+        $resultB = $this->generator(42)->generate($rounds, $teams, $venues, $config);
 
         $this->assertEquals($resultA->candidate, $resultB->candidate);
         $this->assertSame($resultA->attemptsUsed, $resultB->attemptsUsed);

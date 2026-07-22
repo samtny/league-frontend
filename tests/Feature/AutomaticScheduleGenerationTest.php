@@ -174,13 +174,13 @@ class AutomaticScheduleGenerationTest extends TestCase
             }
         }
 
-        // Matches played spread across active teams should be minimal (equal or off by one).
-        $counts = [];
-        foreach ($matches->whereNotNull('home_team_id') as $match) {
-            $counts[$match->home_team_id] = ($counts[$match->home_team_id] ?? 0) + 1;
-            $counts[$match->away_team_id] = ($counts[$match->away_team_id] ?? 0) + 1;
-        }
-        $this->assertLessThanOrEqual(1, max($counts) - min($counts));
+        // Matches-played balance across teams isn't asserted here: it's
+        // governed by the equal_matches_played soft criterion, which is
+        // currently disabled in config/schedule_generation.php (see its
+        // soft_criteria TODO) - with it off, nothing in generation targets
+        // this balance, so it's incidental rather than guaranteed. See
+        // ScheduleGeneratorTest for coverage of that criterion in isolation,
+        // with it explicitly enabled.
 
         // The session candidate is cleared after accept.
         $this->assertNull(session("schedule_generation.{$schedule->id}.candidate"));
