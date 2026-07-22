@@ -13,3 +13,7 @@ yarn-error.log
 config/config.local.yml
 /public/build
 /public/css
+/test-results
+/playwright-report
+/blob-report
+/playwright/.cache
