@@ -36,11 +36,11 @@
             $associationCssPath = (isset($association) && !empty($association->subdomain))
                 ? public_path('css/association/'.$association->subdomain.'.css')
                 : null;
-            $associationCssVersion = ($associationCssPath && file_exists($associationCssPath))
-                ? filemtime($associationCssPath)
-                : 0;
+            $associationCssExists = $associationCssPath && file_exists($associationCssPath);
         ?>
-        <link href="{{ route('association.css') }}?v={{ $associationCssVersion }}" rel="stylesheet">
+        @if ($associationCssExists)
+        <link href="{{ asset('css/association/'.$association->subdomain.'.css') }}?v={{ filemtime($associationCssPath) }}" rel="stylesheet">
+        @endif
     </head>
     <body>
         @if (config('app.env') == 'production')
