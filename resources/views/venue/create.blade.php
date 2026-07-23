@@ -26,6 +26,27 @@
             </div>
 
             <div class="mb-3">
+                <label>Eligible Divisions</label>
+                <small class="form-text text-muted">Which divisions can play here?</small>
+                <?php $selectedDivisionIds = old('division_ids', []); ?>
+                <?php if (!$association->divisions->isEmpty()): ?>
+                    <?php foreach ($association->divisions->sortBy('sequence') as $division): ?>
+                        <div class="form-check">
+                            <input id="division_<?php echo $division->id; ?>" type="checkbox" class="form-check-input" name="division_ids[]" value="<?php echo $division->id; ?>" <?php if (in_array($division->id, $selectedDivisionIds)) echo 'checked'; ?>>
+                            <label for="division_<?php echo $division->id; ?>" class="form-check-label"><?php echo $division->name; ?></label>
+                        </div>
+                    <?php endforeach; ?>
+                <?php else: ?>
+                    <div class="message">
+                        No divisions for this association.
+                    </div>
+                <?php endif; ?>
+                @error('division_ids')
+                    <div class="alert alert-danger">{{ $message }}</div>
+                @enderror
+            </div>
+
+            <div class="mb-3">
                 <label for="pinballmap_id">Pinball Map ID</label>
                 <input id="pinballmap_id" type="text" class="form-control @error('pinballmap_id') is-invalid @enderror" name="pinballmap_id" value="{{ old('pinballmap_id') }}">
                 @error('pinballmap_id')

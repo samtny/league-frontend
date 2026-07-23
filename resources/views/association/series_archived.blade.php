@@ -14,7 +14,7 @@
         <div class="col">
             <?php if (!$association->archivedSeries->isEmpty()): ?>
                 <div class="list-group">
-                <?php foreach ($association->archivedSeries->sortBy(['start_date', 'DESC']) as $index => $item): ?>
+                <?php foreach ($association->archivedSeries->sortBy('name') as $index => $item): ?>
                     <a class="list-group-item list-group-item-action" href="{{ route('series.view', ['association' => $association, 'series' => $item]) }}">
                         <?php echo ('<div class="series">' . $item->name . '</div>'); ?>
                     </a>

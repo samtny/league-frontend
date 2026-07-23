@@ -205,23 +205,18 @@ Breadcrumbs::for('series.deleteConfirm', function ($trail, $series) {
     $trail->push('Delete Series', route('series.deleteConfirm', ['association' => $series->association, 'series' => $series]));
 });
 
-Breadcrumbs::for('series.schedules', function ($trail, $series) {
-    $trail->parent('series.view', $series);
-    $trail->push(__('Schedules'), route('series.schedules', ['association' => $series->association, 'series' => $series]));
-});
-
 Breadcrumbs::for('series.schedules.archived', function ($trail, $series) {
-    $trail->parent('series.schedules', $series);
+    $trail->parent('series.view', $series);
     $trail->push(__('Archived Schedules'), route('series.schedules.archived', ['association' => $series->association, 'series' => $series]));
 });
 
 Breadcrumbs::for('schedule.create', function ($trail, $series) {
-    $trail->parent('series.schedules', $series);
+    $trail->parent('series.view', $series);
     $trail->push(__('Create'), route('schedule.create', ['association' => $series->association, 'series' => $series]));
 });
 
 Breadcrumbs::for('schedule.view', function ($trail, $schedule) {
-    $trail->parent('series.schedules', $schedule->series);
+    $trail->parent('series.view', $schedule->series);
     $trail->push($schedule->name ? $schedule->name : '<noname>', route('schedule.view', ['association' => $schedule->association, 'schedule' => $schedule]));
 });
 

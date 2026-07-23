@@ -55,6 +55,33 @@
             </div>
 
             <div class="mb-3">
+                <label>Active Venues</label>
+                <?php $selectedDivisionId = old('division_id'); ?>
+                <?php $venueEligible = function ($venue) use ($selectedDivisionId) {
+                    return empty($selectedDivisionId) || $venue->divisions->contains('id', $selectedDivisionId);
+                }; ?>
+                <?php $visibleVenues = $association->venues->filter(function ($venue) use ($venueEligible) {
+                    return $venue->active && $venueEligible($venue);
+                })->sortBy('name'); ?>
+                <?php $selectedVenueIds = old('venue_ids', $visibleVenues->pluck('id')->toArray()); ?>
+                <?php if (!$visibleVenues->isEmpty()): ?>
+                    <?php foreach ($visibleVenues as $venue): ?>
+                        <div class="form-check">
+                            <input id="venue_<?php echo $venue->id; ?>" type="checkbox" class="form-check-input" name="venue_ids[]" value="<?php echo $venue->id; ?>" <?php if (in_array($venue->id, $selectedVenueIds)) echo 'checked'; ?>>
+                            <label for="venue_<?php echo $venue->id; ?>" class="form-check-label"><?php echo $venue->name; ?></label>
+                        </div>
+                    <?php endforeach; ?>
+                <?php else: ?>
+                    <div class="message">
+                        No venues for this association.
+                    </div>
+                <?php endif; ?>
+                @error('venue_ids')
+                    <div class="alert alert-danger">{{ $message }}</div>
+                @enderror
+            </div>
+
+            <div class="mb-3">
                 <legend>Match Weekday</legend>
                 <fieldset>
                     <div class="form-check">
@@ -95,6 +122,16 @@
                 @error('weekday')
                     <div class="alert alert-danger">{{ $message }}</div>
                 @enderror
+            </div>
+
+            <div class="mb-3">
+                <div class="form-check">
+                    <input class="form-check-input" name="archived" type="checkbox" value="1" id="archived" <?php echo old('archived') ? ' checked' : ''; ?>>
+                    <label class="form-check-label" for="archived">
+                        Archived
+                    </label>
+                    <small class="form-text text-muted">When checked, this schedule will not show in the Standings / Results pages.</small>
+                </div>
             </div>
 
             <div class="form-actions">

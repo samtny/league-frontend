@@ -64,7 +64,7 @@ class ScheduleController extends Controller
 
         $schedule->delete();
 
-        return redirect()->route('series.schedules', ['association' => $association, 'series' => $series]);
+        return redirect()->route('series.view', ['association' => $association, 'series' => $series]);
     }
 
     public function store(Association $association, Series $series, Request $request)
@@ -75,6 +75,8 @@ class ScheduleController extends Controller
             'start_date' => 'required|date',
             'end_date' => 'required|date',
             'weekday' => 'nullable|in:sun,mon,tue,wed,thu,fri,sat',
+            'venue_ids' => 'array',
+            'venue_ids.*' => 'integer|exists:venues,id',
         ]);
 
         $division_id = $request->division_id;
@@ -88,6 +90,7 @@ class ScheduleController extends Controller
         $schedule->start_date = $request->start_date;
         $schedule->end_date = $request->end_date;
         $schedule->weekday = $request->weekday;
+        $schedule->archived = $request->has('archived');
 
         $division = Division::where(['id' => $division_id])->first();
 
@@ -95,12 +98,21 @@ class ScheduleController extends Controller
 
         $schedule->save();
 
+        $venueIds = $request->input('venue_ids', []);
+
+        if (! empty($venueIds)) {
+            Venue::whereIn('id', $venueIds)->update(['schedule_id' => $schedule->id]);
+        }
+
+        $schedule->venues_configured = true;
+        $schedule->save();
+
         // Same as editing a schedule: if start/end/weekday are all present,
         // Rounds are generated to match right away - no separate "Generate
         // Schedule" step during creation.
         $this->regenerateRounds($schedule);
 
-        return redirect()->route('series.schedules', ['association' => $association, 'series' => $series]);
+        return redirect()->route('series.view', ['association' => $association, 'series' => $series]);
     }
 
     public function update(Association $association, Schedule $schedule, Request $request)

@@ -55,8 +55,6 @@ class SeriesController extends Controller
             'association' => $association,
             'current_user' => \Auth::user(),
             'series' => $series,
-            'start_date_string' => $series->start_date !== null ? date('Y-m-d', strtotime($series->start_date)) : null,
-            'end_date_string' => $series->end_date !== null ? date('Y-m-d', strtotime($series->end_date)) : null,
             'schedules' => Schedule::where('series_id', $series->id)->orderBy('sequence', 'ASC')->orderBy('start_date', 'ASC')->get(),
         ]);
     }
@@ -76,19 +74,6 @@ class SeriesController extends Controller
         ]);
 
         $series->name = $request->name;
-
-        if ($request->start_date !== null) {
-            $series->start_date = $request->start_date;
-        } else {
-            $series->start_date = null;
-        }
-
-        if ($request->end_date !== null) {
-            $series->end_date = $request->end_date;
-        } else {
-            $series->end_date = null;
-        }
-
         $series->archived = $request->has('archived');
 
         $series->save();
@@ -96,11 +81,6 @@ class SeriesController extends Controller
         $request->session()->flash('message', __('Successfully updated series :series!', ['series' => $series->name]));
 
         return redirect()->route('series.view', ['association' => $association, 'series' => $series]);
-    }
-
-    public function schedules(Association $association, Series $series)
-    {
-        return view('series.schedules', ['association' => $association, 'series' => $series]);
     }
 
     public function schedulesArchived(Association $association, Series $series)

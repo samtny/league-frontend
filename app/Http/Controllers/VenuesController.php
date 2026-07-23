@@ -32,6 +32,8 @@ class VenuesController extends Controller
             $validatedData = $request->validate([
                 'name' => 'required|max:255',
                 'pinballmap_id' => 'nullable|string|max:255',
+                'division_ids' => 'array',
+                'division_ids.*' => 'integer|exists:divisions,id',
             ]);
 
             $venue = new Venue;
@@ -42,6 +44,8 @@ class VenuesController extends Controller
             $venue->active = $request->boolean('active');
 
             $venue->save();
+
+            $venue->divisions()->sync($request->input('division_ids', []));
 
             return redirect()->route('association.venues', ['association' => $association]);
         } else {

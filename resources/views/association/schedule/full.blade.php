@@ -23,7 +23,9 @@
             <h3><?php echo $round->name; ?> - <?php echo date('l, F j, Y', strtotime($round->start_date)); ?></h3>
 
             <?php if ($round->off_week): ?>
-                {!! $round->message !!}
+                <div class="message">
+                    {!! $round->message !!}
+                </div>
             <?php elseif ($round->scheduledMatches->first()): ?>
                 <table>
                     <thead>
@@ -70,7 +72,9 @@
                     </tbody>
                 </table>
             <?php elseif ($round->playoffs_week && !empty($round->message)): ?>
-                {!! $round->message !!}
+                <div class="message">
+                    {!! $round->message !!}
+                </div>
             <?php else: ?>
                 TBD
             <?php endif; ?>
