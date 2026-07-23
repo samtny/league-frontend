@@ -1,8 +1,0 @@
-// Matches the vertical rhythm of .game/.game-name in templates/venues.scss
-// (0.5rem + 0.25rem stacked) - see templates/standings.scss's .standings-row
-// and templates/schedule.scss's .schedule-row for the same treatment on
-// table rows; .member is already its own div per row, so no extra class
-// is needed here.
-.member {
-    padding: 0.75rem 0;
-}
