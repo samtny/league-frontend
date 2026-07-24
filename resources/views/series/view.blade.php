@@ -8,7 +8,7 @@
 
 @section('content')
     <div class="row">
-        <h1 class="col"><?php echo $series->name; ?></h1>
+        <h1 class="col">Series: <?php echo $series->name; ?></h1>
     </div>
     <div class="links row">
         <div class="col">

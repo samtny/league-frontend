@@ -8,7 +8,7 @@
 
 @section('content')
     <div class="row">
-        <h1 class="col">{{ __(':series - :name', ['series' => $schedule->series->name, 'name' => $schedule->name]) }}</h1>
+        <h1 class="col">{{ __('Series: :series - :division Schedule', ['series' => $schedule->series->name, 'division' => $schedule->division->name ?? __('(no division)')]) }}</h1>
     </div>
     <div class="links row">
         <div class="col">
