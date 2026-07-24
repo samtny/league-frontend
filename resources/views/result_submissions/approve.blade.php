@@ -21,7 +21,7 @@
             <?php $hasSubmissions = true; ?>
             <div class="result-submissions row mb-3">
                 <div class="col-md-12">
-                    <h2 class="text-muted"><?php echo $seriesItem->name; ?></h2>
+                    <h2 class="text-primary"><?php echo $seriesItem->name; ?></h2>
                     <h3 class="text-muted"><?php echo $schedule->name; ?></h3>
                     <?php foreach ($schedule->resultSubmissions->where('approved', FALSE) as $submission): ?>
                     <form class="d-flex flex-wrap align-items-center" method="POST" action="{{ route('result_submission.update', ['association' => $association, 'id' => $submission->id]) }}">

@@ -17,7 +17,7 @@
             </div>
         </div>
     </div>
-    <h2 class="text-muted mt-3">Schedules</h2>
+    <h2 class="text-primary mt-3">Schedules</h2>
     <div class="row">
         <p class="col text-muted">Create a Schedule for each Division you want to play in this Series. Schedules hold (weekly) Rounds and Team / Venue assignments. Make sure your <a href="{{ route('association.divisions', ['association' => $series->association]) }}">Divisions</a>, <a href="{{ route('association.venues', ['association' => $series->association]) }}">Venues</a> and <a href="{{ route('association.teams', ['association' => $series->association]) }}">Teams</a> are up-to-date (activate / deactivate the ones you want now) before generating a Schedule for the best experience.</p>
     </div>

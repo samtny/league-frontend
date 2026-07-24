@@ -15,7 +15,7 @@
     </div>
     <div class="series row mb-3">
         <div class="col">
-            <h2 class="text-muted">Active</h2>
+            <h2 class="text-primary">Active</h2>
             <?php if (!$association->activeSeries->isEmpty()): ?>
                 <div class="list-group">
                 <?php foreach ($association->activeSeries->sortBy('name') as $index => $item): ?>
@@ -30,7 +30,7 @@
                 </div>
             <?php endif; ?>
             <?php if (!$association->archivedSeries->isEmpty()): ?>
-                <h2 class="text-muted mt-3">Archived</h2>
+                <h2 class="text-primary mt-3">Archived</h2>
                 <div class="list-group">
                     <a class="list-group-item list-group-item-action" href="{{ route('association.series.archived', ['association' => $association]) }}">
                         View

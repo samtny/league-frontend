@@ -16,7 +16,7 @@
                 <a class="list-group-item list-group-item-action" href="{{ route('schedule.edit', ['association' => $schedule->association, 'schedule' => $schedule]) }}">Edit</a>
                 <a class="list-group-item list-group-item-action" href="{{ route('schedule.generate-matches', ['association' => $schedule->association, 'schedule' => $schedule]) }}">Generate Matches</a>
             </div>
-            <h2 class="text-muted mt-3">Rounds</h2>
+            <h2 class="text-primary mt-3">Rounds</h2>
             <?php if (!$schedule->rounds->isEmpty()): ?>
                 <div class="list-group">
                 <?php foreach ($schedule->rounds->sortBy('start_date') as $round): ?>

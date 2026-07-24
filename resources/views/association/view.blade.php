@@ -14,7 +14,7 @@
         <div class="col-md-6 mb-3">
             <div class="row">
                 <div class="col mb-3">
-                    <h2 class="text-muted">Active Rounds</h2>
+                    <h2 class="text-primary">Active Rounds</h2>
                     <?php $roundsByDivision = $association->activeRounds->sortBy('start_date')->groupBy(function ($round) { return $round->division ? $round->division->id : 0; }); ?>
                     <?php if (!$association->activeRounds->isEmpty()): ?>
                         <?php foreach ($association->divisions->sortBy('sequence') as $division): ?>
@@ -48,7 +48,7 @@
             </div>
             <div class="row">
                 <div class="col mb-3">
-                    <h2 class="text-muted">Score Submissions</h2>
+                    <h2 class="text-primary">Score Submissions</h2>
                     <div class="list-group">
                     <?php $submissions = $association->resultSubmissions->where('approved', 0); ?>
                     <?php if(!($submissions->isEmpty())): ?>
@@ -64,7 +64,7 @@
             </div>
             <div class="row">
                 <div class="col mb-3">
-                    <h2 class="text-muted">Active Schedules</h2>
+                    <h2 class="text-primary">Active Schedules</h2>
                     <?php $schedulesByDivision = $association->activeSchedules->sortBy([['series.name', 'asc'], ['name', 'asc']])->groupBy(function ($schedule) { return $schedule->division ? $schedule->division->id : 0; }); ?>
                     <?php if (!$association->activeSchedules->isEmpty()): ?>
                         <?php foreach ($association->divisions->sortBy('sequence') as $division): ?>
@@ -100,7 +100,7 @@
         <div class="col-md-6 mb-3">
             <div class="row">
                 <div class="col mb-3">
-                    <h2 class="text-muted">Administer</h2>
+                    <h2 class="text-primary">Administer</h2>
                     <div class="list-group">
                         <a class="list-group-item list-group-item-action" href="{{ route('association.edit', ['association' => $association]) }}">Settings</a>
                         <a class="list-group-item list-group-item-action" href="{{ route('association.divisions', ['association' => $association]) }}">Divisions</a>
@@ -112,7 +112,7 @@
             </div>
             <div class="row">
                 <div class="col mb-3">
-                    <h2 class="text-muted">Scheduling</h2>
+                    <h2 class="text-primary">Scheduling</h2>
                     <div class="list-group">
                         <a class="list-group-item list-group-item-action" href="{{ route('association.series', ['association' => $association]) }}">Manage Series, Schedules, Rounds</a>
                     </div>
@@ -120,7 +120,7 @@
             </div>
             <div class="row">
                 <div class="col mb-3">
-                    <h2 class="text-muted">Messages</h2>
+                    <h2 class="text-primary">Messages</h2>
                     <div class="list-group">
                     <?php $messages = $association->contactSubmissions->where('archived', 0); ?>
                     <?php if(!($messages->isEmpty())): ?>

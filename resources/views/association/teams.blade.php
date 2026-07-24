@@ -12,7 +12,7 @@
     </div>
     <div class="teams row mb-3">
         <div class="col">
-            <h2 class="text-muted">Active</h2>
+            <h2 class="text-primary">Active</h2>
             <?php $teamsByDivision = $association->activeTeams->sortBy('sortName')->groupBy(function ($team) { return $team->division ? $team->division->id : 0; }); ?>
             <?php if (!$association->activeTeams->isEmpty()): ?>
                 <?php foreach ($association->divisions->sortBy('sequence') as $division): ?>
@@ -45,7 +45,7 @@
                 </div>
             <?php endif; ?>
             <?php if (!$association->inactiveTeams->isEmpty()): ?>
-                <h2 class="text-muted mt-3">Inactive</h2>
+                <h2 class="text-primary mt-3">Inactive</h2>
                 <div class="list-group">
                     <a class="list-group-item list-group-item-action" href="{{ route('association.teams.inactive', ['association' => $association]) }}">
                         View

@@ -12,7 +12,7 @@
     </div>
     <div class="row venues mb-3">
         <div class="col">
-            <h2 class="text-muted">Active</h2>
+            <h2 class="text-primary">Active</h2>
             <?php if (!$association->activeVenues->isEmpty()): ?>
                 <div class="list-group">
                 <?php foreach ($association->activeVenues->sortBy('name') as $item): ?>
@@ -29,7 +29,7 @@
                 </div>
             <?php endif; ?>
             <?php if (!$association->inactiveVenues->isEmpty()): ?>
-                <h2 class="text-muted mt-3">Inactive</h2>
+                <h2 class="text-primary mt-3">Inactive</h2>
                 <div class="list-group">
                     <a class="list-group-item list-group-item-action" href="{{ route('association.venues.inactive', ['association' => $association]) }}">
                         View
