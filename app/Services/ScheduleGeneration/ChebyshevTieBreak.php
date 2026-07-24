@@ -81,6 +81,7 @@ final class ChebyshevTieBreak
                 timeBudgetMs: $probeTimeShareEach,
                 softCriteria: $passConfig->softCriteria,
                 excludedFromObjective: array_merge($passConfig->excludedFromObjective, $siblingKeys),
+                enforceBalancedOpponents: $passConfig->enforceBalancedOpponents,
             );
 
             $probeSeedReport = $this->scorer->score($seed, $activeTeams, $activeVenues, $probeConfig);
@@ -115,6 +116,7 @@ final class ChebyshevTieBreak
             timeBudgetMs: max(1, $passConfig->timeBudgetMs - $probeTimeShareEach * $memberCount),
             softCriteria: $passConfig->softCriteria,
             excludedFromObjective: $passConfig->excludedFromObjective,
+            enforceBalancedOpponents: $passConfig->enforceBalancedOpponents,
         );
 
         $jointSeedReport = $this->scorer->score($seed, $activeTeams, $activeVenues, $jointConfig);

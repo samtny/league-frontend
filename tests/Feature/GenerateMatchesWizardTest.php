@@ -9,6 +9,7 @@ use App\Round;
 use App\Series;
 use App\Team;
 use App\User;
+use App\Venue;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -57,6 +58,19 @@ class GenerateMatchesWizardTest extends TestCase
         $round->division_id = $schedule->division_id;
         $round->start_date = now();
         $round->end_date = now();
+        $round->save();
+
+        return $round;
+    }
+
+    private function createRoundOnDate($schedule, $date): Round
+    {
+        $round = new Round(['name' => 'Round']);
+        $round->schedule_id = $schedule->id;
+        $round->series_id = $schedule->series_id;
+        $round->division_id = $schedule->division_id;
+        $round->start_date = $date;
+        $round->end_date = $date;
         $round->save();
 
         return $round;
@@ -305,5 +319,159 @@ class GenerateMatchesWizardTest extends TestCase
         $response->assertSee('Start Date');
         $response->assertSee('End Date');
         $response->assertDontSee('Assignment Method');
+    }
+
+    /**
+     * See plan.md "Size-Aware Schedule Generation" §5/§7: the select screen
+     * offers every GenerationStrategy option (never hides one, decision
+     * 2.6), with the engine's regime-based recommendation pre-checked. 8
+     * teams each owning a distinct venue, over exactly 7 rounds (R = N-1),
+     * is the single-cycle regime plan.md §1c says recommends SeedOnly - more
+     * than 6 teams so the newer N <= 6 -> Exact rule (plan.md §5 Phase 4b,
+     * covered by test_select_screen_recommends_exact_for_a_small_eligible_league()
+     * below) doesn't take priority over it.
+     */
+    public function test_select_screen_renders_every_strategy_with_the_recommended_one_pre_checked()
+    {
+        ['association' => $association, 'schedule' => $schedule] = $this->buildFixture('wizard-strategy-a');
+
+        $venues = collect(range(1, 8))->map(
+            fn ($i) => Venue::create(['name' => "Venue {$i}", 'association_id' => $association->id, 'active' => true])
+        );
+        $venues->each(fn ($venue) => $venue->divisions()->attach($schedule->division_id));
+
+        collect(range(1, 8))->each(fn ($i) => Team::create([
+            'name' => "Team {$i}",
+            'association_id' => $association->id,
+            'active' => true,
+            'division_id' => $schedule->division_id,
+            'venue_id' => $venues[$i - 1]->id,
+        ]));
+
+        foreach (range(0, 6) as $i) {
+            $this->createRoundOnDate($schedule, now()->addWeeks($i));
+        }
+
+        $response = $this->get(route('schedule.generate-matches.select', ['association' => $association, 'schedule' => $schedule]));
+
+        $response->assertStatus(200);
+        $response->assertSee('Seed only');
+        $response->assertSee('Seed + annealing');
+        $response->assertSee('Greedy');
+        $response->assertSee('Exact');
+
+        $response->assertSee('id="strategy_seed_only" name="strategy" value="seed_only" checked', false);
+        $response->assertDontSee('id="strategy_seed_and_anneal" name="strategy" value="seed_and_anneal" checked', false);
+        $response->assertDontSee('id="strategy_greedy" name="strategy" value="greedy" checked', false);
+        $response->assertDontSee('id="strategy_exact" name="strategy" value="exact" checked', false);
+    }
+
+    /**
+     * plan.md §5 Phase 4b's size-first pre-selection rule: 6 or fewer
+     * active teams with an eligible venue structure recommends Exact,
+     * taking priority over what the regime rule alone would pick (a
+     * single-cycle season here would otherwise recommend SeedOnly, per the
+     * test right above).
+     */
+    public function test_select_screen_recommends_exact_for_a_small_eligible_league()
+    {
+        ['association' => $association, 'schedule' => $schedule] = $this->buildFixture('wizard-strategy-exact');
+
+        $venues = collect(range(1, 4))->map(
+            fn ($i) => Venue::create(['name' => "Venue {$i}", 'association_id' => $association->id, 'active' => true])
+        );
+        $venues->each(fn ($venue) => $venue->divisions()->attach($schedule->division_id));
+
+        collect(range(1, 4))->each(fn ($i) => Team::create([
+            'name' => "Team {$i}",
+            'association_id' => $association->id,
+            'active' => true,
+            'division_id' => $schedule->division_id,
+            'venue_id' => $venues[$i - 1]->id,
+        ]));
+
+        $this->createRoundOnDate($schedule, '2026-07-06');
+        $this->createRoundOnDate($schedule, '2026-07-13');
+        $this->createRoundOnDate($schedule, '2026-07-20');
+
+        $response = $this->get(route('schedule.generate-matches.select', ['association' => $association, 'schedule' => $schedule]));
+
+        $response->assertStatus(200);
+        $response->assertSee('id="strategy_exact" name="strategy" value="exact" checked', false);
+        $response->assertDontSee('id="strategy_seed_only" name="strategy" value="seed_only" checked', false);
+    }
+
+    /**
+     * The inverse shape: no team owns a home venue at all, so
+     * RoundRobinConstructor::isEligible() is false and Greedy is the only
+     * strategy that can actually run - plan.md §5's eligibility-first rule.
+     * Still every option is offered (decision 2.6), just not pre-checked.
+     */
+    public function test_select_screen_recommends_greedy_when_venue_ownership_data_is_missing()
+    {
+        ['association' => $association, 'schedule' => $schedule] = $this->buildFixture('wizard-strategy-b');
+
+        collect(range(1, 4))->each(fn ($i) => Team::create([
+            'name' => "Team {$i}",
+            'association_id' => $association->id,
+            'active' => true,
+            'division_id' => $schedule->division_id,
+        ]));
+
+        $this->createRoundOnDate($schedule, '2026-07-06');
+
+        $response = $this->get(route('schedule.generate-matches.select', ['association' => $association, 'schedule' => $schedule]));
+
+        $response->assertStatus(200);
+        $response->assertSee('id="strategy_greedy" name="strategy" value="greedy" checked', false);
+        $response->assertDontSee('id="strategy_seed_only" name="strategy" value="seed_only" checked', false);
+    }
+
+    /**
+     * generateMatchesRetry() must reuse the strategy generateMatchesStore()
+     * was posted with, not silently fall back to the recommendation - the
+     * strategy has to survive in the session alongside the candidate/report
+     * (see ScheduleController::sessionKey()/generateMatchesStore()).
+     */
+    public function test_a_posted_strategy_survives_a_retry()
+    {
+        ['association' => $association, 'schedule' => $schedule] = $this->buildFixture('wizard-strategy-c');
+
+        $venues = collect(range(1, 4))->map(
+            fn ($i) => Venue::create(['name' => "Venue {$i}", 'association_id' => $association->id, 'active' => true])
+        );
+        $venues->each(fn ($venue) => $venue->divisions()->attach($schedule->division_id));
+
+        collect(range(1, 4))->each(fn ($i) => Team::create([
+            'name' => "Team {$i}",
+            'association_id' => $association->id,
+            'active' => true,
+            'division_id' => $schedule->division_id,
+            'venue_id' => $venues[$i - 1]->id,
+        ]));
+
+        // Only 4 active teams, so the recommendation would be Exact (plan.md
+        // §5 Phase 4b's N <= 6 rule) regardless of the round count -
+        // deliberately posting the NON-recommended 'greedy' strategy
+        // instead, so a silent revert-to-recommendation on retry would be
+        // caught by this test.
+        for ($i = 0; $i < 7; $i++) {
+            $this->createRoundOnDate($schedule, now()->addWeeks($i));
+        }
+
+        $store = $this->post(route('schedule.generate-matches.store', ['association' => $association, 'schedule' => $schedule]), [
+            'generate' => 'random',
+            'strategy' => 'greedy',
+        ]);
+        $store->assertRedirect(route('schedule.generate-matches.review', ['association' => $association, 'schedule' => $schedule]));
+
+        $firstReport = session("schedule_generation.{$schedule->id}.report");
+        $this->assertSame('greedy', $firstReport['strategy']);
+
+        $retry = $this->post(route('schedule.generate-matches.retry', ['association' => $association, 'schedule' => $schedule]));
+        $retry->assertRedirect(route('schedule.generate-matches.review', ['association' => $association, 'schedule' => $schedule]));
+
+        $retryReport = session("schedule_generation.{$schedule->id}.report");
+        $this->assertSame('greedy', $retryReport['strategy']);
     }
 }

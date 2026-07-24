@@ -26,7 +26,7 @@ class ChebyshevTieBreakTest extends TestCase
     }
 
     /**
-     * @param VenueInput[] $venues
+     * @param  VenueInput[]  $venues
      * @return RoundInput[]
      */
     private function rounds(int $count, array $venues): array
@@ -53,7 +53,14 @@ class ChebyshevTieBreakTest extends TestCase
         $teams = $this->teams(1, 2, 3, 4, 5, 6);
         $venues = $this->venues(10, 20);
         $rounds = $this->rounds(8, $venues);
-        $config = new GenerationConfig(maxAttempts: 300, timeBudgetMs: 800);
+        // This fixture is a greedy seed, which does not satisfy balanced
+        // opponent meetings (measured: the greedy path violates it in ~67% of
+        // runs, rising with team count) - and it isn't meant to, since this
+        // test is about tie-group resolution, not opponent balance. The flag
+        // is forwarded into ChebyshevTieBreak's probe/joint sub-configs, so
+        // setting it here genuinely disables the constraint for the whole
+        // search. See GenerationConfig::$enforceBalancedOpponents.
+        $config = new GenerationConfig(maxAttempts: 300, timeBudgetMs: 800, enforceBalancedOpponents: false);
         $scorer = new ScheduleScorer;
 
         $seed = (new InitialSolutionBuilder(new SeededRng(5)))->greedyPass($rounds, $teams);

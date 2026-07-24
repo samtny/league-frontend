@@ -528,7 +528,16 @@ The corrected design: `RoundRobinConstructor` now takes an `Rng` (previously non
 
 ## Status
 
-**Not started - exploratory, paused by product request.** Raised via a product conversation questioning why `RoundRobinConstructor`'s multi-pass seam (see "Seam between passes/leftover" in §8 above) always concentrates breaks/home-venue-streaks on 2 of the teams rather than spreading them evenly. Directly verified during that conversation (not just discussed abstractly):
+**Not started, and SUPERSEDED** by "Size-Aware Schedule Generation" below, which re-frames this
+problem. The framing in this section - that the small-league complaint is about seam construction -
+turned out to be wrong: it is an *objective* problem. The 1.68-billion score recorded below is not
+evidence that the palindrome is bad, it is evidence that `full_cycle_spacing` is mis-ranked; and at
+4x6 the 3-round same-venue streak this section blames on "flip" is provably unavoidable under
+full-cycle spacing regardless of seam strategy. The palindrome/mirrored choice is still worth
+building, but as one strategy option among several - see that section's §5. Read this one for its
+measurements, not its conclusions.
+
+Raised via a product conversation questioning why `RoundRobinConstructor`'s multi-pass seam (see "Seam between passes/leftover" in §8 above) always concentrates breaks/home-venue-streaks on 2 of the teams rather than spreading them evenly. Directly verified during that conversation (not just discussed abstractly):
 
 - Current "flip" behavior (repeat the same cycle-round order every pass, invert H/A globally) on a 4-team/6-round exclusive-venue case: 2 of 4 teams alternate perfectly (0 breaks), the other 2 each get a 3-round same-role streak spanning the seam (e.g. `A,H,H,H,A,A`) - 3 `home_away_break` violations apiece, concentrated. `ScheduleScorer` total: **4166.83**.
 - An alternative hand-built schedule using **palindrome pairing order** (week *i* and week *(2C+1-i)* use the same pairing, i.e. reverse the cycle-round order for the second pass instead of repeating it) spreads the break evenly - every team gets exactly 1 `consecutive_venue` violation instead of 2 teams getting 0 and the other 2 getting up to 2 each. But reversing the order forces the two weeks straddling the exact center of the season to use the *same pairing*, which are adjacent rounds - i.e. it forces an immediate opponent rematch at the seam. Scored through the real `ScheduleScorer`: `repeat_opponent_consecutive_rounds` and `full_cycle_spacing` (tiers 4-5 of 10 in the big-M priority order) fire, and the total score explodes to **1,677,781,111** - the current scoring config treats "no immediate rematch" as effectively non-negotiable, far above home/away balance.
@@ -548,3 +557,552 @@ Product's stated take: for a small enough league, an immediate rematch at the se
 - Does "Invert" generalize cleanly beyond the N=4/exactly-2-passes case verified above (e.g. 3+ passes, or a pass-plus-leftover shape)? Not yet checked.
 - Exact mechanism for exempting the seam rematch from `repeat_opponent_consecutive_rounds`/`full_cycle_spacing` when "Invert" is active - not designed yet.
 - Where the radio group actually lives in the UI (per-generation choice in the wizard vs. a persisted per-Association default) - not decided.
+
+---
+
+# Size-Aware Schedule Generation — Strategy Selection, Exact Solver, and a Corrected Objective
+
+## Status
+
+**Not started. This section supersedes the "TODO (not started) — Configurable pass-boundary
+strategy: Flip vs Invert" section immediately above it**, which framed the small-league problem
+as a seam-construction choice. That framing was wrong, and the investigation below shows why:
+the small-league problem is an **objective** problem, not a search or construction problem. The
+"Flip vs Invert" radio group is still worth building, but as one of several strategy options and
+for a different stated reason — see §5.
+
+Everything in "Verified findings" below was measured directly, not reasoned about. Reproduce
+before doubting, but do not re-litigate.
+
+---
+
+## 1. Verified findings (measured — do not re-derive)
+
+### 1a. At 4 teams x 6 weeks, full-cycle rematch spacing and venue variety are mutually exclusive
+
+Exhaustive enumeration of every valid 4x6 double round-robin (5,760 schedules; "valid" =
+every rematch home/away reversed, every team exactly 3 home / 3 away) produced this frontier:
+
+| Min gap between a pair's two meetings | Best achievable venue outcome |
+|---|---|
+| 1 week (adjacent rematch, roles reversed) | **1 same-venue repeat, 1 team, longest run 2** |
+| 2 weeks | 3 repeats, 3 teams, longest run 2 |
+| 3 weeks (a full cycle) | 3 repeats, 2 teams, longest run **3** |
+
+The combination "full-cycle spacing AND no 3-week same-venue run" yields **zero schedules**. It
+does not exist. So today's default config (`full_cycle_spacing` at tier 1) *mathematically
+guarantees* that some team plays at their own venue three weeks running in a 4x6 season. That
+is the exact complaint that motivated this work.
+
+### 1b. `home_away_break` measures the wrong thing for exclusive-home-venue leagues
+
+When every team owns a distinct venue, "home" always means "at my own venue". Therefore:
+
+- consecutive **home** rounds = same venue twice = the real, visible problem;
+- consecutive **away** rounds = two *different* venues = a change of scenery = harmless.
+
+Measured across every size tested, same-venue repeats equal home-role breaks **exactly**, and
+`home_away_break` counts home + away breaks, i.e. always precisely **twice** the venue repeats.
+Half its penalty budget is spent on a non-problem, and because the two halves move together it
+cannot distinguish a good schedule from a bad one on the axis that matters.
+
+Scored through the real `ScheduleScorer`, the consequence is stark:
+
+| Schedule | Current default config (`full_cycle_spacing`, `home_away_break`) | `consecutive_venue` only |
+|---|---|---|
+| The genuinely optimal 4x6 (1 venue repeat) | **33.42** | **0.042** |
+| Best full-cycle-spacing 4x6 (3 repeats, a 3-week run) | **0.42** | 0.167 |
+
+Today's configuration ranks the best available 4x6 schedule near the *bottom*.
+
+**This reframes the long-standing 4-team plateau documented earlier in this file.** That plateau
+(score identical at 500 / 2,000 / 10,000 / 50,000 attempts) was read as evidence that more
+search wouldn't help. That reading was right but the conclusion drawn from it was wrong: the
+good schedule was **unreachable, not undiscovered**. No amount of annealing would ever have
+found it. Correcting the objective fixes it immediately.
+
+### 1c. Seed-only sufficiency is governed by the regime `R <= N-1`, not by league size
+
+When rounds `R <= teams-1`, the season fits inside a single round-robin cycle: there are no
+rematches at all, no pass seam, and breaks sit at the theoretical minimum. There is nothing for
+annealing to fix. Measured with `RoundRobinConstructor`'s seed alone, averaged over 12 seeds:
+
+| Teams x rounds | Regime | Same-venue repeats | Teams affected |
+|---|---|---|---|
+| 7 x 6 | single cycle | **0** | 0 of 7 |
+| 14 x 10 | single cycle | 5 | 5 of 14 |
+| 16 x 10 | single cycle | 5 | 5 of 16 |
+| 8 x 7 (`R = N-1` exactly) | single, full | 3 | 3 of 8 |
+| 4 x 6 | multi-cycle | 3 | 2 of 4 |
+| 8 x 10 | multi-cycle | 7 | 6 of 8 |
+| 16 x 20 | multi-cycle | 16 | 14 of 16 |
+
+A 16-team league over 20 weeks degrades exactly like 4x6; a 4-team league over 3 weeks is
+perfect. **Size is not the discriminator — regime is.** Odd team counts do especially well,
+because the rotating bye resets every streak.
+
+### 1d. The venue/spacing conflict is narrow, and 4 teams is the pathological case
+
+Proven optima from the exact solver prototype (priority `consecutive_venue > full_cycle_spacing
+> home_away_break`), cost vector `[venue repeats, breaks, spacing shortfall]`:
+
+| Teams x rounds | Proven optimum |
+|---|---|
+| 4 x 6 | `[1, 2, 4]` |
+| 5 x 6 | `[0, 0, 0]` |
+| 5 x 10 | `[0, 0, 0]` |
+| 6 x 6 | `[2, 4, 0]` |
+| 7 x 6 | `[0, 0, 0]` |
+
+5 and 7 teams reach a perfect zero; 6x6 achieves `full_cycle_spacing = 0` with only 2 venue
+repeats. Only 4 teams forces the trade, because its cycle is 3 weeks long so a 6-week season is
+two complete cycles. Do not generalise the 4-team pain to all small leagues.
+
+### 1e. Exhaustive search ruthlessly exploits whatever the objective omits
+
+Run on 4x6 with `consecutive_venue` first and no structural constraints, the prototype returned
+a schedule with **zero** venue repeats and **zero** breaks:
+
+```
+W1  B @ A    D @ C          pair meetings:
+W2  A @ D    C @ B            A-B = 4    A-C = 0
+W3  B @ A    D @ C            C-D = 4    B-D = 0
+W4  A @ B    C @ D
+W5  D @ A    B @ C
+W6  A @ B    C @ D
+```
+
+A and B meet four times; A and C never meet. It is perfect by the stated objective and worthless
+as a season. Annealing never produces this, but only by accident: it starts from a structurally
+sound seed and makes small moves, so it stays near the valid region without anything actually
+holding it there. **Exhaustive search has no such luck, so the round-robin invariants must be
+made explicit before any exact solver ships.** With balanced pair meetings enforced structurally,
+the same solver returned `[1, 2, 4]` — independently matching the brute-force optimum in §1a,
+which is good cross-validation of both methods.
+
+### 1f. Naive exhaustive search does not fit a 10s budget; a decomposed one does
+
+Straight DFS over all matchings times out well inside the N<=6 target (6x10 times out; 5x10
+times out **without finding any solution at all**). The problem decomposes cleanly:
+
+- **which pairings happen in which week** determines `full_cycle_spacing` and round-robin
+  balance;
+- **who hosts each match** determines `consecutive_venue` and `home_away_break`, and depends
+  only on *adjacent* rounds given the pairing sequence.
+
+So enumerate pairing orders, and solve home/away assignment **exactly by dynamic programming**
+rather than searching it. Measured, 10s limit, PHP, priority as in §1d:
+
+| Teams x rounds | Optimum | Orderings | Time | Status |
+|---|---|---|---|---|
+| 4 x 6 | `[1, 2, 4]` | 30 | <0.01s | proven optimal |
+| 4 x 10 | `[1, 2, 12]` | 1,680 | 0.15s | proven optimal |
+| 5 x 6 | `[0, 0, 0]` | 120 | 0.01s | proven optimal |
+| 5 x 10 | `[0, 0, 0]` | 22,680 | 2.13s | proven optimal |
+| 6 x 6 | `[2, 4, 0]` | 120 | 0.02s | proven optimal |
+| 6 x 8 | `[2, 4, 18]` | 1,260 | 0.36s | proven optimal |
+| 6 x 10 | `[2, 4, 36]` | 22,680 | 8.2s | proven optimal |
+| 7 x 6 | `[0, 0, 0]` | 120 | 0.03s | proven optimal |
+| 7 x 10 | — | 26,624 | timeout | not proven |
+| 8 x 10 | — | 6,656 | timeout | not proven |
+
+`N <= 6` at a 10-second budget is comfortable rather than marginal.
+
+---
+
+## 2. Decisions carried in from product (do not re-litigate)
+
+1. **The adjacent seam rematch with reversed home/away is acceptable, and preferable to a
+   3-week same-venue run**, for short seasons. Change of scenery beats rematch spacing when the
+   two conflict.
+2. **`consecutive_venue` moves up the default priority order.** `full_cycle_spacing` is still
+   wanted, just not above venue variety.
+3. **Round-robin balance ("every pair meets an equal number of times, +/-1") becomes a hard
+   constraint.** See §4 for the safe rollout, which is the one place this needs care.
+4. **Exact solver: `N <= 6` by default, 10-second budget.** On timeout it returns
+   **best-found, explicitly labelled as not proven optimal** — it does not refuse and does not
+   silently pretend. It is bounded below by the seed, so best-found is never worse than
+   seed-only.
+5. **Exact is offered even when the enabled criteria include ones it cannot optimise exactly**,
+   with a note saying which criteria are enforced as constraints rather than optimised.
+6. **Every strategy appears on the radio list, including ones that are a bad fit for the current
+   league shape.** The admin always gets to choose. Bad fits are communicated by *warnings*, not
+   by hiding or disabling the option — soft failure, never a locked door.
+7. **The engine pre-selects the likely-best radio option** based on the league shape (§5), but
+   pre-selection is a default, never a restriction.
+8. **UI wording/naming of the options is explicitly deferred** to a follow-up conversation. Use
+   the working names in §5 as placeholders and do not spend effort polishing copy.
+9. **Where settings ultimately live (Schedule-level vs Association-level) is deferred** until
+   this lands. Build the per-generation choice first; see §8.
+
+---
+
+## 3. Corrected default soft-criteria order
+
+Change `config/schedule_generation.php`'s `soft_criteria` default to:
+
+```php
+'soft_criteria' => [
+    'consecutive_venue',
+    'full_cycle_spacing',
+    'home_away_break',
+],
+```
+
+Rationale is §1a/§1b: `consecutive_venue` is the criterion that actually expresses "change of
+scenery", and it must outrank `full_cycle_spacing` or 4x6 is provably forced into a 3-week
+same-venue run. Delete the `// TODO: something better for small leagues e.g. 4 team 6 round.`
+comment — this section is that "something better".
+
+**Note the redundancy honestly in the config comment**: for exclusive-home-venue leagues,
+`home_away_break` is exactly twice `consecutive_venue` (§1b), so keeping both changes nothing
+about the ranking; it earns its place only on the greedy path, where a match can be played at a
+venue neither team owns and the two criteria genuinely diverge. Do not delete it, but do not
+pretend it is adding signal in the exclusive-venue case either.
+
+---
+
+## 4. New hard constraint: balanced opponent meetings
+
+New `App\Services\ScheduleGeneration\HardConstraints\BalancedOpponentMeetingsConstraint`,
+implementing the existing `HardConstraint` interface. It accumulates a per-unordered-pair
+meeting count across the whole schedule and reports violations from `violations()` (the
+interface already supports whole-schedule constraints this way — `ScheduleScorer` collects
+violations after the round loop).
+
+Rule: with `M` total matches and `P = C(activeTeamCount, 2)` pairs, every pair must meet between
+`floor(M/P)` and `ceil(M/P)` times inclusive.
+
+**Rollout risk, and the required mitigation.** `RoundRobinConstructor` satisfies this by
+construction, but `RoundBuilder`'s greedy path almost certainly does not, and
+`SimulatedAnnealingOptimizer`'s `opponentRecombine` / `roundRebuild` moves can break it.
+Registering it unconditionally would turn currently-working greedy schedules into hard-invalid
+degenerate results — a serious regression on the exact inputs that have no better path
+available.
+
+Therefore:
+
+1. Add a `bool $enforceBalancedOpponents = true` flag to `GenerationConfig`, and have
+   `ScheduleScorer` register the constraint only when it is set.
+2. The exact solver and every round-robin-seeded strategy run with it **on**.
+3. The greedy fallback strategy runs with it **off**, and instead surfaces a warning on the
+   review screen when the resulting schedule would have violated it. This is decision 2.6
+   (soft failure via warning) applied concretely.
+4. **MEASURED — the greedy path violates this routinely, so the gating above is mandatory and
+   the flag can never default on globally.** Across 450 runs (team counts {4,6,8,10,14,16} x
+   round counts {6,10,14} x 25 seeds each), `InitialSolutionBuilder::greedyPass()` produced a
+   schedule violating the +/-1 rule in **67.1%** of runs, and the rate climbs steeply with team
+   count:
+
+   | Active teams | Violation rate |
+   |---|---|
+   | 4 | 0% |
+   | 6 - 10 | 52% - 88% |
+   | 14 - 16 | 72% - 100% |
+
+   The 4-team result is the informative one: greedy only satisfies the rule where the pair count
+   is so small that equal meetings are nearly forced. Everywhere a real league lives, greedy
+   cannot meet it. This is not a defect in greedy — it has no whole-schedule view by design —
+   which is exactly why `Greedy` runs with the constraint off and warns instead of failing.
+
+---
+
+## 5. Generation strategies
+
+Introduce an explicit strategy concept rather than the current single hardcoded pipeline. Working
+names (final wording deferred — decision 2.8):
+
+| Strategy | What it runs | Best fit |
+|---|---|---|
+| **Exact** | Decomposed exhaustive solver (§6), seeded with the construction as incumbent | `N <= 6`, eligible venue structure |
+| **Seed only** | `RoundRobinConstructor` alone, no annealing | `R <= N-1` (single-cycle regime) |
+| **Seed + annealing** | Today's full pipeline: construction seed then `EpsilonConstraintOptimizer` | `R > N-1` with `N > 6` |
+| **Seed (mirrored seam) + annealing** | As above, pass boundary repeats cycle order and flips roles — today's behaviour | multi-cycle, spacing prioritised |
+| **Seed (palindrome seam) + annealing** | Pass boundary *reverses* cycle order and flips roles | multi-cycle, venue variety prioritised |
+| **Greedy + annealing** | `RoundBuilder` path, no construction seed | ineligible venue structures |
+
+The two seam variants only differ when `R > N-1`; when the season fits one cycle they collapse to
+the same schedule and should be presented as such rather than as a meaningless choice.
+
+**Pre-selection logic** takes two inputs, not one:
+
+1. **Eligibility first.** If `RoundRobinConstructor::isEligible()` is false (a team with no home
+   venue, 3+ teams sharing a venue, or two separate shared pairs), no seed-based strategy can
+   run — pre-select **Greedy + annealing** and warn that venue ownership data is blocking the
+   better strategies. The other options stay selectable and fail softly.
+2. **Then regime.** With eligibility satisfied:
+   - `N <= 6` → pre-select **Exact**.
+   - `R <= N-1` (single cycle) → pre-select **Seed only**. Nothing for annealing to fix (§1c).
+   - `R > N-1` → pre-select **Seed + annealing**, with the seam variant chosen by whether
+     `consecutive_venue` currently outranks `full_cycle_spacing` (palindrome if it does).
+
+Each option carries help text stating what it optimises and when it is a poor fit. When the
+pre-selected option is not the one displayed as selected — i.e. the admin has overridden — no
+warning is needed up front; the warning belongs on the review screen alongside the result.
+
+---
+
+## 6. The exact solver
+
+New `App\Services\ScheduleGeneration\ExactSolver`. Plain PHP, `Rng` injected (for the final
+team-to-slot randomisation only), no Eloquent, same as every other class in this namespace.
+
+**Algorithm** (this is the measured-tractable formulation from §1f — do not substitute a naive
+DFS over all matchings, it does not fit the budget):
+
+1. Work on **abstract slots**, not teams. No soft criterion distinguishes one team from another,
+   so the optimum is a property of the slot pattern. This is also exactly the "agree what a good
+   schedule looks like, then randomise which team lands in which slot" idea from the original
+   product conversation, and it doubles as the fairness mechanism `RoundRobinConstructor`
+   already uses.
+2. Build the canonical circle-method cycle for `N` slots (`C = N-1` rounds; odd team counts get
+   the usual phantom slot and its rotating bye). Reuse `RoundRobinConstructor`'s existing cycle
+   construction rather than reimplementing it.
+3. Enumerate **orderings of the cycle's rounds**, using each cycle-round as equally often as
+   `R` allows. This makes round-robin balance automatic and satisfies §4 by construction.
+   Fix round 0 canonically — every alternative is a pure relabelling.
+4. For each ordering, compute `full_cycle_spacing` directly (it depends only on the pairing
+   order), and solve the optimal **home/away orientation by DP** over rounds, with state = the
+   previous round's orientation. This is exact, not heuristic, because `consecutive_venue` and
+   `home_away_break` depend only on adjacent rounds once pairings are fixed.
+5. Compare candidates **lexicographically** over the configured tier order. This is the
+   exact-arithmetic equivalent of `GenerationConfig`'s big-M dominance weighting, so the solver
+   optimises *literally the same objective* the annealer approximates — Exact swaps out the
+   search, never the definition of good.
+6. Randomise the team-to-slot assignment at the end, honouring the shared-venue-pair safe-slot
+   logic `RoundRobinConstructor` already implements.
+
+**Budget and safety.**
+
+- Seed the incumbent with the `RoundRobinConstructor` result so the solver can only improve on
+  it. This preserves the existing non-regression guarantee and makes pruning effective from the
+  first node.
+- 10-second wall-clock budget, configurable. On expiry return best-found with a
+  `provenOptimal: false` flag on the result. **Never return something worse than the seed** —
+  the incumbent seeding guarantees this, and a test must lock it in.
+- `GenerationReport` gains a way to express "proven optimal" vs "best found", and the review
+  screen states which.
+
+**Exactness is per-criterion — state this in the class docblock and in the UI note.**
+`consecutive_venue` and `home_away_break` are exact via the DP. `full_cycle_spacing` is exact
+(pairing-order-determined). Count-based criteria — `home_away_balance`, `home_venue_balance`,
+`equal_matches_played`, `balanced_opponents` — do **not** decompose this way; they are either
+enforced structurally (§4) or simply not optimised by this strategy. Per decision 2.5, Exact
+stays offered regardless, with a note naming which enabled criteria it cannot optimise.
+
+**Known limitation, disclose rather than hide:** the enumeration explores orderings of one
+canonical cycle, so it is exact *within that family*. It does not consider structurally
+different pairing cycles in different passes. It reproduced the true global optimum at 4x6
+(independently verified in §1a), but that equivalence is verified at N=4 only. Do not claim
+global optimality in code comments or UI copy beyond what is verified.
+
+---
+
+## 7. UI changes
+
+**`resources/views/schedule/generate-matches-select.blade.php`** — replace the current
+Clear/Automatic pair with the Clear option plus a radio group of the §5 strategies. Each option
+needs help text; the engine's pre-selected option is checked on render. Every option is always
+selectable (decision 2.6).
+
+**`ScheduleController::generateMatchesStore()`** — validation currently reads
+`'generate' => 'required|in:clear,random'`. Add a `strategy` parameter validated against the
+known strategy keys, defaulting to the pre-selected one when absent so existing links and tests
+keep working. Thread it into `generateAutomaticCandidate()`.
+
+**`generateMatchesRetry()`** must preserve the chosen strategy across a retry, otherwise
+regenerating silently reverts to the default.
+
+**Review screen** — surface: which strategy ran; whether the result is proven optimal or
+best-found; any warning from a poor-fit strategy choice; and, when the greedy path ran with §4's
+constraint disabled, whether the result would have violated balanced opponent meetings.
+
+---
+
+## 8. Settings (deliberately minimal for now)
+
+Per decision 2.9, do **not** build Schedule-level settings storage in this phase. The
+per-generation radio choice in §7 is transient and needs no migration. `GenerationConfig::
+forAssociation()` keeps working exactly as today for the criteria list.
+
+Revisit afterwards, with the specific question being whether Schedule-level criteria ordering is
+still wanted once size-aware strategy selection exists — several of the current knobs may turn
+out to be superfluous, which was the reason for deferring.
+
+---
+
+## 9. Testing
+
+- **`ExactSolverTest`**: reproduce the §1d/§1f optima exactly for 4x6, 5x6, 5x10, 6x6, 6x10,
+  7x6. These are proven values; assert them as equalities, not bounds. Assert 4x6 specifically
+  returns 1 venue repeat, since that is the flagship case.
+- **Timeout safety**: with an artificially tiny budget, assert the solver returns the seed's
+  result or better, never worse, and flags `provenOptimal: false`.
+- **Balance constraint**: assert `BalancedOpponentMeetingsConstraint` accepts every
+  `RoundRobinConstructor` output across a spread of sizes, and rejects the §1e degenerate
+  schedule (A-B four times, A-C never). That schedule is a good permanent regression fixture.
+- **Regime pre-selection**: table-driven over (teams, rounds, eligibility) asserting the
+  pre-selected strategy, including the ineligible-venue case pre-selecting Greedy.
+- **Non-regression**: an ineligible input (team with `homeVenueId === null`) must produce
+  byte-identical output to today on the greedy path.
+- **`ScheduleScorerTest`**: lock in §1b — that for an exclusive-venue candidate,
+  `home_away_break`'s raw penalty is exactly twice `consecutive_venue`'s underlying repeat count.
+  If that ever stops holding, an assumption in this plan has broken and should fail loudly.
+- **Feature test**: the select screen renders the radio group with the expected pre-selection,
+  and posting a strategy generates with it and preserves it across retry.
+
+---
+
+## 10. Phased rollout (independently shippable)
+
+- **Phase 1 — objective correction only.** Change the default criteria order (§3). No new
+  classes, no UI. This alone fixes the 4x6 complaint and is the highest value-per-risk change
+  in the whole plan; ship it first and verify against the real association 2 / schedule 2 data
+  before building anything else.
+- **Phase 2 — balance constraint.** §4, including the measurement step, gated behind the
+  `GenerationConfig` flag so nothing regresses.
+- **Phase 3 — strategy concept + select screen.** §5 and §7, initially offering only the
+  already-existing strategies (seed only, seed + annealing, greedy). No exact solver yet. Ships
+  the regime-aware pre-selection, which is most of the user-visible benefit for large leagues.
+- **Phase 4 — exact solver.** §6, added as one more strategy option.
+- **Phase 5 — seam variants.** Palindrome/mirrored as strategy options, absorbing the superseded
+  "Flip vs Invert" TODO section above.
+
+---
+
+## 11. Open questions / risks
+
+- ~~**Does the greedy path routinely violate balanced opponent meetings?**~~ **RESOLVED —
+  measured at 67.1% across 450 runs, rising to 72-100% at 14-16 teams. See §4 step 4 for the
+  table. The flag can never default on globally; `Greedy` must run with it off and warn.**
+- **The exact solver's canonical-cycle restriction is verified equivalent to global optimality
+  at N=4 only.** Worth a brute-force cross-check at N=5 or N=6 if anyone leans on the word
+  "optimal" in user-facing copy.
+- **`home_away_break`'s severe-streak multiplier interacts with the reordering in §3** in a way
+  that has not been measured. It exists to punish 3+ round streaks, which is precisely the thing
+  §1a says is unavoidable at 4x6 under full-cycle spacing. Check whether it now double-counts
+  against `consecutive_venue` once that outranks it.
+- **10 seconds inside a synchronous HTTP request — largely defused, but keep the budget.**
+  Existing generation is bounded at 2000ms precisely so a bigger league does not mean a slower
+  page load, and Exact deliberately breaks that rule. However, the shipped solver precomputes
+  its DP transition table once instead of re-deriving it per ordering, making it roughly **15x
+  faster than the prototype these timings came from**: the worst supported case (6x10, 22,680
+  orderings) measured **0.55s**, not the 8.2s in §1f. So the 10s budget is now ~18x headroom
+  rather than the ~1.2x it looked like when this risk was written, and a queued job is not
+  needed at the supported sizes. Keep the budget anyway — it is what makes the timeout path
+  (best-found, honestly labelled) reachable rather than theoretical, and it is the only thing
+  bounding an admin who overrides the pre-selection onto a league Exact was never sized for.
+- **Odd team counts perform conspicuously well** (§1c/§1d: 5x10 and 7x6 reach a perfect zero)
+  because the rotating bye resets every streak. Nobody has asked for it, but "add a phantom bye
+  week to an even-team league" is a real lever that would improve small even-team leagues
+  substantially. Flagged, not pursued.
+
+## Implementation notes (Phases 4b/5, shipped)
+
+Both phases landed together: `GenerationStrategy` gained `Exact`, `SeedMirroredAndAnneal`, and
+`SeedPalindromeAndAnneal`; `ExactSolver` is wired into `ScheduleGenerator::generate()`;
+`RoundRobinConstructor::construct()` gained a `$palindromeSeam` flag; and `StrategyRecommender`
+implements the full §5 pre-selection (eligibility -> N<=6 -> regime -> seam variant).
+
+**Palindrome vs mirrored at 4x6, measured through the real `ScheduleScorer` under the shipped
+default order (`consecutive_venue`, `full_cycle_spacing`, `home_away_break`) - reproducible via
+`RoundRobinConstructor::construct($rounds, $teams, $venues, $palindromeSeam)`, no annealing, 5
+seeds, identical every time:**
+
+| Seam | Raw counts `[venue, breaks, spacing]` | Score, shipped default order | Score, pre-correction order (`full_cycle_spacing` first) |
+|---|---|---|---|
+| Mirrored | `[3, 6, 0]` | 1667.08 | **17.08** |
+| Palindrome | `[2, 4, 4]` | **844.61** | 1119.61 |
+
+This confirms §3/§6's central claim without qualification: under the shipped order, palindrome
+**wins outright** (844.61 < 1667.08) with zero scoring exceptions or seam-aware special-casing -
+`consecutive_venue` outranking `full_cycle_spacing` is sufficient on its own. The pre-correction
+column reproduces the superseded "Flip vs Invert" section's finding directionally (mirrored wins
+by orders of magnitude once `full_cycle_spacing` is ranked first), confirming that section's
+measurements were real, just wrongly diagnosed as a seam-construction problem instead of an
+objective-ordering one. Also confirms §1b's exact-doubling claim on both seams:
+`home_away_break`'s raw count is precisely 2x `consecutive_venue`'s (6=2x3 mirrored, 4=2x2
+palindrome).
+
+**What differed from the plan:**
+
+- **§5's Open Question ("does the seam choice generalize past exactly 2 passes?") is now
+  answered by construction, not left open**: `$palindromeSeam` reverses the cycle-round order on
+  every pass whose role is flipped (`pass % 2 === 1`), not just the pass immediately after the
+  first seam. For 3+ passes this creates an intentional adjacent rematch at *every* seam, not only
+  the middle one - the natural generalisation of "reverse after the seam," but unverified against
+  an independent brute force beyond N=4/2-passes (same caveat `ExactSolver`'s own docblock already
+  carries for its cycle-family restriction).
+- **`GenerationStrategy::SeedAndAnneal` was kept, not replaced**, alongside the two new seam-variant
+  cases - it still defaults to mirrored (today's behaviour, and `ScheduleGenerator::generate()`'s
+  own default parameter) but `StrategyRecommender` never recommends it anymore in the multi-cycle
+  regime, only the seam variant matching the criteria order. It stays selectable as a generic
+  "just anneal, seam unspecified" option per decision 2.6.
+- **`StrategyRecommender::recommend()` gained a required `GenerationConfig $config` parameter**
+  (not optional/defaulted) - the seam-variant pick genuinely depends on the caller's criteria
+  order, and a silent default risked masking that dependency. Every call site (the controller, all
+  tests) was updated accordingly; this is a breaking signature change from Phase 3.
+- **Exact's ineligibility fallback needed a new `GenerationReport` field**, `$strategyWarning`
+  (alongside `$provenOptimal`) - `$balancedOpponentsViolations` and `$degenerateReason` both carry
+  different, narrower meanings (a specific hard-constraint warning and an actual hard-constraint
+  failure, respectively) and neither fit "the requested strategy couldn't run, a different one did
+  instead." `GenerationReport::withStrategyWarning()` follows the same copy-and-override pattern as
+  `withStrategyMetadata()`.
+- **The exact solver's time budget is its own `GenerationConfig` field**
+  (`$exactSolverTimeBudgetMs`, default 10000, from `config('schedule_generation.exact_solver_time_budget_ms')`)
+  rather than reusing `$timeBudgetMs` - the two searches are different enough in cost (2000ms
+  default for annealing vs 10000ms for Exact, per decision 2.4) that sharing one field would have
+  forced a choice between under-budgeting Exact or over-budgeting every annealing pass.
+
+### The §1e loophole was real, and it bit the shipped default
+
+Found by running the finished pipeline end to end on the flagship 4x6 case, not by reasoning —
+worth recording because it is the single most important lesson from building this.
+
+The default criteria list shipped by Phase 1 was `consecutive_venue`, `full_cycle_spacing`,
+`home_away_break`. `ExactSolver` optimises **exactly** what it is given and nothing else, so it
+returned a schedule that was genuinely, provably optimal on those three criteria — 1 venue
+repeat, no 3-week run, `provenOptimal: true` — and which also scheduled the **same fixture twice
+with identical home/away** (one team hosting the other twice and never travelling to them) and
+left a team on **2 home / 4 away** across six weeks. Both are things any human scheduler would
+call broken, and both were invisible to the objective because `rematch_home_away_reversal` and
+`home_away_balance` were switched off.
+
+This is exactly the failure mode §1e predicted from the A-B-four-times fixture, reproduced with
+the real shipped configuration rather than a contrived one. The annealer never surfaced it
+because it starts from a structurally sound construction seed and makes small moves — it stayed
+near the valid region by luck, not because anything held it there. Exhaustive search has no such
+luck.
+
+Fix: both criteria are now enabled by default, ranked directly under `consecutive_venue`.
+Measured across sizes (`SeedAndAnneal` above 6 teams, `Exact` at or below), it costs nothing
+anywhere and fixes the multi-cycle shapes outright:
+
+| Shape | Venue repeats | Max home/away gap | Unreversed rematches |
+|---|---|---|---|
+| 4 x 6 | 1 -> 1 | 2 -> **0** | 5 -> **0** |
+| 7 x 6 | 0 -> 0 | 1 -> 1 | 0 -> 0 |
+| 14 x 10 | 5 -> 5 | 2 -> 2 | 0 -> 0 |
+| 16 x 10 | 5 -> 5 | 2 -> 2 | 0 -> 0 |
+| 16 x 20 | 16 -> 16 | 0 -> 0 | 16 -> **0** |
+
+The single-cycle shapes are unchanged because they contain no rematches to reverse. With the
+corrected list, the 4x6 output's opening week is **identical to the reference "good" schedule**
+product supplied at the very start of this work, and it beats that reference on venue repeats
+(1 versus 4).
+
+**Generalised rule for anyone editing `soft_criteria` in future:** every omitted criterion is
+licence for an exhaustive strategy to do something unacceptable in its name. Under annealing an
+omission is usually harmless; under `Exact` it is an exploit. Re-run a small league end to end
+after any change to that list and look at the actual schedule, not just the score.
+
+### Critical Files for Implementation
+- /Users/sthompson/Documents/league-frontend/config/schedule_generation.php
+- /Users/sthompson/Documents/league-frontend/app/Services/ScheduleGeneration/ExactSolver.php (new)
+- /Users/sthompson/Documents/league-frontend/app/Services/ScheduleGeneration/HardConstraints/BalancedOpponentMeetingsConstraint.php (new)
+- /Users/sthompson/Documents/league-frontend/app/Services/ScheduleGeneration/GenerationConfig.php
+- /Users/sthompson/Documents/league-frontend/app/Services/ScheduleGeneration/ScheduleGenerator.php
+- /Users/sthompson/Documents/league-frontend/app/Services/ScheduleGeneration/RoundRobinConstructor.php
+- /Users/sthompson/Documents/league-frontend/app/Services/ScheduleGeneration/ScheduleScorer.php
+- /Users/sthompson/Documents/league-frontend/app/Http/Controllers/ScheduleController.php
+- /Users/sthompson/Documents/league-frontend/resources/views/schedule/generate-matches-select.blade.php

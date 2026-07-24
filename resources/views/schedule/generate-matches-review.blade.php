@@ -11,6 +11,42 @@
         <h1 class="col">Review Automatically Generated Matches</h1>
     </div>
 
+    @php
+        $strategyRan = $report->strategy ? \App\Services\ScheduleGeneration\GenerationStrategy::tryFrom($report->strategy) : null;
+    @endphp
+
+    @if ($strategyRan)
+        <div class="row mb-3">
+            <div class="col">
+                <div class="alert alert-secondary">
+                    <strong>Strategy used:</strong> {{ $strategyRan->label() }}
+                    @if ($report->provenOptimal !== null)
+                        <br>
+                        @if ($report->provenOptimal)
+                            <strong>Proven optimal:</strong> this is the best possible result for venue variety,
+                            rematch spacing, and home/away breaks together - no other schedule using this
+                            construction could score better on those three criteria.
+                        @else
+                            <strong>Best found, not proven optimal:</strong> the exhaustive search ran out of its
+                            time budget before it could rule out every alternative, so a better result may exist.
+                            This is never worse than the plain round-robin construction, though.
+                        @endif
+                    @endif
+                </div>
+            </div>
+        </div>
+    @endif
+
+    @if (! empty($report->strategyWarning))
+        <div class="row mb-3">
+            <div class="col">
+                <div class="alert alert-warning">
+                    {{ $report->strategyWarning }}
+                </div>
+            </div>
+        </div>
+    @endif
+
     @if ($report->degenerate)
         <div class="row mb-3">
             <div class="col">
@@ -24,6 +60,22 @@
             <div class="col">
                 <div class="alert alert-success">
                     All required constraints were satisfied (only active teams and venues were used, with no scheduling conflicts).
+                </div>
+            </div>
+        </div>
+    @endif
+
+    @if (! empty($report->balancedOpponentsViolations))
+        <div class="row mb-3">
+            <div class="col">
+                <div class="alert alert-warning">
+                    <strong>Some pairs of teams don't meet a balanced number of times:</strong> the Greedy strategy
+                    does not guarantee this the way the seed-based strategies do.
+                    <ul class="mb-0">
+                        @foreach ($report->balancedOpponentsViolations as $message)
+                            <li>{{ $message }}</li>
+                        @endforeach
+                    </ul>
                 </div>
             </div>
         </div>

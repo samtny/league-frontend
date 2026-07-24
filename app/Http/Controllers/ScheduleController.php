@@ -8,17 +8,20 @@ use App\PLMatch;
 use App\Round;
 use App\Schedule;
 use App\Series;
-use App\Venue;
 use App\Services\ScheduleGeneration\GenerationConfig;
 use App\Services\ScheduleGeneration\GenerationReport;
 use App\Services\ScheduleGeneration\GenerationResult;
+use App\Services\ScheduleGeneration\GenerationStrategy;
 use App\Services\ScheduleGeneration\MatchSlotInput;
 use App\Services\ScheduleGeneration\RoundDatePlanner;
 use App\Services\ScheduleGeneration\RoundInput;
 use App\Services\ScheduleGeneration\ScheduleCandidate;
 use App\Services\ScheduleGeneration\ScheduleGenerator;
+use App\Services\ScheduleGeneration\StrategyRecommendation;
+use App\Services\ScheduleGeneration\StrategyRecommender;
 use App\Services\ScheduleGeneration\TeamInput;
 use App\Services\ScheduleGeneration\VenueInput;
+use App\Venue;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -287,6 +290,8 @@ class ScheduleController extends Controller
         return view('schedule.generate-matches-select', [
             'association' => $association,
             'schedule' => $schedule,
+            'strategies' => GenerationStrategy::cases(),
+            'recommendation' => $this->recommendedStrategy($schedule),
         ]);
     }
 
@@ -310,6 +315,8 @@ class ScheduleController extends Controller
         return view('schedule.generate-matches-select', [
             'association' => $association,
             'schedule' => $schedule,
+            'strategies' => GenerationStrategy::cases(),
+            'recommendation' => $this->recommendedStrategy($schedule),
         ]);
     }
 
@@ -317,6 +324,10 @@ class ScheduleController extends Controller
     {
         $request->validate([
             'generate' => 'required|in:clear,random',
+            // Absent/null defaults to the engine's own recommendation (see
+            // resolveStrategy()) so existing links/tests that don't know
+            // about strategies at all keep working unchanged.
+            'strategy' => 'nullable|in:'.implode(',', GenerationStrategy::values()),
         ]);
 
         if (! empty($this->generateMatchesErrors($schedule))) {
@@ -331,7 +342,14 @@ class ScheduleController extends Controller
             return redirect()->route('schedule.view', ['association' => $association, 'schedule' => $schedule]);
         }
 
-        $this->stashGeneratedCandidate($schedule, $this->generateAutomaticCandidate($schedule));
+        $strategy = $this->resolveStrategy($schedule, $request->input('strategy'));
+
+        // Stashed independently of the candidate/report so
+        // generateMatchesRetry() can reuse the SAME chosen strategy without
+        // silently reverting to the recommendation - see that method.
+        session([$this->sessionKey($schedule, 'strategy') => $strategy->value]);
+
+        $this->stashGeneratedCandidate($schedule, $this->generateAutomaticCandidate($schedule, $strategy));
 
         return redirect()->route('schedule.generate-matches.review', ['association' => $association, 'schedule' => $schedule]);
     }
@@ -382,20 +400,32 @@ class ScheduleController extends Controller
             $this->applyCandidateToExistingMatches($schedule, $candidate);
         });
 
-        session()->forget([$this->sessionKey($schedule, 'candidate'), $this->sessionKey($schedule, 'report')]);
+        session()->forget([
+            $this->sessionKey($schedule, 'candidate'),
+            $this->sessionKey($schedule, 'report'),
+            $this->sessionKey($schedule, 'strategy'),
+        ]);
 
         $request->session()->flash('message', __('Successfully generated rounds'));
 
         return redirect()->route('schedule.view', ['association' => $association, 'schedule' => $schedule]);
     }
 
+    /**
+     * Regenerates using the SAME strategy generateMatchesStore() stashed,
+     * not the engine's recommendation - otherwise an admin who deliberately
+     * picked a non-default strategy would see it silently revert on every
+     * "Discard & Regenerate" click.
+     */
     public function generateMatchesRetry(Association $association, Schedule $schedule)
     {
         if (! empty($this->generateMatchesErrors($schedule))) {
             return redirect()->route('schedule.generate-matches', ['association' => $association, 'schedule' => $schedule]);
         }
 
-        $this->stashGeneratedCandidate($schedule, $this->generateAutomaticCandidate($schedule));
+        $strategy = $this->resolveStrategy($schedule, session($this->sessionKey($schedule, 'strategy')));
+
+        $this->stashGeneratedCandidate($schedule, $this->generateAutomaticCandidate($schedule, $strategy));
 
         return redirect()->route('schedule.generate-matches.review', ['association' => $association, 'schedule' => $schedule]);
     }
@@ -470,24 +500,90 @@ class ScheduleController extends Controller
 
     /**
      * Runs the constraint-aware generator (see App\Services\ScheduleGeneration)
+     * with the given strategy (see GenerationStrategy/StrategyRecommender)
      * against this schedule's active teams/venues and its own already-
-     * persisted Rounds/Matches. Each Round becomes a RoundInput carrying the
-     * real matches.id of every empty match slot it already has (created by
-     * Round::createMatches() one per active venue) - the generator never
-     * invents Round/Match rows, it only ever assigns teams into slots that
-     * already exist. Slots pointing at a since-deactivated venue are
-     * excluded from the pool the same way they always were (RoundBuilder
-     * only ever drew from the active venue pool). A Round flagged off_week
-     * or playoffs_week is excluded from this list entirely - not merely
-     * given empty slots, but genuinely absent, exactly as if it didn't
-     * exist for solving purposes (round-index-based soft criteria like
-     * FullCycleSpacingCriterion naturally treat the remaining rounds as
-     * contiguous, with no gap for the skipped week). Note this only
-     * controls what the SOLVER considers; the Accept flow still clears and
-     * (for included rounds) reassigns matches schedule-wide regardless of
-     * this filter - see generateMatchesAccept()/clearMatchAssignments().
+     * persisted Rounds/Matches - see scheduleGenerationInputs() for how
+     * those are built.
      */
-    private function generateAutomaticCandidate(Schedule $schedule): GenerationResult
+    private function generateAutomaticCandidate(Schedule $schedule, GenerationStrategy $strategy): GenerationResult
+    {
+        $inputs = $this->scheduleGenerationInputs($schedule);
+
+        return app(ScheduleGenerator::class)->generate(
+            $inputs['rounds'],
+            $inputs['activeTeams'],
+            $inputs['activeVenues'],
+            GenerationConfig::forAssociation($schedule->association),
+            $strategy,
+        );
+    }
+
+    /**
+     * The engine's default strategy pick for this Schedule's current
+     * league shape (plan.md §5) - shown on the select screen as the
+     * pre-checked radio and used by resolveStrategy() whenever no explicit
+     * choice is available. This is a DEFAULT only: every GenerationStrategy
+     * stays selectable regardless (decision 2.7).
+     */
+    private function recommendedStrategy(Schedule $schedule): StrategyRecommendation
+    {
+        $inputs = $this->scheduleGenerationInputs($schedule);
+
+        return app(StrategyRecommender::class)->recommend(
+            $inputs['activeTeams'],
+            $inputs['activeVenues'],
+            count($inputs['rounds']),
+            GenerationConfig::forAssociation($schedule->association),
+        );
+    }
+
+    /**
+     * Resolves a raw strategy value (the posted 'strategy' field, or
+     * whatever generateMatchesStore() previously stashed in the session)
+     * into a real GenerationStrategy - anything missing, not a string, or
+     * not a recognized value falls back to the engine's own recommendation
+     * for this Schedule, rather than erroring. generateMatchesStore()'s own
+     * validation already rejects an unrecognized posted value before this
+     * is ever reached from there, so the fallback mainly protects
+     * generateMatchesRetry() against a missing/stale session key.
+     */
+    private function resolveStrategy(Schedule $schedule, mixed $strategyValue): GenerationStrategy
+    {
+        if (is_string($strategyValue)) {
+            $strategy = GenerationStrategy::tryFrom($strategyValue);
+
+            if ($strategy !== null) {
+                return $strategy;
+            }
+        }
+
+        return $this->recommendedStrategy($schedule)->strategy;
+    }
+
+    /**
+     * Builds the RoundInput/TeamInput/VenueInput triple every
+     * ScheduleGenerator::generate() call and StrategyRecommender::recommend()
+     * call needs, from this schedule's active teams/venues and its own
+     * already-persisted Rounds/Matches. Each Round becomes a RoundInput
+     * carrying the real matches.id of every empty match slot it already has
+     * (created by Round::createMatches() one per active venue) - the
+     * generator never invents Round/Match rows, it only ever assigns teams
+     * into slots that already exist. Slots pointing at a since-deactivated
+     * venue are excluded from the pool the same way they always were
+     * (RoundBuilder only ever drew from the active venue pool). A Round
+     * flagged off_week or playoffs_week is excluded from this list entirely
+     * - not merely given empty slots, but genuinely absent, exactly as if it
+     * didn't exist for solving purposes (round-index-based soft criteria
+     * like FullCycleSpacingCriterion naturally treat the remaining rounds as
+     * contiguous, with no gap for the skipped week). Note this only
+     * controls what the SOLVER (and the recommendation) considers; the
+     * Accept flow still clears and (for included rounds) reassigns matches
+     * schedule-wide regardless of this filter - see
+     * generateMatchesAccept()/clearMatchAssignments().
+     *
+     * @return array{rounds: RoundInput[], activeTeams: TeamInput[], activeVenues: VenueInput[]}
+     */
+    private function scheduleGenerationInputs(Schedule $schedule): array
     {
         $association = $schedule->association;
 
@@ -499,8 +595,15 @@ class ScheduleController extends Controller
         $eligibleTeams = $association->activeTeams->filter(fn ($team) => $team->division_id == $schedule->division_id);
         $eligibleVenues = $association->activeVenues->filter(fn ($venue) => $venue->divisions->contains('id', $schedule->division_id));
 
-        $activeTeams = $eligibleTeams->map(fn ($team) => TeamInput::fromModel($team))->all();
-        $activeVenues = $eligibleVenues->map(fn ($venue) => VenueInput::fromModel($venue))->all();
+        // values() before all(): Collection::filter() above PRESERVES the
+        // original keys, so without this the generator receives arrays keyed
+        // e.g. [0, 1, 3, 5] whenever any team/venue was filtered out. Several
+        // consumers index these positionally as 0..count-1 (slot assignment,
+        // pairwise iteration), which then reads a missing key. This caused a
+        // real 500 on the generate-matches screen; unit fixtures never caught
+        // it because they hand-build zero-indexed lists.
+        $activeTeams = $eligibleTeams->map(fn ($team) => TeamInput::fromModel($team))->values()->all();
+        $activeVenues = $eligibleVenues->map(fn ($venue) => VenueInput::fromModel($venue))->values()->all();
         $activeVenueIds = $eligibleVenues->pluck('id')->flip();
 
         $rounds = $schedule->rounds()->with('matches.venue')->orderBy('start_date')->get()
@@ -517,7 +620,7 @@ class ScheduleController extends Controller
             })
             ->all();
 
-        return app(ScheduleGenerator::class)->generate($rounds, $activeTeams, $activeVenues, GenerationConfig::forAssociation($association));
+        return ['rounds' => $rounds, 'activeTeams' => $activeTeams, 'activeVenues' => $activeVenues];
     }
 
     private function stashGeneratedCandidate(Schedule $schedule, GenerationResult $result): void

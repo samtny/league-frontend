@@ -59,12 +59,11 @@ final class RoundRobinConstructor
 {
     public function __construct(
         private readonly Rng $rng,
-    ) {
-    }
+    ) {}
 
     /**
-     * @param TeamInput[] $activeTeams
-     * @param VenueInput[] $activeVenues
+     * @param  TeamInput[]  $activeTeams
+     * @param  VenueInput[]  $activeVenues
      */
     public function isEligible(array $activeTeams, array $activeVenues): bool
     {
@@ -106,7 +105,7 @@ final class RoundRobinConstructor
      * The two teams sharing a venue, if any (isEligible() already
      * guarantees at most one such venue, with exactly 2 owners).
      *
-     * @param TeamInput[] $activeTeams
+     * @param  TeamInput[]  $activeTeams
      * @return array{0: TeamInput, 1: TeamInput}|null
      */
     private function findSharedVenuePair(array $activeTeams): ?array
@@ -135,7 +134,7 @@ final class RoundRobinConstructor
      * (0..realTeamCount-2 for the lower slot) are candidates - the odd-team
      * phantom's slot is never eligible for the shared pair.
      *
-     * @param array<int, array{pairs: array<int, array{0: int, 1: int}>, role: array<int, int>}> $cycle
+     * @param  array<int, array{pairs: array<int, array{0: int, 1: int}>, role: array<int, int>}>  $cycle
      * @return array<int, array{0: int, 1: int}>
      */
     private function findSafeSlotPairs(array $cycle, int $realTeamCount): array
@@ -169,11 +168,11 @@ final class RoundRobinConstructor
      * randomly assigned between its two slots, and everyone else is
      * shuffled into the remaining slots.
      *
-     * @param TeamInput[] $activeTeams
-     * @param array<int, array{pairs: array<int, array{0: int, 1: int}>, role: array<int, int>}> $cycle
+     * @param  TeamInput[]  $activeTeams
+     * @param  array<int, array{pairs: array<int, array{0: int, 1: int}>, role: array<int, int>}>  $cycle
      * @return array<int, TeamInput>
      */
-    private function assignTeamsToSlots(array $activeTeams, array $cycle): array
+    public function assignTeamsToSlots(array $activeTeams, array $cycle): array
     {
         $sharedPair = $this->findSharedVenuePair($activeTeams);
 
@@ -204,11 +203,27 @@ final class RoundRobinConstructor
     }
 
     /**
-     * @param RoundInput[] $rounds
-     * @param TeamInput[] $activeTeams
-     * @param VenueInput[] $activeVenues
+     * @param  RoundInput[]  $rounds
+     * @param  TeamInput[]  $activeTeams
+     * @param  VenueInput[]  $activeVenues
+     * @param  bool  $palindromeSeam  Governs how each pass boundary (the point where the schedule wraps
+     *                                back to the start of the cycle - see class docblock and plan.md
+     *                                "Size-Aware Schedule Generation" §5) is built, and only makes any
+     *                                difference when the season spans more than one cycle (rounds >
+     *                                activeTeams - 1); a single-cycle season never reaches a second pass
+     *                                at all. Default false = "mirrored": every pass reuses the SAME
+     *                                cycle-round order, only home/away roles invert (today's behaviour,
+     *                                unchanged - this default is what keeps every pre-existing caller and
+     *                                test byte-identical). true = "palindrome": on top of the same role
+     *                                inversion, alternate passes also run the cycle in REVERSE round
+     *                                order, so the round immediately after a seam reuses the exact same
+     *                                pairing as the round immediately before it (with roles reversed,
+     *                                so the venue changes) instead of a fresh pairing. That trades one
+     *                                immediate rematch at each seam for a much more even spread of
+     *                                same-venue streaks across teams - see plan.md §1a for why, at 4
+     *                                teams x 6 weeks, that trade is unavoidable one way or the other.
      */
-    public function construct(array $rounds, array $activeTeams, array $activeVenues): ?ScheduleCandidate
+    public function construct(array $rounds, array $activeTeams, array $activeVenues, bool $palindromeSeam = false): ?ScheduleCandidate
     {
         if (! $this->isEligible($activeTeams, $activeVenues)) {
             return null;
@@ -252,7 +267,15 @@ final class RoundRobinConstructor
         while (count($roundCandidates) < $roundCount) {
             $flip = $pass % 2 === 1;
 
-            foreach ($cycle as $cycleRound) {
+            // Palindrome seam mode (see this method's docblock): a pass
+            // whose roles are inverted ALSO runs the cycle in reverse round
+            // order, so its first round reuses the previous pass's LAST
+            // cycle round - an immediate rematch with roles reversed,
+            // deliberately, rather than the next fresh pairing mirrored
+            // mode would use.
+            $passCycle = ($palindromeSeam && $flip) ? array_reverse($cycle) : $cycle;
+
+            foreach ($passCycle as $cycleRound) {
                 if (count($roundCandidates) >= $roundCount) {
                     break;
                 }
@@ -271,9 +294,17 @@ final class RoundRobinConstructor
      * Builds one full single round-robin cycle (N-1 rounds) for N slots:
      * the circle-method pairing plus a break-minimal home/away orientation.
      *
+     * Public, along with assignTeamsToSlots() above, because ExactSolver
+     * reuses both rather than reimplementing them - its enumeration searches
+     * orderings of exactly this canonical cycle, and its output must land on
+     * the same shared-venue-safe, fairly-randomised slots this class already
+     * guarantees. Treat them as a shared contract with that class: changing
+     * either signature or their return shapes breaks it. They are otherwise
+     * internal to the construction algorithm and not intended for wider use.
+     *
      * @return array<int, array{pairs: array<int, array{0: int, 1: int}>, role: array<int, int>}>
      */
-    private function buildSingleCycle(int $slotCount): array
+    public function buildSingleCycle(int $slotCount): array
     {
         $fixed = $slotCount - 1;
         $m = $slotCount - 1;
@@ -353,9 +384,9 @@ final class RoundRobinConstructor
     }
 
     /**
-     * @param array{pairs: array<int, array{0: int, 1: int}>, role: array<int, int>} $cycleRound
-     * @param array<int, TeamInput|null> $slotTeams
-     * @param array<int, VenueInput> $venueLookup
+     * @param  array{pairs: array<int, array{0: int, 1: int}>, role: array<int, int>}  $cycleRound
+     * @param  array<int, TeamInput|null>  $slotTeams
+     * @param  array<int, VenueInput>  $venueLookup
      */
     private function mapRound(
         RoundInput $round,

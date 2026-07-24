@@ -24,7 +24,7 @@ class RoundRobinConstructorTest extends TestCase
     }
 
     /**
-     * @param array<int, int> $homeVenueIdByTeamId team id => venue id, in the order teams should be assigned to slots
+     * @param  array<int, int>  $homeVenueIdByTeamId  team id => venue id, in the order teams should be assigned to slots
      */
     private function teamsWithOwnVenues(array $homeVenueIdByTeamId): array
     {
@@ -41,7 +41,7 @@ class RoundRobinConstructorTest extends TestCase
     }
 
     /**
-     * @param VenueInput[] $venues
+     * @param  VenueInput[]  $venues
      * @return RoundInput[]
      */
     private function rounds(int $count, array $venues): array
@@ -314,6 +314,129 @@ class RoundRobinConstructorTest extends TestCase
         $this->assertNotNull($candidate);
         $this->assertCount(7, $candidate->rounds);
         $this->assertValidRoundRobinAllowingRematchesAcrossCycles($candidate);
+    }
+
+    /**
+     * plan.md "Size-Aware Schedule Generation" §5 Phase 5: $palindromeSeam
+     * defaults to false, which must reproduce every pre-existing caller's
+     * output exactly - this is the non-negotiable non-regression
+     * requirement. Since the implementation is a single early-exit branch
+     * (only taken when $palindromeSeam is true AND the pass is flipped),
+     * leaving it false is trivially the same code path as before this
+     * parameter existed; this test documents that contract explicitly
+     * rather than relying only on the rest of this file staying green.
+     */
+    public function test_palindrome_seam_defaults_to_false_and_matches_explicit_mirrored()
+    {
+        $homeVenueIdByTeamId = [1 => 101, 2 => 102, 3 => 103, 4 => 104];
+        $teams = $this->teamsWithOwnVenues($homeVenueIdByTeamId);
+        $venues = $this->venuesFor($homeVenueIdByTeamId);
+        $rounds = $this->rounds(6, $venues);
+
+        $default = $this->constructor(7)->construct($rounds, $teams, $venues);
+        $explicitMirrored = $this->constructor(7)->construct($rounds, $teams, $venues, false);
+
+        $this->assertEquals($default, $explicitMirrored);
+    }
+
+    /**
+     * The two seam variants only differ once there's an actual pass
+     * boundary to handle differently - a single-cycle season (R <= N-1)
+     * never reaches a second pass, so palindromeSeam has nothing to act on
+     * (plan.md §5: "the two seam variants only differ when R > N-1").
+     */
+    public function test_palindrome_and_mirrored_seams_are_identical_within_a_single_cycle()
+    {
+        $homeVenueIdByTeamId = [1 => 101, 2 => 102, 3 => 103, 4 => 104];
+        $teams = $this->teamsWithOwnVenues($homeVenueIdByTeamId);
+        $venues = $this->venuesFor($homeVenueIdByTeamId);
+        $rounds = $this->rounds(3, $venues); // R = N-1 exactly: single cycle, no seam at all
+
+        $mirrored = $this->constructor(9)->construct($rounds, $teams, $venues, false);
+        $palindrome = $this->constructor(9)->construct($rounds, $teams, $venues, true);
+
+        $this->assertEquals($mirrored, $palindrome);
+    }
+
+    /**
+     * The flagship 4x6 case (plan.md §1a/§1d): once the season spans two
+     * cycles, palindrome mode genuinely diverges from mirrored - it
+     * reverses the second pass's cycle-round order, which makes the round
+     * right after the seam reuse the EXACT SAME pairing as the round right
+     * before it (an intentional immediate rematch), just with home/away
+     * reversed so the venue changes. Mirrored never does this - repeating
+     * the same order every pass means pass 2's first round is always a
+     * fresh pairing relative to pass 1's last.
+     */
+    public function test_palindrome_seam_reuses_the_pre_seam_pairing_with_roles_reversed_across_multiple_cycles()
+    {
+        $homeVenueIdByTeamId = [1 => 101, 2 => 102, 3 => 103, 4 => 104];
+        $teams = $this->teamsWithOwnVenues($homeVenueIdByTeamId);
+        $venues = $this->venuesFor($homeVenueIdByTeamId);
+        $rounds = $this->rounds(6, $venues); // two full 3-round cycles - one seam, at round index 3
+
+        $mirrored = $this->constructor(9)->construct($rounds, $teams, $venues, false);
+        $palindrome = $this->constructor(9)->construct($rounds, $teams, $venues, true);
+
+        $this->assertNotEquals($mirrored, $palindrome, 'seam choice must actually change the schedule for this fixture');
+
+        // Both stay hard-valid (no double-booking, every match at the home
+        // team's own venue) even though palindrome now intentionally
+        // creates a seam-adjacent rematch.
+        $this->assertNoDoubleBooking($mirrored);
+        $this->assertNoDoubleBooking($palindrome);
+        $this->assertEveryMatchAtHomeTeamsOwnVenue($palindrome, $homeVenueIdByTeamId);
+
+        $lastRoundBeforeSeam = $palindrome->rounds[2]->matches;
+        $firstRoundAfterSeam = $palindrome->rounds[3]->matches;
+
+        $this->assertCount(2, $lastRoundBeforeSeam);
+        $this->assertCount(2, $firstRoundAfterSeam);
+
+        $pairKey = fn ($match) => $match->homeTeamId < $match->awayTeamId
+            ? "{$match->homeTeamId}-{$match->awayTeamId}"
+            : "{$match->awayTeamId}-{$match->homeTeamId}";
+
+        $beforeByPair = collect($lastRoundBeforeSeam)->keyBy($pairKey);
+        $afterByPair = collect($firstRoundAfterSeam)->keyBy($pairKey);
+
+        $this->assertSame($beforeByPair->keys()->sort()->values()->all(), $afterByPair->keys()->sort()->values()->all(), 'the round right after the seam should reuse the exact same pairings as the round right before it');
+
+        foreach ($beforeByPair as $pair => $beforeMatch) {
+            $afterMatch = $afterByPair[$pair];
+            $this->assertSame($beforeMatch->homeTeamId, $afterMatch->awayTeamId, 'roles should be reversed across the seam rematch');
+            $this->assertSame($beforeMatch->awayTeamId, $afterMatch->homeTeamId, 'roles should be reversed across the seam rematch');
+        }
+
+        // Mirrored, by contrast, never repeats a pairing across the seam -
+        // its own default behaviour already guarantees no adjacent rematch.
+        $this->assertValidRoundRobinAllowingRematchesAcrossCycles($mirrored);
+    }
+
+    private function assertNoDoubleBooking(ScheduleCandidate $candidate): void
+    {
+        foreach ($candidate->rounds as $roundIndex => $round) {
+            $played = [];
+
+            foreach ($round->matches as $match) {
+                foreach ([$match->homeTeamId, $match->awayTeamId] as $teamId) {
+                    $this->assertArrayNotHasKey($teamId, $played, "team {$teamId} double-booked in round {$roundIndex}");
+                    $played[$teamId] = true;
+                }
+            }
+        }
+    }
+
+    /**
+     * @param  array<int, int>  $homeVenueIdByTeamId
+     */
+    private function assertEveryMatchAtHomeTeamsOwnVenue(ScheduleCandidate $candidate, array $homeVenueIdByTeamId): void
+    {
+        foreach ($candidate->rounds as $round) {
+            foreach ($round->matches as $match) {
+                $this->assertSame($homeVenueIdByTeamId[$match->homeTeamId], $match->venueId);
+            }
+        }
     }
 
     public function test_declines_when_a_team_has_no_home_venue()

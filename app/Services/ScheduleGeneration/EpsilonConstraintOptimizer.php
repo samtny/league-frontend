@@ -107,6 +107,11 @@ final class EpsilonConstraintOptimizer
                 timeBudgetMs: intdiv($config->timeBudgetMs * $shareWeight, $weightDenominator),
                 softCriteria: $config->softCriteria,
                 excludedFromObjective: $excluded,
+                // Must be forwarded: this pass config is what SimulatedAnnealingOptimizer
+                // actually scores against, so dropping it would silently re-enable the
+                // balanced-opponents hard constraint for the whole search even when the
+                // caller (the greedy strategy) deliberately turned it off.
+                enforceBalancedOpponents: $config->enforceBalancedOpponents,
             );
 
             if (count($tierKeys) === 1) {

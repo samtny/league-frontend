@@ -96,13 +96,29 @@ final class GenerationConfig
      * synchronously inside an HTTP request and a bigger league shouldn't
      * mean a slower page load.
      *
-     * @param array<int, string|string[]> $softCriteria tiers, highest priority first - a bare string is a
-     *   singleton tier, an array of 2+ strings is a co-equal tie-group (see class docblock). A key's ABSENCE
-     *   anywhere in this structure disables that criterion entirely, it is not merely deprioritized. May cover a
-     *   proper subset of the known keys, or even an empty array (hard constraints only, no soft scoring at all).
-     * @param string[] $excludedFromObjective soft-criterion keys to zero out of tierWeight() entirely - used by
-     *   EpsilonConstraintOptimizer to remove already-fixed tiers from a pass's objective without disturbing the
-     *   relative dominance exponents of the remaining tiers (which stay derived from the full $softCriteria order)
+     * @param  array<int, string|string[]>  $softCriteria  tiers, highest priority first - a bare string is a
+     *                                                     singleton tier, an array of 2+ strings is a co-equal tie-group (see class docblock). A key's ABSENCE
+     *                                                     anywhere in this structure disables that criterion entirely, it is not merely deprioritized. May cover a
+     *                                                     proper subset of the known keys, or even an empty array (hard constraints only, no soft scoring at all).
+     * @param  string[]  $excludedFromObjective  soft-criterion keys to zero out of tierWeight() entirely - used by
+     *                                           EpsilonConstraintOptimizer to remove already-fixed tiers from a pass's objective without disturbing the
+     *                                           relative dominance exponents of the remaining tiers (which stay derived from the full $softCriteria order)
+     * @param  bool  $enforceBalancedOpponents  whether ScheduleScorer registers BalancedOpponentMeetingsConstraint (every
+     *                                          unordered pair of active teams must meet between floor(M/P) and ceil(M/P) times, M = total matches, P = pairs)
+     *                                          as a HARD constraint. Defaults true because RoundRobinConstructor's seed-based strategies satisfy this by
+     *                                          construction and the exact solver enforces it structurally too - but RoundBuilder's greedy fallback path
+     *                                          almost certainly does NOT satisfy it, and SimulatedAnnealingOptimizer's opponentRecombine/roundRebuild moves
+     *                                          can break it even starting from a valid seed. Registering the constraint unconditionally would turn schedules
+     *                                          the greedy path currently produces successfully into hard-invalid degenerate results with no better path
+     *                                          available, so the greedy strategy runs with this OFF and surfaces a warning instead (soft failure, not a
+     *                                          silent regression). See plan.md ("Size-Aware Schedule Generation") §4.
+     * @param  int  $exactSolverTimeBudgetMs  wall-clock budget ExactSolver::solve() gets for GenerationStrategy::Exact
+     *                                        (plan.md §6/§10 Phase 4b) - deliberately its OWN config key rather than reusing $timeBudgetMs, since the
+     *                                        exact solver is a fundamentally different, much more expensive search than EpsilonConstraintOptimizer's
+     *                                        annealing passes (which $timeBudgetMs bounds) and product explicitly signed off on a much larger default
+     *                                        (10 seconds vs. 2) for it alone - see plan.md decision 2.4 and §11's "10 seconds inside a synchronous HTTP
+     *                                        request" risk note. ScheduleGenerator reads this rather than relying on solve()'s own default argument, so
+     *                                        it stays admin/environment configurable the same way every other budget here is.
      */
     public function __construct(
         public readonly int $maxAttempts = 5000,
@@ -110,8 +126,9 @@ final class GenerationConfig
         public readonly int $searchEpochs = self::DEFAULT_SEARCH_EPOCHS,
         public readonly array $softCriteria = self::DEFAULT_SOFT_CRITERIA,
         public readonly array $excludedFromObjective = [],
-    ) {
-    }
+        public readonly bool $enforceBalancedOpponents = true,
+        public readonly int $exactSolverTimeBudgetMs = 10000,
+    ) {}
 
     /**
      * Normalizes $softCriteria so every tier is a string[] of one or more
@@ -169,6 +186,8 @@ final class GenerationConfig
             timeBudgetMs: (int) config('schedule_generation.time_budget_ms', 2000),
             searchEpochs: (int) config('schedule_generation.search_epochs', self::DEFAULT_SEARCH_EPOCHS),
             softCriteria: self::sanitizeSoftCriteria(config('schedule_generation.soft_criteria', self::DEFAULT_SOFT_CRITERIA)),
+            enforceBalancedOpponents: (bool) config('schedule_generation.enforce_balanced_opponents', true),
+            exactSolverTimeBudgetMs: (int) config('schedule_generation.exact_solver_time_budget_ms', 10000),
         );
     }
 
@@ -199,6 +218,8 @@ final class GenerationConfig
             timeBudgetMs: (int) config('schedule_generation.time_budget_ms', 2000),
             searchEpochs: (int) config('schedule_generation.search_epochs', self::DEFAULT_SEARCH_EPOCHS),
             softCriteria: self::sanitizeSoftCriteria($settings['soft_criteria'] ?? null, $systemDefault),
+            enforceBalancedOpponents: (bool) config('schedule_generation.enforce_balanced_opponents', true),
+            exactSolverTimeBudgetMs: (int) config('schedule_generation.exact_solver_time_budget_ms', 10000),
         );
     }
 
@@ -214,8 +235,8 @@ final class GenerationConfig
      * that flattened set contains a duplicate (whether within one tie-group
      * or across two different tiers).
      *
-     * @param mixed $softCriteria
-     * @param array<int, string|string[]> $fallback
+     * @param  mixed  $softCriteria
+     * @param  array<int, string|string[]>  $fallback
      * @return array<int, string|string[]>
      */
     private static function sanitizeSoftCriteria($softCriteria, array $fallback = self::DEFAULT_SOFT_CRITERIA): array

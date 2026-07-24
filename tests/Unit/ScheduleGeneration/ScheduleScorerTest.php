@@ -64,7 +64,7 @@ class ScheduleScorerTest extends TestCase
     }
 
     /**
-     * @param array<int, int|null> $homeVenueIdByTeamId
+     * @param  array<int, int|null>  $homeVenueIdByTeamId
      */
     private function teamsWithHomeVenues(array $homeVenueIdByTeamId): array
     {
@@ -132,7 +132,14 @@ class ScheduleScorerTest extends TestCase
             ], []),
         ]);
 
-        $report = (new ScheduleScorer)->score($candidate, $teams, $venues, new GenerationConfig);
+        // enforceBalancedOpponents disabled: this fixture is deliberately
+        // hand-built to isolate repeat_opponent_consecutive_rounds (both
+        // pairs meet twice, out of only 6 possible pairs among 4 teams,
+        // which is itself a balanced-opponent-meetings violation) - not
+        // what this test is about, see
+        // GenerationConfig::$enforceBalancedOpponents.
+        $config = new GenerationConfig(enforceBalancedOpponents: false);
+        $report = (new ScheduleScorer)->score($candidate, $teams, $venues, $config);
 
         $this->assertTrue($report->hardConstraintsSatisfied);
         $this->assertEqualsWithDelta(5_000_000_000.0, $this->criterionScore($report, 'repeat_opponent_consecutive_rounds'), 0.01);
@@ -317,7 +324,12 @@ class ScheduleScorerTest extends TestCase
         // Byes rotate unevenly here on purpose: 1/2 play twice, 3/4 play once.
         // A bye between a team's matches resets its "last opponent", so the
         // repeated (1v2) pairing across rounds 1 and 3 is not a back-to-back
-        // repeat (round 2 was a bye for both) and stays hard-constraint clean.
+        // repeat (round 2 was a bye for both) and stays clean on THAT hard
+        // constraint - it does trip BalancedOpponentMeetingsConstraint,
+        // though (pair 1-2 meets twice against only 3 total matches across 6
+        // possible pairs), which is irrelevant to what this test is
+        // checking, hence enforceBalancedOpponents: false below - see
+        // GenerationConfig::$enforceBalancedOpponents.
         $candidate = new ScheduleCandidate([
             new RoundCandidate($this->date('2026-07-06'), [
                 new MatchCandidate(10, 'Venue 10', 1, 2),
@@ -330,7 +342,8 @@ class ScheduleScorerTest extends TestCase
             ], [3, 4]),
         ]);
 
-        $report = (new ScheduleScorer)->score($candidate, $teams, $venues, new GenerationConfig);
+        $config = new GenerationConfig(enforceBalancedOpponents: false);
+        $report = (new ScheduleScorer)->score($candidate, $teams, $venues, $config);
 
         $this->assertTrue($report->hardConstraintsSatisfied);
         // Teams 1/2 played 2 matches, teams 3/4 played 1 -> spread of 1,
@@ -471,6 +484,11 @@ class ScheduleScorerTest extends TestCase
         // sitting out a round are explicitly byed so their opponent/venue
         // history resets - matching the invariant real generator output
         // maintains (every active team either plays or is byed each round).
+        // Team 1 faces team 2 twice (rounds 1 and 4) against only 4 total
+        // matches across 6 possible pairs, which trips
+        // BalancedOpponentMeetingsConstraint - irrelevant to what this test
+        // checks (home_venue_balance), hence enforceBalancedOpponents: false
+        // below - see GenerationConfig::$enforceBalancedOpponents.
         $candidate = new ScheduleCandidate([
             new RoundCandidate($this->date('2026-07-06'), [new MatchCandidate(300, 'Venue 300', 2, 1)], [3, 4]),
             new RoundCandidate($this->date('2026-07-13'), [new MatchCandidate(300, 'Venue 300', 3, 1)], [2, 4]),
@@ -478,7 +496,8 @@ class ScheduleScorerTest extends TestCase
             new RoundCandidate($this->date('2026-07-27'), [new MatchCandidate(300, 'Venue 300', 2, 1)], [3, 4]),
         ]);
 
-        $report = (new ScheduleScorer)->score($candidate, $teams, $venues, new GenerationConfig);
+        $config = new GenerationConfig(enforceBalancedOpponents: false);
+        $report = (new ScheduleScorer)->score($candidate, $teams, $venues, $config);
 
         $this->assertTrue($report->hardConstraintsSatisfied);
         // Team 1: 0 home-venue appearances out of 4 matches -> diff=4, over

@@ -34,6 +34,31 @@
                 @enderror
             </div>
 
+            <div class="mb-3" id="strategy-options">
+                <legend>Strategy</legend>
+                <div class="alert alert-info">{{ $recommendation->reason }}</div>
+                <fieldset>
+                    @foreach ($strategies as $strategy)
+                        @php
+                            $checked = old('strategy', $recommendation->strategy->value) === $strategy->value;
+                        @endphp
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" id="strategy_{{ $strategy->value }}" name="strategy" value="{{ $strategy->value }}" {{ $checked ? 'checked' : '' }}>
+                            <label class="form-check-label" for="strategy_{{ $strategy->value }}">
+                                {{ $strategy->label() }}
+                                @if ($strategy === $recommendation->strategy)
+                                    <span class="badge bg-secondary">Recommended</span>
+                                @endif
+                            </label>
+                            <small class="form-text text-muted d-block">{{ $strategy->helpText() }}</small>
+                        </div>
+                    @endforeach
+                </fieldset>
+                @error('strategy')
+                    <div class="alert alert-danger">{{ $message }}</div>
+                @enderror
+            </div>
+
             <div class="form-actions">
                 <div class="mb-3">
                     <input class="btn btn-primary" type="submit" value="Apply"/>

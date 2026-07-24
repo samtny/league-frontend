@@ -2,7 +2,9 @@
 
 namespace Tests\Unit\ScheduleGeneration;
 
+use App\Services\ScheduleGeneration\ExactSolver;
 use App\Services\ScheduleGeneration\GenerationConfig;
+use App\Services\ScheduleGeneration\GenerationStrategy;
 use App\Services\ScheduleGeneration\InitialSolutionBuilder;
 use App\Services\ScheduleGeneration\MatchSlotInput;
 use App\Services\ScheduleGeneration\RoundInput;
@@ -22,7 +24,7 @@ class ScheduleGeneratorTest extends TestCase
     }
 
     /**
-     * @param array<int, int|null> $homeVenueIdByTeamId
+     * @param  array<int, int|null>  $homeVenueIdByTeamId
      */
     private function teamsWithHomeVenues(array $homeVenueIdByTeamId): array
     {
@@ -39,7 +41,7 @@ class ScheduleGeneratorTest extends TestCase
     }
 
     /**
-     * @param VenueInput[] $venues
+     * @param  VenueInput[]  $venues
      * @return RoundInput[]
      */
     private function rounds(int $count, array $venues): array
@@ -468,5 +470,243 @@ class ScheduleGeneratorTest extends TestCase
     private function venuesFor(array $homeVenueIdByTeamId): array
     {
         return array_map(fn (int $venueId) => new VenueInput($venueId, "Venue {$venueId}"), array_values($homeVenueIdByTeamId));
+    }
+
+    // --- Strategy dispatch (plan.md "Size-Aware Schedule Generation" §5/§7) ---
+
+    /**
+     * Calling generate() without a $strategy argument at all must behave
+     * identically to passing GenerationStrategy::SeedAndAnneal explicitly -
+     * this is the non-regression requirement backing the optional parameter
+     * (every pre-existing test in this file calls the pre-strategy 4-arg
+     * signature and continues to pass unmodified, which is the other half
+     * of this guarantee).
+     */
+    public function test_default_strategy_parameter_is_byte_identical_to_explicit_seed_and_anneal()
+    {
+        $teams = $this->teams(1, 2, 3, 4, 5, 6);
+        $venues = $this->venues(10, 20);
+        $rounds = $this->rounds(8, $venues);
+        $config = new GenerationConfig(timeBudgetMs: 1_000_000_000);
+
+        $implicit = $this->generator(42)->generate($rounds, $teams, $venues, $config);
+        $explicit = $this->generator(42)->generate($rounds, $teams, $venues, $config, GenerationStrategy::SeedAndAnneal);
+
+        $this->assertEquals($implicit->candidate, $explicit->candidate);
+        $this->assertSame($implicit->attemptsUsed, $explicit->attemptsUsed);
+        $this->assertSame('seed_and_anneal', $explicit->report->strategy);
+    }
+
+    public function test_seed_only_strategy_returns_the_construction_seed_with_no_annealing()
+    {
+        // 4 teams / 7 rounds is a genuine multi-cycle regime (R=7 > N-1=3),
+        // so SeedAndAnneal on this exact input DOES find annealing work to
+        // do (asserted below) - that's what makes "SeedOnly does nothing
+        // further" a meaningful claim here rather than a vacuous one.
+        $teams = $this->teamsWithHomeVenues([1 => 100, 2 => 200, 3 => 300, 4 => 400]);
+        $venues = $this->venues(100, 200, 300, 400);
+        $rounds = $this->rounds(7, $venues);
+        $config = new GenerationConfig(maxAttempts: 5000, timeBudgetMs: 5000);
+
+        $expectedSeed = (new InitialSolutionBuilder(new SeededRng(1)))->build($rounds, $teams, $venues);
+
+        $result = $this->generator(1)->generate($rounds, $teams, $venues, $config, GenerationStrategy::SeedOnly);
+
+        $this->assertEquals($expectedSeed, $result->candidate);
+        $this->assertSame(0, $result->attemptsUsed, 'no annealing should ever run for SeedOnly');
+        $this->assertSame('seed_only', $result->report->strategy);
+
+        $annealed = $this->generator(1)->generate($rounds, $teams, $venues, $config, GenerationStrategy::SeedAndAnneal);
+        $this->assertGreaterThan(0, $annealed->attemptsUsed, 'sanity check: this input should genuinely give annealing something to do');
+    }
+
+    /**
+     * Isolates the construction step by using an empty soft-criteria list
+     * (hard constraints only), which makes the seed's own score exactly 0.0
+     * regardless of strategy - that trips ScheduleGenerator's existing
+     * "already perfect, skip the polish phase" short-circuit for BOTH
+     * strategies, so what's returned is exactly the raw construction-phase
+     * seed with nothing further applied to it, letting a direct equality
+     * comparison prove which construction path actually ran.
+     */
+    public function test_greedy_strategy_skips_round_robin_construction_even_when_eligible()
+    {
+        $teams = $this->teamsWithHomeVenues([1 => 100, 2 => 200, 3 => 300, 4 => 400]);
+        $venues = $this->venues(100, 200, 300, 400);
+        $rounds = $this->rounds(7, $venues);
+        $config = new GenerationConfig(softCriteria: []);
+
+        $this->assertTrue(
+            (new RoundRobinConstructor(new SeededRng(1)))->isEligible($teams, $venues),
+            'fixture must be round-robin eligible, otherwise this test cannot distinguish "skipped" from "would have fallen back anyway"'
+        );
+
+        $expectedGreedySeed = (new InitialSolutionBuilder(new SeededRng(1)))->greedyPass($rounds, $teams);
+        $expectedRoundRobinSeed = (new InitialSolutionBuilder(new SeededRng(1)))->build($rounds, $teams, $venues);
+        $this->assertNotEquals($expectedGreedySeed, $expectedRoundRobinSeed, 'sanity check: the two construction paths must actually differ for this input');
+
+        $result = $this->generator(1)->generate($rounds, $teams, $venues, $config, GenerationStrategy::Greedy);
+
+        $this->assertEquals($expectedGreedySeed, $result->candidate);
+        $this->assertSame('greedy', $result->report->strategy);
+    }
+
+    public function test_seed_based_strategies_never_carry_a_balanced_opponents_warning()
+    {
+        $teams = $this->teamsWithHomeVenues([1 => 100, 2 => 200, 3 => 300, 4 => 400]);
+        $venues = $this->venues(100, 200, 300, 400);
+        $rounds = $this->rounds(10, $venues);
+        $config = new GenerationConfig(maxAttempts: 200, timeBudgetMs: 500);
+
+        foreach ([GenerationStrategy::SeedOnly, GenerationStrategy::SeedAndAnneal] as $strategy) {
+            $result = $this->generator(1)->generate($rounds, $teams, $venues, $config, $strategy);
+
+            $this->assertSame([], $result->report->balancedOpponentsViolations, "{$strategy->value} should never carry this warning - the hard constraint is enforced instead");
+        }
+    }
+
+    /**
+     * The greedy path has no whole-schedule visibility, so unlike the
+     * seed-based strategies it is not guaranteed to keep every pair's
+     * meeting count balanced (plan.md §4) - it runs with the hard
+     * constraint OFF instead, and any violation surfaces as a soft
+     * review-screen warning (decision 2.6), never a hard failure. Checked
+     * across a spread of seeds on a tightly-shaped input (6 teams sharing
+     * just 2 venues, mirroring AutomaticScheduleGenerationTest's own
+     * real-world fixture) since any single seed's outcome isn't guaranteed.
+     */
+    public function test_greedy_strategy_can_surface_a_balanced_opponents_warning_while_staying_hard_valid()
+    {
+        $teams = $this->teams(1, 2, 3, 4, 5, 6);
+        $venues = $this->venues(10, 20);
+        $rounds = $this->rounds(12, $venues);
+        $config = new GenerationConfig(maxAttempts: 50, timeBudgetMs: 200);
+
+        $sawWarning = false;
+
+        for ($seed = 1; $seed <= 25; $seed++) {
+            $result = $this->generator($seed)->generate($rounds, $teams, $venues, $config, GenerationStrategy::Greedy);
+
+            $this->assertTrue($result->report->hardConstraintsSatisfied, "seed {$seed} should stay hard-valid even with the balanced-opponents constraint unenforced");
+            $this->assertSame('greedy', $result->report->strategy);
+
+            if (! empty($result->report->balancedOpponentsViolations)) {
+                $sawWarning = true;
+            }
+        }
+
+        $this->assertTrue($sawWarning, 'expected at least one of these seeds to surface a balanced-opponents warning on this tightly-shaped input');
+    }
+
+    /**
+     * plan.md §6/§10 Phase 4b: GenerationStrategy::Exact dispatches straight
+     * to ExactSolver rather than the construct-then-anneal pipeline. Uses
+     * the flagship 4x6 case (plan.md §1a/§1d/§1f) and cross-checks against
+     * calling ExactSolver directly with an identically-seeded Rng, rather
+     * than re-deriving the raw [1, 2, 4] counts here (ExactSolverTest
+     * already locks those in as equalities) - this test is about the WIRING
+     * (does ScheduleGenerator actually reach the solver and carry its
+     * result through, not whether the solver itself is correct).
+     */
+    public function test_exact_strategy_dispatches_to_the_solver_and_reproduces_the_4x6_flagship_optimum()
+    {
+        $teams = $this->teamsWithHomeVenues([1 => 100, 2 => 200, 3 => 300, 4 => 400]);
+        $venues = $this->venues(100, 200, 300, 400);
+        $rounds = $this->rounds(6, $venues);
+        $config = new GenerationConfig(softCriteria: ['consecutive_venue', 'full_cycle_spacing', 'home_away_break']);
+
+        $result = $this->generator(1)->generate($rounds, $teams, $venues, $config, GenerationStrategy::Exact);
+
+        $this->assertSame('exact', $result->report->strategy);
+        $this->assertTrue($result->report->provenOptimal);
+
+        $expected = (new ExactSolver(new SeededRng(1)))->solve($rounds, $teams, $venues, $config, 10000);
+
+        $this->assertEquals($expected->candidate, $result->candidate);
+        $this->assertSame($expected->report->score, $result->report->score);
+        $this->assertSame($expected->orderingsExplored, $result->attemptsUsed);
+    }
+
+    /**
+     * Decision 2.6 (soft failure, never a locked door): an admin can pick
+     * Exact for a league whose venue ownership data makes
+     * RoundRobinConstructor - and so ExactSolver, which reuses it -
+     * ineligible. ExactSolver::solve() THROWS in that situation, so
+     * ScheduleGenerator must catch that upstream (via the isEligible()
+     * check, backstopped by a try/catch) and degrade to Greedy with a
+     * warning rather than ever letting the exception surface.
+     */
+    public function test_exact_strategy_on_ineligible_input_degrades_to_greedy_with_a_warning_instead_of_throwing()
+    {
+        // Team 3 has no home venue - the classic ineligible shape.
+        $teams = $this->teamsWithHomeVenues([1 => 100, 2 => 200, 3 => null, 4 => 400]);
+        $venues = $this->venues(100, 200, 400);
+        $rounds = $this->rounds(6, $venues);
+        $config = new GenerationConfig(maxAttempts: 200, timeBudgetMs: 500);
+
+        $result = $this->generator(1)->generate($rounds, $teams, $venues, $config, GenerationStrategy::Exact);
+
+        $this->assertSame('greedy', $result->report->strategy);
+        $this->assertTrue($result->report->hardConstraintsSatisfied);
+        $this->assertNull($result->report->provenOptimal, 'Greedy makes no optimality claim, proven or otherwise');
+        $this->assertNotNull($result->report->strategyWarning);
+        $this->assertStringContainsString('Exact', $result->report->strategyWarning);
+        $this->assertStringContainsString('Greedy', $result->report->strategyWarning);
+    }
+
+    /**
+     * A non-throwing but genuinely infeasible seam for RoundRobinConstructor
+     * doesn't exist in practice once isEligible() passes, but this locks in
+     * that a requested-but-unavailable Exact never carries a proven-optimal
+     * claim regardless of degradation path.
+     */
+    public function test_exact_strategy_fallback_report_never_claims_proven_optimal()
+    {
+        $teams = $this->teamsWithHomeVenues([1 => 100, 2 => 200, 3 => null]);
+        $venues = $this->venues(100, 200);
+        $rounds = $this->rounds(4, $venues);
+        $config = new GenerationConfig(maxAttempts: 200, timeBudgetMs: 500);
+
+        $result = $this->generator(1)->generate($rounds, $teams, $venues, $config, GenerationStrategy::Exact);
+
+        $this->assertNotSame('exact', $result->report->strategy);
+        $this->assertNull($result->report->provenOptimal);
+    }
+
+    /**
+     * plan.md §5 Phase 5: the two seam-variant strategies thread their
+     * choice all the way from GenerationStrategy through buildSeed() into
+     * RoundRobinConstructor::construct()'s $palindromeSeam parameter.
+     * Uses an empty soft-criteria list (hard constraints only), which makes
+     * the seed's own score exactly 0.0 and trips ScheduleGenerator's
+     * "already perfect, skip the polish phase" short-circuit regardless of
+     * strategy - so what's returned is exactly the raw construction seed
+     * with nothing further applied, letting a direct equality comparison
+     * prove which seam mode actually ran.
+     */
+    public function test_seam_variant_strategies_thread_their_seam_choice_into_construction()
+    {
+        $teams = $this->teamsWithHomeVenues([1 => 100, 2 => 200, 3 => 300, 4 => 400]);
+        $venues = $this->venues(100, 200, 300, 400);
+        $rounds = $this->rounds(6, $venues);
+        $config = new GenerationConfig(softCriteria: []);
+
+        $expectedMirrored = (new RoundRobinConstructor(new SeededRng(1)))->construct($rounds, $teams, $venues, false);
+        $expectedPalindrome = (new RoundRobinConstructor(new SeededRng(1)))->construct($rounds, $teams, $venues, true);
+        $this->assertNotEquals($expectedMirrored, $expectedPalindrome, 'sanity check: seam choice must actually matter for this fixture');
+
+        $mirroredResult = $this->generator(1)->generate($rounds, $teams, $venues, $config, GenerationStrategy::SeedMirroredAndAnneal);
+        $this->assertEquals($expectedMirrored, $mirroredResult->candidate);
+        $this->assertSame('seed_mirrored_and_anneal', $mirroredResult->report->strategy);
+
+        $palindromeResult = $this->generator(1)->generate($rounds, $teams, $venues, $config, GenerationStrategy::SeedPalindromeAndAnneal);
+        $this->assertEquals($expectedPalindrome, $palindromeResult->candidate);
+        $this->assertSame('seed_palindrome_and_anneal', $palindromeResult->report->strategy);
+
+        // SeedAndAnneal (the plain, pre-Phase-5 case) keeps the mirrored
+        // default - this is the non-regression guarantee plan.md's Phase 5
+        // section requires.
+        $plainResult = $this->generator(1)->generate($rounds, $teams, $venues, $config, GenerationStrategy::SeedAndAnneal);
+        $this->assertEquals($expectedMirrored, $plainResult->candidate);
     }
 }

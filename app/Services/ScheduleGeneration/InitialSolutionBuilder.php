@@ -17,17 +17,19 @@ final class InitialSolutionBuilder
 {
     public function __construct(
         private readonly Rng $rng,
-    ) {
-    }
+    ) {}
 
     /**
-     * @param RoundInput[] $rounds
-     * @param TeamInput[] $activeTeams
-     * @param VenueInput[] $activeVenues
+     * @param  RoundInput[]  $rounds
+     * @param  TeamInput[]  $activeTeams
+     * @param  VenueInput[]  $activeVenues
+     * @param  bool  $palindromeSeam  threaded straight through to RoundRobinConstructor::construct() - see
+     *                                its docblock. Default false ("mirrored") reproduces this method's
+     *                                pre-existing behaviour exactly.
      */
-    public function build(array $rounds, array $activeTeams, array $activeVenues): ScheduleCandidate
+    public function build(array $rounds, array $activeTeams, array $activeVenues, bool $palindromeSeam = false): ScheduleCandidate
     {
-        $seed = (new RoundRobinConstructor($this->rng))->construct($rounds, $activeTeams, $activeVenues);
+        $seed = (new RoundRobinConstructor($this->rng))->construct($rounds, $activeTeams, $activeVenues, $palindromeSeam);
 
         return $seed ?? $this->greedyPass($rounds, $activeTeams);
     }
@@ -39,8 +41,8 @@ final class InitialSolutionBuilder
      * seed pointlessly (its break-minimal structure doesn't improve by
      * re-rolling, only who gets which slot changes).
      *
-     * @param RoundInput[] $rounds
-     * @param TeamInput[] $activeTeams
+     * @param  RoundInput[]  $rounds
+     * @param  TeamInput[]  $activeTeams
      */
     public function greedyPass(array $rounds, array $activeTeams): ScheduleCandidate
     {

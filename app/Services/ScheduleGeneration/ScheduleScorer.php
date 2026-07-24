@@ -3,6 +3,7 @@
 namespace App\Services\ScheduleGeneration;
 
 use App\Services\ScheduleGeneration\HardConstraints\AwayTeamAtOwnVenueConstraint;
+use App\Services\ScheduleGeneration\HardConstraints\BalancedOpponentMeetingsConstraint;
 use App\Services\ScheduleGeneration\HardConstraints\ByeAndMatchConflictConstraint;
 use App\Services\ScheduleGeneration\HardConstraints\DoubleBookedTeamConstraint;
 use App\Services\ScheduleGeneration\HardConstraints\HomeTeamAtAnotherTeamsVenueConstraint;
@@ -20,8 +21,8 @@ use App\Services\ScheduleGeneration\SoftCriteria\SoftCriterionRegistry;
 final class ScheduleScorer
 {
     /**
-     * @param TeamInput[] $activeTeams
-     * @param VenueInput[] $activeVenues
+     * @param  TeamInput[]  $activeTeams
+     * @param  VenueInput[]  $activeVenues
      */
     public function score(ScheduleCandidate $candidate, array $activeTeams, array $activeVenues, GenerationConfig $config): GenerationReport
     {
@@ -35,6 +36,13 @@ final class ScheduleScorer
             new HomeTeamAtAnotherTeamsVenueConstraint($context),
             new ByeAndMatchConflictConstraint($context),
         ];
+
+        // Conditional, not unconditional - see
+        // GenerationConfig::$enforceBalancedOpponents for why RoundBuilder's
+        // greedy path needs to be able to opt out.
+        if ($config->enforceBalancedOpponents) {
+            $hardConstraints[] = new BalancedOpponentMeetingsConstraint($context);
+        }
 
         $softCriteria = SoftCriterionRegistry::build($config->flatSoftCriteria(), $context);
 

@@ -5,6 +5,7 @@ namespace Tests\Unit\ScheduleGeneration;
 use App\Services\ScheduleGeneration\EpsilonConstraintOptimizer;
 use App\Services\ScheduleGeneration\GenerationConfig;
 use App\Services\ScheduleGeneration\GenerationReport;
+use App\Services\ScheduleGeneration\InitialSolutionBuilder;
 use App\Services\ScheduleGeneration\MatchSlotInput;
 use App\Services\ScheduleGeneration\RoundInput;
 use App\Services\ScheduleGeneration\ScheduleGenerator;
@@ -27,7 +28,7 @@ class EpsilonConstraintOptimizerTest extends TestCase
     }
 
     /**
-     * @param VenueInput[] $venues
+     * @param  VenueInput[]  $venues
      * @return RoundInput[]
      */
     private function rounds(int $count, array $venues): array
@@ -129,7 +130,7 @@ class EpsilonConstraintOptimizerTest extends TestCase
         $config = new GenerationConfig(maxAttempts: 500, timeBudgetMs: 1000, softCriteria: $this->flatSingletonTierOrder());
         $scorer = new ScheduleScorer;
 
-        $seed = (new \App\Services\ScheduleGeneration\InitialSolutionBuilder(new SeededRng(3)))->greedyPass($rounds, $teams);
+        $seed = (new InitialSolutionBuilder(new SeededRng(3)))->greedyPass($rounds, $teams);
         $seedReport = $scorer->score($seed, $teams, $venues, $config);
         $this->assertTrue($seedReport->hardConstraintsSatisfied);
 
@@ -175,10 +176,17 @@ class EpsilonConstraintOptimizerTest extends TestCase
         $teams = $this->teams(1, 2, 3, 4, 5, 6);
         $venues = $this->venues(10, 20);
         $rounds = $this->rounds(8, $venues);
-        $config = new GenerationConfig(maxAttempts: 400, timeBudgetMs: 1500);
+        // enforceBalancedOpponents disabled: the seed below comes from
+        // InitialSolutionBuilder::greedyPass (no venue ownership set, so
+        // RoundRobinConstructor isn't eligible), and the greedy path is NOT
+        // guaranteed to satisfy balanced-opponent-meetings (see
+        // GenerationConfig::$enforceBalancedOpponents) - unrelated to what
+        // this test actually exercises (the tied-tier minimax regression
+        // guarantee).
+        $config = new GenerationConfig(maxAttempts: 400, timeBudgetMs: 1500, enforceBalancedOpponents: false);
         $scorer = new ScheduleScorer;
 
-        $seed = (new \App\Services\ScheduleGeneration\InitialSolutionBuilder(new SeededRng(4)))->greedyPass($rounds, $teams);
+        $seed = (new InitialSolutionBuilder(new SeededRng(4)))->greedyPass($rounds, $teams);
         $seedReport = $scorer->score($seed, $teams, $venues, $config);
         $this->assertTrue($seedReport->hardConstraintsSatisfied);
 
@@ -241,10 +249,17 @@ class EpsilonConstraintOptimizerTest extends TestCase
         $teams = $this->teams(1, 2, 3, 4, 5, 6);
         $venues = $this->venues(10, 20);
         $rounds = $this->rounds(8, $venues);
-        $config = new GenerationConfig(maxAttempts: 300, timeBudgetMs: 1000, softCriteria: $this->flatSingletonTierOrder());
+        // enforceBalancedOpponents disabled: the seed below comes from
+        // InitialSolutionBuilder::greedyPass (no venue ownership set, so
+        // RoundRobinConstructor isn't eligible), and the greedy path is NOT
+        // guaranteed to satisfy balanced-opponent-meetings (see
+        // GenerationConfig::$enforceBalancedOpponents) - unrelated to what
+        // this test actually exercises (the first-tier-never-regresses
+        // guarantee).
+        $config = new GenerationConfig(maxAttempts: 300, timeBudgetMs: 1000, softCriteria: $this->flatSingletonTierOrder(), enforceBalancedOpponents: false);
         $scorer = new ScheduleScorer;
 
-        $seed = (new \App\Services\ScheduleGeneration\InitialSolutionBuilder(new SeededRng(2)))->greedyPass($rounds, $teams);
+        $seed = (new InitialSolutionBuilder(new SeededRng(2)))->greedyPass($rounds, $teams);
         $seedReport = $scorer->score($seed, $teams, $venues, $config);
 
         $outcome = (new EpsilonConstraintOptimizer(new SeededRng(2), $scorer))->optimize(
